@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Client;
+use App\Models\Worker;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -21,5 +23,21 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        Client::factory(3)
+            ->hasProjects(2, function ($project) {
+                return [
+                    'name' => fake()->city,
+                ];
+            })
+            ->create();
+
+        Worker::factory(10)
+            ->hasAssignments(3)
+            ->hasFamilyMembers(2)
+            ->hasDocuments(3)
+            ->create();
+
+        
     }
 }
