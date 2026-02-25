@@ -22,11 +22,11 @@ return new class extends Migration
             $table->foreignId('department_id')
                   ->constrained('departments')
                   ->onDelete('cascade');
-            $table->string('employee_id');
+            $table->string('employee_id')->nullable();
             $table->string('position')->nullable();
             $table->date('hire_date');
             $table->date('termination_date')->nullable();
-            $table->string('termination_reason')->nullable();
+            $table->enum('termination_reason', ['contract expired', 'resign', 'fired', 'other'])->nullable();
             $table->timestamps();
 
             $table->unique(['project_id', 'employee_id']);

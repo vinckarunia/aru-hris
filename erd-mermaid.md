@@ -56,11 +56,11 @@ erDiagram
         bigint worker_id FK
         bigint project_id FK
         bigint department_id FK
-        string employee_id "NN"
+        string employee_id
         string position
         date hire_date "NN"
         date termination_date
-        string termination_reason
+        enum termination_reason "contract expired|resign|fired|other"
         timestamp created_at
         note additional_note "UNIQUE(project_id, employee_id)"
         note additional_note "PARTIAL UNIQUE(worker_id) WHERE termination_date IS NULL"
