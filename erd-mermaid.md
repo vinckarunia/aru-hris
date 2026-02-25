@@ -71,7 +71,7 @@ erDiagram
         bigint id PK
         bigint assignment_id FK
         enum contract_type "PKWT|PKWTT"
-        int contract_number "CHK > 0"
+        int contract_number "CHK > 0, NN"
         date start_date "NN"
         date end_date
         int duration_months

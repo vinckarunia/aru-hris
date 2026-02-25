@@ -17,7 +17,7 @@ return new class extends Migration
                   ->constrained('assignments')
                   ->onDelete('cascade');
             $table->enum('contract_type', ['PKWT','PKWTT']);
-            $table->integer('contract_number')->unsigned();
+            $table->integer('contract_number')->unsigned()->nullable();
             $table->date('start_date');
             $table->date('end_date')->nullable();
             $table->integer('duration_months')->nullable();
