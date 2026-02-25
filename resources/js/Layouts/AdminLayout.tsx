@@ -74,7 +74,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         Dashboard
                     </Link>
 
-                    <Link href={route('import.workers.view')} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium transition-all group mt-1">
+                    <Link href="/import" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium transition-all group mt-1">
                         <iconify-icon icon="solar:import-linear" width="20"></iconify-icon>
                         Bulk Import Data
                     </Link>

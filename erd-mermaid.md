@@ -60,7 +60,7 @@ erDiagram
         string position
         date hire_date "NN"
         date termination_date
-        enum termination_reason "contract expired|resign|fired|other"
+        enum status "active|contract expired|resign|fired|other"
         timestamp created_at
         note additional_note "UNIQUE(project_id, employee_id)"
         note additional_note "PARTIAL UNIQUE(worker_id) WHERE termination_date IS NULL"
@@ -70,8 +70,9 @@ erDiagram
     CONTRACTS {
         bigint id PK
         bigint assignment_id FK
-        enum contract_type "PKWT|PKWTT"
-        int contract_number "CHK > 0, NN"
+        enum contract_type "Kontrak|Harian"
+        enum pkwt_type "PKWT|PKWTT"
+        int pkwt_number "CHK > 0, NN"
         date start_date "NN"
         date end_date
         int duration_months

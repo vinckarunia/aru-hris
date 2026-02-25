@@ -137,6 +137,9 @@ class ProcessBulkImport implements ShouldQueue
                     // 3. Create Assignment
                     $terminationReasonRaw = strtolower($this->extractMappedData($row, 'termination_reason') ?? '');
                     $parsedTermination = $this->parseTerminationStatus($terminationReasonRaw);
+                    
+                    // Use explicitly mapped termination date if available, else fallback to parsed string
+                    $mappedTermDate = $this->parseDateString($this->extractMappedData($row, 'termination_date'));
 
                     $assignment = Assignment::create([
                         'worker_id'          => $worker->id,
@@ -145,13 +148,18 @@ class ProcessBulkImport implements ShouldQueue
                         'employee_id'        => $this->extractMappedData($row, 'nik_tlj'),
                         'position'           => $this->extractMappedData($row, 'position'),
                         'hire_date'          => $this->parseDateString($this->extractMappedData($row, 'hire_date')) ?? Carbon::now()->format('Y-m-d'),
-                        'termination_date'   => $parsedTermination['date'],
+                        'termination_date'   => $mappedTermDate ?? $parsedTermination['date'],
                         'termination_reason' => $parsedTermination['reason'],
                     ]);
 
                     // 4. Process Contracts (Horizontal to Vertical)
                     $latestContractId = null;
                     $latestEndDate = null;
+                    
+                    // Detect Contract Type from CSV (Harian or Kontrak)
+                    $excelContractType = strtolower($this->extractMappedData($row, 'raw_contract_type') ?? '');
+                    $dbContractType = str_contains($excelContractType, 'harian') ? 'Harian' : 'Kontrak';
+                    $evalNotes = $this->extractMappedData($row, 'evaluation_notes');
 
                     // Loop for PKWT 1 to 8
                     for ($i = 1; $i <= 8; $i++) {
@@ -160,11 +168,13 @@ class ProcessBulkImport implements ShouldQueue
 
                         if ($start) {
                             $contract = Contract::create([
-                                'assignment_id'   => $assignment->id,
-                                'contract_type'   => 'PKWT',
-                                'contract_number' => $i,
-                                'start_date'      => $start,
-                                'end_date'        => $end,
+                                'assignment_id'    => $assignment->id,
+                                'contract_type'    => $dbContractType,
+                                'pkwt_type'        => $dbContractType === 'Kontrak' ? 'PKWT' : null,
+                                'pkwt_number'      => $dbContractType === 'Kontrak' ? $i : null,
+                                'start_date'       => $start,
+                                'end_date'         => $end,
+                                'evaluation_notes' => $evalNotes,
                             ]);
 
                             // Track the latest contract
@@ -179,26 +189,34 @@ class ProcessBulkImport implements ShouldQueue
                     $pkwttStart = $this->parseDateString($this->extractMappedData($row, 'pkwtt_start'));
                     if ($pkwttStart) {
                         $contract = Contract::create([
-                            'assignment_id'   => $assignment->id,
-                            'contract_type'   => 'PKWTT',
-                            'contract_number' => 99, // Indicate special number or leave null based on your logic
-                            'start_date'      => $pkwttStart,
-                            'end_date'        => null,
+                            'assignment_id'    => $assignment->id,
+                            'contract_type'    => 'Kontrak', 
+                            'pkwt_type'        => 'PKWTT',
+                            'pkwt_number'      => null, // PKWTT doesn't have a number
+                            'start_date'       => $pkwttStart,
+                            'end_date'         => null,
+                            'evaluation_notes' => $evalNotes,
                         ]);
                         $latestContractId = $contract->id; // PKWTT is always the ultimate latest
                     }
 
                     // 5. Attach Compensation to the Latest Contract
                     if ($latestContractId) {
+                        // Extract rates or fallback to defaults
+                        $salaryRate = strtolower($this->extractMappedData($row, 'salary_rate')) ?: 'monthly';
+                        $allowanceRate = strtolower($this->extractMappedData($row, 'allowance_rate')) ?: 'daily';
+                        $overtimeRate = strtolower($this->extractMappedData($row, 'overtime_rate')) ?: 'hourly';
+
                         ContractCompensation::create([
                             'contract_id'             => $latestContractId,
                             'base_salary'             => $this->cleanCurrencyString($this->extractMappedData($row, 'base_salary')),
-                            'salary_rate'             => 'monthly', // Can be dynamic based on your frontend mapping
+                            'salary_rate'             => in_array($salaryRate, ['hourly', 'daily', 'monthly', 'yearly']) ? $salaryRate : 'monthly',
                             'meal_allowance'          => $this->cleanCurrencyString($this->extractMappedData($row, 'meal_allowance')),
                             'transport_allowance'     => $this->cleanCurrencyString($this->extractMappedData($row, 'transport_allowance')),
+                            'allowance_rate'          => in_array($allowanceRate, ['hourly', 'daily', 'monthly', 'yearly']) ? $allowanceRate : 'daily',
                             'overtime_weekday_rate'   => $this->cleanCurrencyString($this->extractMappedData($row, 'overtime_weekday')),
                             'overtime_holiday_rate'   => $this->cleanCurrencyString($this->extractMappedData($row, 'overtime_holiday')),
-                            'overtime_rate'           => 'hourly',
+                            'overtime_rate'           => in_array($overtimeRate, ['hourly', 'daily', 'monthly', 'yearly']) ? $overtimeRate : 'hourly',
                         ]);
                     }
 
@@ -210,7 +228,7 @@ class ProcessBulkImport implements ShouldQueue
 
                 } catch (\Exception $e) {
                     $failedRow = $row;
-                    $failedRow[] = $e->getMessage();
+                    $failedRow[] = $e->getMessage() . " di baris NIK: " . ($ktpNumber ?? 'Unknown');
                     $failedRows[] = $failedRow;
                 }
             }
@@ -295,19 +313,29 @@ class ProcessBulkImport implements ShouldQueue
     }
 
     /**
-     * Parse termination text like "Resign (30/9/2021)" or "Habis Kontrak"
+     * Parse raw status text from Excel (e.g., "Aktif", "Resign (30/9/2021)")
      * * @param string $statusString
-     * @return array ['reason' => string|null, 'date' => string|null]
+     * @return array ['status' => string, 'date' => string|null]
      */
-    private function parseTerminationStatus(string $statusString): array
+    private function parseAssignmentStatus(string $statusString): array
     {
-        $result = ['reason' => null, 'date' => null];
-        if (!$statusString || str_contains($statusString, 'aktif')) return $result;
+        // Default to active if empty or explicitly stated
+        $result = ['status' => 'active', 'date' => null];
+        
+        if (!$statusString || str_contains($statusString, 'aktif') || str_contains($statusString, 'active')) {
+            return $result;
+        }
 
-        if (str_contains($statusString, 'resign')) $result['reason'] = 'resign';
-        elseif (str_contains($statusString, 'habis kontrak')) $result['reason'] = 'contract expired';
-        elseif (str_contains($statusString, 'diberhentikan')) $result['reason'] = 'fired';
-        else $result['reason'] = 'other';
+        // Determine specific termination status
+        if (str_contains($statusString, 'resign')) {
+            $result['status'] = 'resign';
+        } elseif (str_contains($statusString, 'habis kontrak')) {
+            $result['status'] = 'contract expired';
+        } elseif (str_contains($statusString, 'diberhentikan')) {
+            $result['status'] = 'fired';
+        } else {
+            $result['status'] = 'other';
+        }
 
         // Extract date inside parentheses (e.g., "Resign (30/10/2023)")
         preg_match('/\((.*?)\)/', $statusString, $matches);

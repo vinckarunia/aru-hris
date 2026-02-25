@@ -19,13 +19,17 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::post('/import/workers/preview', [BulkImportController::class, 'preview'])->name('import.workers.preview');
     Route::post('/import/workers/process', [BulkImportController::class, 'process'])->name('import.workers.process');
+    Route::get('/import/workers', function () {
+        return Inertia::render('Worker/BulkImport');
+    })->name('import.workers.view');
+    Route::redirect('/import', '/import/workers', 301);
 });
 
 require __DIR__.'/auth.php';

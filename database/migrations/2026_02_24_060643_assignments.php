@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('position')->nullable();
             $table->date('hire_date');
             $table->date('termination_date')->nullable();
-            $table->enum('termination_reason', ['contract expired', 'resign', 'fired', 'other'])->nullable();
+            $table->enum('status', ['active', 'contract expired', 'resign', 'fired', 'other'])->nullable();
             $table->timestamps();
 
             $table->unique(['project_id', 'employee_id']);

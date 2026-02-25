@@ -16,8 +16,9 @@ return new class extends Migration
             $table->foreignId('assignment_id')
                   ->constrained('assignments')
                   ->onDelete('cascade');
-            $table->enum('contract_type', ['PKWT','PKWTT']);
-            $table->integer('contract_number')->unsigned()->nullable();
+            $table->enum('contract_type', ['Kontrak','Harian']);
+            $table->enum('pkwt_type', ['PKWT','PKWTT']);
+            $table->integer('pkwt_number')->unsigned()->nullable();
             $table->date('start_date');
             $table->date('end_date')->nullable();
             $table->integer('duration_months')->nullable();
@@ -25,12 +26,12 @@ return new class extends Migration
             $table->string('file_path')->nullable();
             $table->timestamps();
 
-            $table->unique(['assignment_id','contract_number']);
+            $table->unique(['assignment_id', 'contract_type', 'pkwt_type', 'pkwt_number']);
         });
 
         DB::statement('CREATE UNIQUE INDEX contracts_assignment_active_unique ON contracts(assignment_id) WHERE end_date IS NULL;');
-        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_contract_number_positive CHECK (contract_number > 0);');
-        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwtt_enddate CHECK ((contract_type = \'PKWTT\' AND end_date IS NULL) OR contract_type = \'PKWT\');');
+        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwt_number_positive CHECK (pkwt_number > 0);');
+        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwtt_enddate CHECK ((pkwt_type = \'PKWTT\' AND end_date IS NULL) OR pkwt_type = \'PKWT\');');
     }
 
     /**
