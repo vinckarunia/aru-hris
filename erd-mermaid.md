@@ -87,10 +87,13 @@ erDiagram
         bigint id PK
         bigint contract_id FK "UK"
         decimal base_salary "CHK >= 0"
+        enum salary_rate "hourly|daily|monthly|yearly"
         decimal meal_allowance "DEF 0"
         decimal transport_allowance "DEF 0"
+        enum allowance_rate "hourly|daily|monthly|yearly"
         decimal overtime_weekday_rate "DEF 0"
         decimal overtime_holiday_rate "DEF 0"
+        enum overtime_rate "hourly|daily|monthly|yearly"
         note additional_note "1:1 with CONTRACTS"
     }
 

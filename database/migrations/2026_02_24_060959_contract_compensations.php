@@ -18,10 +18,13 @@ return new class extends Migration
                   ->onDelete('cascade')
                   ->unique();
             $table->decimal('base_salary', 15, 2)->default(0);
+            $table->enum('salary_rate', ['hourly', 'daily', 'monthly', 'yearly'])->default('monthly')->nullable();
             $table->decimal('meal_allowance', 15, 2)->default(0);
             $table->decimal('transport_allowance', 15, 2)->default(0);
+            $table->enum('allowance_rate', ['hourly', 'daily', 'monthly', 'yearly'])->default('daily')->nullable();
             $table->decimal('overtime_weekday_rate', 15, 2)->default(0);
             $table->decimal('overtime_holiday_rate', 15, 2)->default(0);
+            $table->enum('overtime_rate', ['hourly', 'daily', 'monthly', 'yearly'])->default('hourly')->nullable();
             $table->timestamps();
 
         });
