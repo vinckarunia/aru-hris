@@ -10,7 +10,7 @@ export default {
         './resources/js/**/*.tsx',
     ],
 
-    darkMode: 'class', // Tambahkan ini
+    darkMode: 'class',
     theme: {
         extend: {
             fontFamily: {

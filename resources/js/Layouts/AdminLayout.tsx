@@ -16,7 +16,7 @@ interface Props {
 /**
  * AdminLayout Component
  *
- * Provides the main application shell including the sidebar navigation, 
+ * Provides the main application shell including the sidebar navigation with accordion modules, 
  * top header with user profile, and the main content area.
  *
  * @param {PropsWithChildren<Props>} props - Component props containing children, title, and optional header.
@@ -25,12 +25,23 @@ interface Props {
 export default function AdminLayout({ title, header, children }: PropsWithChildren<Props>) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
+    // State to manage which sidebar accordion menu is currently open
+    const [openMenu, setOpenMenu] = useState<string | null>('client'); 
+
     // Retrieve the authenticated user data from Inertia's shared props
     const user = usePage<{ auth: { user: { name: string; email: string } } }>().props.auth.user;
 
     /**
+     * Toggles the sidebar accordion menu.
+     *
+     * @param {string} menuName - The identifier of the menu to toggle.
+     */
+    const toggleMenu = (menuName: string) => {
+        setOpenMenu(openMenu === menuName ? null : menuName);
+    };
+
+    /**
      * Extracts initials from a given full name.
-     * Takes the first letter of the first and second names, or the first two letters of a single name.
      *
      * @param {string} name - The full name of the user.
      * @returns {string} The user's initials in uppercase.
@@ -66,18 +77,95 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-                    <div className="px-4 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Main Menu</div>
+                <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-4">
                     
-                    <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800 transition-all group">
-                        <iconify-icon icon="solar:widget-add-linear" width="20" class="group-hover:text-primary transition-colors"></iconify-icon>
-                        Dashboard
-                    </Link>
+                    {/* General Section */}
+                    <div>
+                        <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">General</div>
+                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800 transition-all group">
+                            <iconify-icon icon="solar:widget-add-linear" width="20" className="group-hover:text-primary transition-colors"></iconify-icon>
+                            <span className="font-medium">Dashboard</span>
+                        </Link>
+                    </div>
 
-                    <Link href="/import" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium transition-all group mt-1">
-                        <iconify-icon icon="solar:import-linear" width="20"></iconify-icon>
-                        Bulk Import Data
-                    </Link>
+                    {/* Master Data Modules Section */}
+                    <div>
+                        <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Modules</div>
+                        
+                        <div className="space-y-1">
+                            {/* MODULE: CLIENT */}
+                            <div className="rounded-xl overflow-hidden">
+                                <button 
+                                    onClick={() => toggleMenu('client')}
+                                    className={`w-full flex items-center justify-between px-4 py-3 transition-all group ${openMenu === 'client' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <iconify-icon icon="solar:buildings-linear" width="20" className={`transition-colors ${openMenu === 'client' ? 'text-primary' : 'group-hover:text-primary'}`}></iconify-icon>
+                                        <span className="font-medium">Client</span>
+                                    </div>
+                                    <iconify-icon icon="solar:alt-arrow-down-linear" width="18" className={`transition-transform duration-300 ${openMenu === 'client' ? 'rotate-180 text-primary' : 'text-slate-400 group-hover:text-primary'}`}></iconify-icon>
+                                </button>
+                                
+                                {/* Submenu Client */}
+                                <div className={`transition-all duration-300 ease-in-out ${openMenu === 'client' ? 'max-h-40 opacity-100 bg-white/50 dark:bg-slate-800/50' : 'max-h-0 opacity-0'}`}>
+                                    <div className="py-2 flex flex-col space-y-1">
+                                        <Link href={route('clients.index')} className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List All Clients
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* MODULE: PROJECT */}
+                            <div className="rounded-xl overflow-hidden">
+                                <button 
+                                    onClick={() => toggleMenu('project')}
+                                    className={`w-full flex items-center justify-between px-4 py-3 transition-all group ${openMenu === 'project' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <iconify-icon icon="solar:folder-with-files-linear" width="20" className={`transition-colors ${openMenu === 'project' ? 'text-primary' : 'group-hover:text-primary'}`}></iconify-icon>
+                                        <span className="font-medium">Project</span>
+                                    </div>
+                                    <iconify-icon icon="solar:alt-arrow-down-linear" width="18" className={`transition-transform duration-300 ${openMenu === 'project' ? 'rotate-180 text-primary' : 'text-slate-400 group-hover:text-primary'}`}></iconify-icon>
+                                </button>
+                                
+                                {/* Submenu Project */}
+                                <div className={`transition-all duration-300 ease-in-out ${openMenu === 'project' ? 'max-h-40 opacity-100 bg-white/50 dark:bg-slate-800/50' : 'max-h-0 opacity-0'}`}>
+                                    <div className="py-2 flex flex-col space-y-1">
+                                        <Link href="#" className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List All Projects
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* MODULE: WORKER */}
+                            <div className="rounded-xl overflow-hidden">
+                                <button 
+                                    onClick={() => toggleMenu('worker')}
+                                    className={`w-full flex items-center justify-between px-4 py-3 transition-all group ${openMenu === 'worker' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm dark:hover:bg-slate-800'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <iconify-icon icon="solar:users-group-two-rounded-linear" width="20" className={`transition-colors ${openMenu === 'worker' ? 'text-primary' : 'group-hover:text-primary'}`}></iconify-icon>
+                                        <span className="font-medium">Worker</span>
+                                    </div>
+                                    <iconify-icon icon="solar:alt-arrow-down-linear" width="18" className={`transition-transform duration-300 ${openMenu === 'worker' ? 'rotate-180 text-primary' : 'text-slate-400 group-hover:text-primary'}`}></iconify-icon>
+                                </button>
+                                
+                                {/* Submenu Worker */}
+                                <div className={`transition-all duration-300 ease-in-out ${openMenu === 'worker' ? 'max-h-40 opacity-100 bg-white/50 dark:bg-slate-800/50' : 'max-h-0 opacity-0'}`}>
+                                    <div className="py-2 flex flex-col space-y-1">
+                                        <Link href="#" className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List All Workers
+                                        </Link>
+                                        <Link href={route('import.workers.view')} className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> Bulk Import Data
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </nav>
             </aside>
 

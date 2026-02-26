@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\BulkImportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -20,10 +21,15 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Client Routes
+    Route::resource('clients', ClientController::class)->except(['create', 'show', 'edit']);
+
+    // Worker Routes
     Route::post('/import/workers/preview', [BulkImportController::class, 'preview'])->name('import.workers.preview');
     Route::post('/import/workers/process', [BulkImportController::class, 'process'])->name('import.workers.process');
     Route::get('/import/workers', function () {
