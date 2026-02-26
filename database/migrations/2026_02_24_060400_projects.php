@@ -16,15 +16,12 @@ return new class extends Migration
             $table->foreignId('client_id')
                   ->constrained('clients')
                   ->onDelete('cascade');
-            $table->foreignId('department_id')
-                  ->constrained('departments')
-                  ->onDelete('cascade');
             $table->string('name');
             $table->string('prefix')->unique();
             $table->integer('id_running_number')->default(0);
             $table->timestamps();
-
-            $table->unique(['client_id', 'department_id', 'name']);
+            
+            $table->unique(['client_id', 'name']); 
         });
     }
 

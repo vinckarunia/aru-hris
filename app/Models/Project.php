@@ -33,7 +33,6 @@ class Project extends Model
      */
     protected $fillable = [
         'client_id',
-        'department_id', // <-- DITAMBAHKAN DI SINI
         'name',
         'prefix',
         'id_running_number',
@@ -50,13 +49,13 @@ class Project extends Model
     }
 
     /**
-     * Get the department that owns the project.
+     * Get the departments that are associated with the project.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function department()
+    public function departments()
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsToMany(Department::class);
     }
 
     /**

@@ -21,7 +21,7 @@ class ProjectController extends Controller
     public function index(): Response
     {
         // Eager load relationships
-        $projects = Project::with(['client', 'department'])->latest()->get();
+        $projects = Project::with(['client', 'departments'])->latest()->get();
         
         // Fetch clients and departments for the dependent dropdowns
         $clients = Client::orderBy('full_name')->get(['id', 'full_name', 'short_name']);
@@ -38,25 +38,29 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
-            'department_id' => [
+            'department_ids' => 'required|array|min:1',
+            'department_ids.*' => [
                 'required',
                 Rule::exists('departments', 'id')->where('client_id', $request->client_id)
             ],
             'name' => [
                 'required', 'string', 'max:255',
-                // Harus unik di dalam departemen dan klien yang sama
-                Rule::unique('projects')
-                    ->where('client_id', $request->client_id)
-                    ->where('department_id', $request->department_id),
+                Rule::unique('projects')->where('client_id', $request->client_id)
             ],
-            'prefix' => 'required|string|max:50|unique:projects,prefix',
+            'prefix' => 'required|string|max:3|unique:projects,prefix',
         ], [
             'name.unique' => 'Nama project ini sudah ada di departemen tersebut.',
             'prefix.unique' => 'Prefix ini sudah digunakan oleh project lain.',
-            'department_id.exists' => 'Departemen tidak valid untuk klien yang dipilih.'
+            'department_ids.required' => 'Pilih minimal satu departemen.',
         ]);
 
-        Project::create($validated);
+        $project = Project::create([
+            'client_id' => $validated['client_id'],
+            'name' => $validated['name'],
+            'prefix' => $validated['prefix'],
+        ]);
+
+        $project->departments()->attach($validated['department_ids']);
 
         return redirect()->back()->with('message', 'Project berhasil ditambahkan.');
     }
@@ -65,24 +69,29 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
-            'department_id' => [
+            'department_ids' => 'required|array|min:1',
+            'department_ids.*' => [
                 'required',
                 Rule::exists('departments', 'id')->where('client_id', $request->client_id)
             ],
             'name' => [
                 'required', 'string', 'max:255',
-                Rule::unique('projects')
-                    ->where('client_id', $request->client_id)
-                    ->where('department_id', $request->department_id)
-                    ->ignore($project->id),
+                Rule::unique('projects')->where('client_id', $request->client_id)->ignore($project->id)
             ],
-            'prefix' => 'required|string|max:50|unique:projects,prefix,' . $project->id,
+            'prefix' => 'required|string|max:3|unique:projects,prefix,' . $project->id,
         ], [
             'name.unique' => 'Nama project ini sudah ada di departemen tersebut.',
             'prefix.unique' => 'Prefix ini sudah digunakan oleh project lain.',
+            'department_ids.required' => 'Pilih minimal satu departemen.',
         ]);
 
-        $project->update($validated);
+        $project->update([
+            'client_id' => $validated['client_id'],
+            'name' => $validated['name'],
+            'prefix' => $validated['prefix'],
+        ]);
+
+        $project->departments()->sync($validated['department_ids']);
 
         return redirect()->back()->with('message', 'Project berhasil diperbarui.');
     }
