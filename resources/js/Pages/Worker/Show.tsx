@@ -137,14 +137,33 @@ export default function Show({ worker }: Props) {
                 )}
 
                 {activeTab === 'assignments' && (
-                    <div className="p-10 text-center">
-                        <div className="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                            <iconify-icon icon="solar:rocket-bold" width="40"></iconify-icon>
+                    <div className="p-6">
+                        <div className="flex justify-end mb-4">
+                            <Link href={route('assignments.create', { worker_id: worker.id })} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
+                                <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Penempatan Baru
+                            </Link>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Modul Penempatan (Assignments)</h3>
-                        <p className="text-slate-500 max-w-md mx-auto">
-                            Fitur penempatan pekerja ke Project dan penyusunan Kontrak akan diimplementasikan di tahap selanjutnya.
-                        </p>
+
+                        {/* Nantinya di sini kita bisa me-mapping daftar assignment yang dimiliki oleh worker */}
+                        {worker.assignments && worker.assignments.length > 0 ? (
+                            <div className="space-y-4">
+                                {worker.assignments.map((assign: any) => (
+                                    <div key={assign.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <div>
+                                            <h4 className="font-bold text-slate-800 dark:text-white">{assign.position || 'Tidak ada jabatan'}</h4>
+                                            <p className="text-sm text-slate-500 mt-1">{assign.project?.name} - {assign.department?.name}</p>
+                                        </div>
+                                        <Link href={route('assignments.show', assign.id)} className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors">
+                                            Lihat Detail & Kontrak
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
+                                <p className="text-slate-500 mb-2">Pekerja ini belum ditempatkan di project mana pun.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
