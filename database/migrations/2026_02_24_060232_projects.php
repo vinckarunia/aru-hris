@@ -17,7 +17,7 @@ return new class extends Migration
                   ->constrained('clients')
                   ->onDelete('cascade');
             $table->string('name');
-            $table->string('id_prefix');
+            $table->string('prefix')->unique();
             $table->integer('id_running_number')->default(0);
             $table->timestamps();
 

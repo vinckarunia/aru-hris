@@ -4,8 +4,8 @@ erDiagram
 
     CLIENTS {
         bigint id PK
-        string name "UK, NN"
-        string prefix "UK, NN"
+        string full_name "UK, NN"
+        string short_name "UK"
         timestamp created_at
     }
 
@@ -13,7 +13,7 @@ erDiagram
         bigint id PK
         bigint client_id FK
         string name "NN"
-        string id_prefix "NN"
+        string prefix "UK, NN"
         int id_running_number "DEF 0"
         timestamp created_at
         note additional_note "UNIQUE(client_id, name)"

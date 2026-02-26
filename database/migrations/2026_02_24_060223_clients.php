@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('prefix')->unique();
+            $table->string('full_name')->unique();
+            $table->string('short_name')->unique();
             $table->timestamps();
         });
     }
