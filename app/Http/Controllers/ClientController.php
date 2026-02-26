@@ -40,7 +40,7 @@ class ClientController extends Controller
     public function show(Client $client): Response
     {
         // Eager load departments and projects (along with project's department relation)
-        $client->load(['departments', 'projects.department']);
+        $client->load(['departments', 'projects.departments']);
 
         return Inertia::render('Client/Show', [
             'client' => $client,

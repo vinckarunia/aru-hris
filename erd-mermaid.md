@@ -21,9 +21,17 @@ erDiagram
 
     DEPARTMENTS {
         bigint id PK
-        bigint project_id FK
+        bigint client_id FK
         string name "NN"
-        note additional_note "UNIQUE(project_id, name)"
+        timestamp created_at
+        note additional_note "UNIQUE(client_id, name)"
+    }
+
+    DEPARTMENT_PROJECT {
+        bigint id PK
+        bigint department_id FK
+        bigint project_id FK
+        note additional_note "Pivot Table - UNIQUE(department_id, project_id)"
     }
 
     WORKERS {
@@ -79,7 +87,7 @@ erDiagram
         text evaluation_notes
         string file_path
         timestamp created_at
-        note additional_note "UNIQUE(assignment_id, contract_number)"
+        note additional_note "UNIQUE(assignment_id, pkwt_number)"
         note additional_note "PARTIAL UNIQUE(assignment_id) WHERE end_date IS NULL"
         note additional_note "PKWTT => end_date NULL"
     }
@@ -140,11 +148,14 @@ erDiagram
     }
 
     CLIENTS ||--o{ PROJECTS : has
-    PROJECTS ||--o{ DEPARTMENTS : has
+    CLIENTS ||--o{ DEPARTMENTS : has
+    DEPARTMENTS ||--o{ DEPARTMENT_PROJECT : contains
+    PROJECTS ||--o{ DEPARTMENT_PROJECT : belongs_to
     PROJECTS ||--o{ ASSIGNMENTS : has
+    DEPARTMENTS ||--o{ ASSIGNMENTS : has
     WORKERS ||--o{ ASSIGNMENTS : has
     ASSIGNMENTS ||--o{ CONTRACTS : has
-    CONTRACTS ||--|| CONTRACT_COMPENSATIONS : has
+    CONTRACTS ||--|| CONTRACT_COMPENSATION : has
     WORKERS ||--o{ FAMILY_MEMBERS : has
     WORKERS ||--o{ DOCUMENTS : has
     ASSIGNMENTS ||--o{ DOCUMENTS : has

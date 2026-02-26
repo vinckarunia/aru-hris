@@ -55,7 +55,7 @@ class DepartmentController extends Controller
                 Rule::unique('departments')->where('client_id', $request->client_id),
             ],
         ], [
-            'name.unique' => 'Nama departemen ini sudah ada di Perusahaan Klien tersebut.',
+            'name.unique' => 'Nama departemen ini sudah ada di Perusahaan Client tersebut.',
         ]);
 
         Department::create($validated);
@@ -82,7 +82,7 @@ class DepartmentController extends Controller
                 Rule::unique('departments')->where('client_id', $request->client_id)->ignore($department->id),
             ],
         ], [
-            'name.unique' => 'Nama departemen ini sudah ada di Perusahaan Klien tersebut.',
+            'name.unique' => 'Nama departemen ini sudah ada di Perusahaan Client tersebut.',
         ]);
 
         $department->update($validated);

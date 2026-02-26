@@ -9,44 +9,161 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 
-interface Department { id: number; client_id: number; name: string; }
-interface Project { id: number; client_id: number; department_id: number; name: string; prefix: string; id_running_number: number; department?: Department; }
-interface Client { id: number; full_name: string; short_name: string; departments: Department[]; projects: Project[]; }
-interface Props { client: Client; }
+/**
+ * Represents a department within a client company.
+ */
+interface Department { 
+    id: number; 
+    client_id: number; 
+    name: string; 
+}
 
+/**
+ * Represents a project that can be associated with multiple departments.
+ */
+interface Project { 
+    id: number; 
+    client_id: number; 
+    name: string; 
+    prefix: string; 
+    id_running_number: number; 
+    departments?: Department[]; // Changed to array for Many-to-Many
+}
+
+/**
+ * Represents a client company entity holding departments and projects.
+ */
+interface Client { 
+    id: number; 
+    full_name: string; 
+    short_name: string; 
+    departments: Department[]; 
+    projects: Project[]; 
+}
+
+/**
+ * Props for the Client Show component.
+ */
+interface Props { 
+    client: Client; 
+}
+
+/**
+ * Client Show Page Component
+ *
+ * Displays detailed information about a specific client, including
+ * tabs to view and manage its Departments and its Projects (with Many-to-Many departments).
+ *
+ * @param {Props} props - The component props containing the client data.
+ */
 export default function Show({ client }: Props) {
     const [activeTab, setActiveTab] = useState<'departments' | 'projects'>('departments');
 
-    // --- State & Form for Department ---
-    const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
-    const [isDeptDeleteModalOpen, setIsDeptDeleteModalOpen] = useState(false);
+    // ==========================================
+    // STATE & FORM FOR DEPARTMENT
+    // ==========================================
+    const [isDeptModalOpen, setIsDeptModalOpen] = useState<boolean>(false);
+    const [isDeptDeleteModalOpen, setIsDeptDeleteModalOpen] = useState<boolean>(false);
     const [deptModalMode, setDeptModalMode] = useState<'add' | 'edit'>('add');
     const [selectedDept, setSelectedDept] = useState<Department | null>(null);
 
-    const deptForm = useForm({ client_id: client.id.toString(), name: '' });
+    const deptForm = useForm({ 
+        client_id: client.id.toString(), 
+        name: '' 
+    });
 
-    // --- State & Form for Project ---
-    const [isProjModalOpen, setIsProjModalOpen] = useState(false);
-    const [isProjDeleteModalOpen, setIsProjDeleteModalOpen] = useState(false);
-    const [projModalMode, setProjModalMode] = useState<'add' | 'edit'>('add');
-    const [selectedProj, setSelectedProj] = useState<Project | null>(null);
+    /** Opens the modal to add a new department. */
+    const openAddDept = () => { 
+        setDeptModalMode('add'); 
+        setSelectedDept(null); 
+        deptForm.reset('name'); 
+        deptForm.clearErrors(); 
+        setIsDeptModalOpen(true); 
+    };
 
-    const projForm = useForm({ client_id: client.id.toString(), department_id: '', name: '', prefix: '' });
+    /** Opens the modal to edit an existing department. */
+    const openEditDept = (dept: Department) => { 
+        setDeptModalMode('edit'); 
+        setSelectedDept(dept); 
+        deptForm.setData({ client_id: client.id.toString(), name: dept.name }); 
+        deptForm.clearErrors(); 
+        setIsDeptModalOpen(true); 
+    };
 
-    // --- Handlers for Department ---
-    const openAddDept = () => { setDeptModalMode('add'); setSelectedDept(null); deptForm.reset('name'); deptForm.clearErrors(); setIsDeptModalOpen(true); };
-    const openEditDept = (dept: Department) => { setDeptModalMode('edit'); setSelectedDept(dept); deptForm.setData({ client_id: client.id.toString(), name: dept.name }); deptForm.clearErrors(); setIsDeptModalOpen(true); };
-    const closeDeptModal = () => { setIsDeptModalOpen(false); deptForm.reset('name'); deptForm.clearErrors(); };
+    /** Closes the department modal. */
+    const closeDeptModal = () => { 
+        setIsDeptModalOpen(false); 
+        deptForm.reset('name'); 
+        deptForm.clearErrors(); 
+    };
+
+    /** Submits the department form (Create/Update). */
     const submitDept = (e: React.FormEvent) => {
         e.preventDefault();
         if (deptModalMode === 'add') deptForm.post(route('departments.store'), { onSuccess: () => closeDeptModal() });
         else deptForm.put(route('departments.update', selectedDept?.id), { onSuccess: () => closeDeptModal() });
     };
 
-    // --- Handlers for Project ---
-    const openAddProj = () => { setProjModalMode('add'); setSelectedProj(null); projForm.reset('department_id', 'name', 'prefix'); projForm.clearErrors(); setIsProjModalOpen(true); };
-    const openEditProj = (proj: Project) => { setProjModalMode('edit'); setSelectedProj(proj); projForm.setData({ client_id: client.id.toString(), department_id: proj.department_id.toString(), name: proj.name, prefix: proj.prefix }); projForm.clearErrors(); setIsProjModalOpen(true); };
-    const closeProjModal = () => { setIsProjModalOpen(false); projForm.reset('department_id', 'name', 'prefix'); projForm.clearErrors(); };
+    // ==========================================
+    // STATE & FORM FOR PROJECT
+    // ==========================================
+    const [isProjModalOpen, setIsProjModalOpen] = useState<boolean>(false);
+    const [isProjDeleteModalOpen, setIsProjDeleteModalOpen] = useState<boolean>(false);
+    const [projModalMode, setProjModalMode] = useState<'add' | 'edit'>('add');
+    const [selectedProj, setSelectedProj] = useState<Project | null>(null);
+
+    const projForm = useForm({ 
+        client_id: client.id.toString(), 
+        department_ids: [] as number[], // Array for Many-to-Many Checkboxes
+        name: '', 
+        prefix: '' 
+    });
+
+    /**
+     * Toggles a department ID in the project form's department_ids state array.
+     *
+     * @param {number} id - The ID of the department to toggle.
+     */
+    const handleProjDepartmentToggle = (id: number) => {
+        const currentIds = projForm.data.department_ids;
+        if (currentIds.includes(id)) {
+            projForm.setData('department_ids', currentIds.filter(deptId => deptId !== id));
+        } else {
+            projForm.setData('department_ids', [...currentIds, id]);
+        }
+    };
+
+    /** Opens the modal to add a new project. */
+    const openAddProj = () => { 
+        setProjModalMode('add'); 
+        setSelectedProj(null); 
+        projForm.reset('department_ids', 'name', 'prefix'); 
+        projForm.clearErrors(); 
+        setIsProjModalOpen(true); 
+    };
+
+    /** Opens the modal to edit an existing project. */
+    const openEditProj = (proj: Project) => { 
+        setProjModalMode('edit'); 
+        setSelectedProj(proj); 
+        projForm.setData({ 
+            client_id: client.id.toString(), 
+            department_ids: proj.departments?.map(d => d.id) || [], 
+            name: proj.name, 
+            prefix: proj.prefix 
+        }); 
+        projForm.clearErrors(); 
+        setIsProjModalOpen(true); 
+    };
+
+    /** Closes the project modal. */
+    const closeProjModal = () => { 
+        setIsProjModalOpen(false); 
+        projForm.reset('department_ids', 'name', 'prefix'); 
+        projForm.clearErrors(); 
+    };
+
+    /** Submits the project form (Create/Update). */
     const submitProj = (e: React.FormEvent) => {
         e.preventDefault();
         if (projModalMode === 'add') projForm.post(route('projects.store'), { onSuccess: () => closeProjModal() });
@@ -54,7 +171,7 @@ export default function Show({ client }: Props) {
     };
 
     return (
-        <AdminLayout title={`Detail Client - ${client.short_name}`} header="Detail Klien">
+        <AdminLayout title={`Detail Client - ${client.short_name}`} header="Detail Client">
             {/* Header Profile */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 md:p-8 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
@@ -65,7 +182,7 @@ export default function Show({ client }: Props) {
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{client.full_name}</h2>
                         <div className="flex items-center gap-3 mt-1 text-sm text-slate-500 font-medium">
-                            <span className="flex items-center gap-1.5"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Prefix: {client.short_name}</span>
+                            <span className="flex items-center gap-1.5"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Kode Client: {client.short_name}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             <span>{client.departments.length} Departemen</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
@@ -83,10 +200,10 @@ export default function Show({ client }: Props) {
             {/* Content Tabs */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card overflow-hidden">
                 <div className="flex overflow-x-auto border-b border-slate-100 dark:border-slate-700">
-                    <button onClick={() => setActiveTab('departments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'departments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
+                    <button onClick={() => setActiveTab('departments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'departments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:users-group-two-rounded-bold" width="18"></iconify-icon> Departemen
                     </button>
-                    <button onClick={() => setActiveTab('projects')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'projects' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
+                    <button onClick={() => setActiveTab('projects')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'projects' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:folder-with-files-bold" width="18"></iconify-icon> Daftar Project
                     </button>
                 </div>
@@ -141,7 +258,19 @@ export default function Show({ client }: Props) {
                                         <tr key={proj.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                             <td className="px-6 py-4">{idx + 1}</td>
                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{proj.name}</td>
-                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{proj.department?.name}</td>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {proj.departments && proj.departments.length > 0 ? (
+                                                        proj.departments.map(dept => (
+                                                            <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
+                                                                {dept.name}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400 italic">-</span>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{proj.prefix}</span></td>
                                             <td className="px-6 py-4 text-right space-x-2">
                                                 <button onClick={() => openEditProj(proj)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
@@ -156,7 +285,9 @@ export default function Show({ client }: Props) {
                 )}
             </div>
 
-            {/* --- DEPT MODALS --- */}
+            {/* ========================================== */}
+            {/* DEPARTMENT MODALS */}
+            {/* ========================================== */}
             <Modal show={isDeptModalOpen} onClose={closeDeptModal} maxWidth="md">
                 <form onSubmit={submitDept} className="p-6">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{deptModalMode === 'add' ? `Tambah Departemen` : 'Edit Departemen'}</h2>
@@ -187,27 +318,49 @@ export default function Show({ client }: Props) {
                 </div>
             </Modal>
 
-            {/* --- PROJECT MODALS --- */}
+            {/* ========================================== */}
+            {/* PROJECT MODALS */}
+            {/* ========================================== */}
             <Modal show={isProjModalOpen} onClose={closeProjModal} maxWidth="md">
                 <form onSubmit={submitProj} className="p-6">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{projModalMode === 'add' ? `Tambah Project` : 'Edit Project'}</h2>
                     <div className="space-y-4">
+                        
+                        {/* Checkbox Group for Multiple Departments */}
                         <div>
-                            <InputLabel htmlFor="proj_department_id" value="Pilih Departemen" />
-                            <select id="proj_department_id" value={projForm.data.department_id} onChange={(e) => projForm.setData('department_id', e.target.value)} className="mt-1 block w-full border-slate-300 rounded-md shadow-sm dark:bg-slate-900 dark:border-slate-700">
-                                <option value="" disabled>-- Pilih Departemen --</option>
-                                {client.departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                            </select>
-                            {client.departments.length === 0 && <p className="text-xs text-amber-500 mt-1">Harap buat departemen terlebih dahulu.</p>}
-                            <InputError message={projForm.errors.department_id} className="mt-2" />
+                            <InputLabel value="Departemen (Pilih minimal satu)" />
+                            <div className="mt-2 grid grid-cols-2 gap-3">
+                                {client.departments.length === 0 ? (
+                                    <p className="text-xs text-slate-500 col-span-2 italic">Harap buat departemen terlebih dahulu.</p>
+                                ) : (
+                                    client.departments.map(d => (
+                                        <label key={d.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={projForm.data.department_ids.includes(d.id)}
+                                                onChange={() => handleProjDepartmentToggle(d.id)}
+                                                className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                                            />
+                                            <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{d.name}</span>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                            {/* General array error */}
+                            {projForm.errors.department_ids && <p className="text-sm text-red-600 mt-2">{projForm.errors.department_ids}</p>}
+                            {/* Specific index errors */}
+                            {Object.keys(projForm.errors).filter(key => key.startsWith('department_ids.')).map((key) => (
+                                <p key={key} className="text-sm text-red-600 mt-1">{projForm.errors[key as keyof typeof projForm.errors]}</p>
+                            ))}
                         </div>
+
                         <div>
                             <InputLabel htmlFor="proj_name" value="Nama Project" />
                             <TextInput id="proj_name" type="text" className="mt-1 block w-full" value={projForm.data.name} onChange={(e) => projForm.setData('name', e.target.value)} placeholder="Contoh: IT Support" />
                             <InputError message={projForm.errors.name} className="mt-2" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="proj_prefix" value="Prefix (Unik)" />
+                            <InputLabel htmlFor="proj_prefix" value="Prefix" />
                             <TextInput id="proj_prefix" type="text" className="mt-1 block w-full uppercase" value={projForm.data.prefix} onChange={(e) => projForm.setData('prefix', e.target.value.toUpperCase())} placeholder="Contoh: ITS-01" />
                             <InputError message={projForm.errors.prefix} className="mt-2" />
                         </div>
@@ -225,6 +378,7 @@ export default function Show({ client }: Props) {
                 <div className="p-6 text-center">
                     <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><iconify-icon icon="solar:danger-triangle-bold" width="32"></iconify-icon></div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Project?</h2>
+                    <p className="text-sm text-slate-500 mb-6">Yakin menghapus project <b>{selectedProj?.name}</b>?</p>
                     <div className="flex justify-center gap-3 mt-6">
                         <SecondaryButton onClick={() => setIsProjDeleteModalOpen(false)} type="button">Batal</SecondaryButton>
                         <DangerButton onClick={() => { if(selectedProj) projForm.delete(route('projects.destroy', selectedProj.id), { onSuccess: () => setIsProjDeleteModalOpen(false) }) }} disabled={projForm.processing}>Ya, Hapus</DangerButton>
