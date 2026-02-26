@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('project_id')
-                  ->constrained('projects')
+            $table->foreignId('client_id')
+                  ->constrained('clients')
                   ->onDelete('cascade');
             $table->string('name');
             $table->timestamps();
 
-            $table->unique(['project_id', 'name']);
+            $table->unique(['client_id', 'name']);
         });
     }
 

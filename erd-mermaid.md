@@ -12,6 +12,7 @@ erDiagram
     PROJECTS {
         bigint id PK
         bigint client_id FK
+        bigint department_id FK
         string name "NN"
         string prefix "UK, NN"
         int id_running_number "DEF 0"
@@ -21,7 +22,7 @@ erDiagram
 
     DEPARTMENTS {
         bigint id PK
-        bigint project_id FK
+        bigint client_id FK
         string name "NN"
         note additional_note "UNIQUE(project_id, name)"
     }
@@ -140,11 +141,12 @@ erDiagram
     }
 
     CLIENTS ||--o{ PROJECTS : has
+    CLIENTS ||--o{ DEPARTMENTS : has
     PROJECTS ||--o{ DEPARTMENTS : has
     PROJECTS ||--o{ ASSIGNMENTS : has
     WORKERS ||--o{ ASSIGNMENTS : has
     ASSIGNMENTS ||--o{ CONTRACTS : has
-    CONTRACTS ||--|| CONTRACT_COMPENSATIONS : has
+    CONTRACTS ||--|| CONTRACT_COMPENSATION : has
     WORKERS ||--o{ FAMILY_MEMBERS : has
     WORKERS ||--o{ DOCUMENTS : has
     ASSIGNMENTS ||--o{ DOCUMENTS : has
