@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\BulkImportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Client Routes
     Route::resource('clients', ClientController::class)->except(['create', 'show', 'edit']);
+
+    // Project Routes
+    Route::resource('projects', ProjectController::class)->except(['create', 'show', 'edit']);
 
     // Worker Routes
     Route::post('/import/workers/preview', [BulkImportController::class, 'preview'])->name('import.workers.preview');

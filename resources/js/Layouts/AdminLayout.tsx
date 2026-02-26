@@ -110,7 +110,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 <div className={`transition-all duration-300 ease-in-out ${openMenu === 'client' ? 'max-h-40 opacity-100 bg-white/50 dark:bg-slate-800/50' : 'max-h-0 opacity-0'}`}>
                                     <div className="py-2 flex flex-col space-y-1">
                                         <Link href={route('clients.index')} className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List All Clients
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List Semua Clients
                                         </Link>
                                     </div>
                                 </div>
@@ -132,8 +132,8 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 {/* Submenu Project */}
                                 <div className={`transition-all duration-300 ease-in-out ${openMenu === 'project' ? 'max-h-40 opacity-100 bg-white/50 dark:bg-slate-800/50' : 'max-h-0 opacity-0'}`}>
                                     <div className="py-2 flex flex-col space-y-1">
-                                        <Link href="#" className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List All Projects
+                                        <Link href={route('projects.index')} className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List Semua Projects
                                         </Link>
                                     </div>
                                 </div>
@@ -156,7 +156,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 <div className={`transition-all duration-300 ease-in-out ${openMenu === 'worker' ? 'max-h-40 opacity-100 bg-white/50 dark:bg-slate-800/50' : 'max-h-0 opacity-0'}`}>
                                     <div className="py-2 flex flex-col space-y-1">
                                         <Link href="#" className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List All Workers
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> List Semua Workers
                                         </Link>
                                         <Link href={route('import.workers.view')} className="pl-12 pr-4 py-2 text-sm text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> Bulk Import Data
