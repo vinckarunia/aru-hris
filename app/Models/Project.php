@@ -11,10 +11,11 @@ use App\Models\Assignment;
 /**
  * Class Project
  *
- * Represents a project entity assigned to a specific client.
+ * Represents a project assigned to a specific department of a client.
  *
  * @property int $id
  * @property int $client_id Foreign key referencing the clients table.
+ * @property int $department_id Foreign key referencing the departments table.
  * @property string $name The name of the project.
  * @property string $prefix The prefix used for generating worker IDs within this project.
  * @property int $id_running_number The auto-incrementing number for worker ID generation.
@@ -32,6 +33,7 @@ class Project extends Model
      */
     protected $fillable = [
         'client_id',
+        'department_id', // <-- DITAMBAHKAN DI SINI
         'name',
         'prefix',
         'id_running_number',
@@ -48,13 +50,13 @@ class Project extends Model
     }
 
     /**
-     * Get the departments associated with the project.
+     * Get the department that owns the project.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function departments()
+    public function department()
     {
-        return $this->hasMany(Department::class);
+        return $this->belongsTo(Department::class);
     }
 
     /**
