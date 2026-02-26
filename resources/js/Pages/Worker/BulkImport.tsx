@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 
 /**
@@ -10,7 +10,7 @@ import axios from 'axios';
  */
 const DB_COLUMNS = [
     {
-        group: 'Data Pekerja (Utama)',
+        group: 'Data Karyawan (Utama)',
         options: [
             { key: 'ktp_number', label: 'NIK KTP (Wajib)' },
             { key: 'name', label: 'Nama Lengkap (Wajib)' },
@@ -25,7 +25,7 @@ const DB_COLUMNS = [
         ]
     },
     {
-        group: 'Data Pekerja (Alamat & Dokumen)',
+        group: 'Data Karyawan (Alamat & Dokumen)',
         options: [
             { key: 'address_ktp', label: 'Alamat Sesuai KTP' },
             { key: 'address_domicile', label: 'Alamat Sesuai Domisili' },
@@ -51,7 +51,7 @@ const DB_COLUMNS = [
     {
         group: 'Data Kontrak (PKWT/PKWTT/Harian)',
         options: [
-            { key: 'raw_contract_type', label: 'Jenis Kontrak (Kontrak / Harian)' }, // <-- INI YANG BARU DITAMBAHKAN
+            { key: 'raw_contract_type', label: 'Jenis Kontrak (Kontrak / Harian)' },
             { key: 'pkwt_1_start', label: 'PKWT 1 - Mulai' },
             { key: 'pkwt_1_end', label: 'PKWT 1 - Selesai' },
             { key: 'pkwt_2_start', label: 'PKWT 2 - Mulai' },
@@ -254,13 +254,18 @@ export default function BulkImport() {
     };
 
     return (
-        <AdminLayout title="Bulk Import Data" header="Bulk Import Pekerja">
+        <AdminLayout title="Bulk Import Data" header="Bulk Import Karyawan">
             {message && (
                 <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
                     <iconify-icon icon="solar:check-circle-bold" width="24"></iconify-icon>
                     <span className="font-medium text-sm">{message}</span>
                 </div>
             )}
+            <div className="mb-2 max-w-fit z-10">
+                <Link href={route('workers.index')} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
+                    <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon> Kembali
+                </Link>
+            </div>
 
             {!csvHeaders.length ? (
                 // --- STEP 1: UPLOAD BOX ---
@@ -268,8 +273,8 @@ export default function BulkImport() {
                     <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 shadow-glow">
                         <iconify-icon icon="solar:cloud-upload-linear" width="32"></iconify-icon>
                     </div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Upload Master Data Excel/CSV</h2>
-                    <p className="text-slate-500 text-sm mb-6 max-w-md">Silakan upload file master data dari sistem lama. Pastikan file berformat .csv untuk diproses.</p>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Upload Master Data</h2>
+                    <p className="text-slate-500 text-sm mb-6 max-w-md">Silakan upload file master data dari sistem lama. <br></br> Pastikan file berformat .csv untuk diproses.</p>
                     
                     <input 
                         type="file" 

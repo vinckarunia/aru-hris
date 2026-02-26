@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\BulkImportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -36,12 +37,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('projects', ProjectController::class)->except(['create', 'show', 'edit']);
 
     // Worker Routes
+    Route::resource('workers', WorkerController::class);
     Route::post('/import/workers/preview', [BulkImportController::class, 'preview'])->name('import.workers.preview');
     Route::post('/import/workers/process', [BulkImportController::class, 'process'])->name('import.workers.process');
     Route::get('/import/workers', function () {
         return Inertia::render('Worker/BulkImport');
     })->name('import.workers.view');
-    Route::redirect('/import', '/import/workers', 301);
 });
 
 require __DIR__.'/auth.php';

@@ -71,7 +71,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                     {/* General Section */}
                     <div>
                         <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">General</div>
-                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
+                        <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
                             <iconify-icon icon="solar:widget-add-linear" width="20" className="group-hover:text-primary transition-colors"></iconify-icon>
                             <span className="font-medium">Dashboard</span>
                         </Link>
@@ -80,15 +80,15 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                     {/* Master Data Modules Section */}
                     <div>
                         <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Master Data</div>
-                        <Link href={route('clients.index')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
+                        <Link href={route('clients.index')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
                             <iconify-icon icon="solar:buildings-linear" width="20" className="group-hover:text-primary transition-colors"></iconify-icon>
                             <span className="font-medium">Client</span>
                         </Link>
-                        <Link href={route('projects.index')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
+                        <Link href={route('projects.index')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
                             <iconify-icon icon="solar:folder-with-files-linear" width="20" className="group-hover:text-primary transition-colors"></iconify-icon>
                             <span className="font-medium">Project</span>
                         </Link>
-                        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
+                        <Link href={route('workers.index')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group">
                             <iconify-icon icon="solar:users-group-two-rounded-linear" width="20" className="group-hover:text-primary transition-colors"></iconify-icon>
                             <span className="font-medium">Karyawan</span>
                         </Link>
