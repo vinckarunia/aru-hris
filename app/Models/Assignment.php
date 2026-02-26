@@ -22,11 +22,6 @@ class Assignment extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function department()
-    {
-        return $this->belongsTo(Department::class);
-    }
-
     public function worker()
     {
         return $this->belongsTo(Worker::class);

@@ -4,16 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Project;
+use App\Models\Client;
 use App\Models\Assignment;
 
 class Department extends Model
 {
     use HasFactory;
 
-    public function project()
+    public function client()
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Client::class);
     }
 
     public function assignments()

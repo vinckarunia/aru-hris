@@ -51,4 +51,14 @@ class Client extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Get the departments associated with the client.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function departments()
+    {
+        return $this->hasMany(Department::class);
+    }
 }
