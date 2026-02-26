@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\BulkImportController;
 use Illuminate\Foundation\Application;
@@ -28,7 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Client Routes
-    Route::resource('clients', ClientController::class)->except(['create', 'show', 'edit']);
+    Route::resource('clients', ClientController::class)->except(['create', 'edit']);
+    Route::resource('departments', DepartmentController::class)->except(['index', 'create', 'show', 'edit']);
 
     // Project Routes
     Route::resource('projects', ProjectController::class)->except(['create', 'show', 'edit']);

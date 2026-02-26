@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -161,12 +161,16 @@ export default function Index({ clients }: Props) {
                                 clients.map((client, index) => (
                                     <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                         <td className="px-6 py-4">{index + 1}</td>
-                                        <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{client.full_name}</td>
+                                        <td className="px-6 py-4">  
+                                            <Link href={route('clients.show', client.id)} className="text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                                                <span className="font-medium">{client.full_name}</span>
+                                            </Link>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
                                                 {client.short_name}
                                             </span>
-                                        </td>
+                                        </td> 
                                         <td className="px-6 py-4 text-right space-x-2">
                                             <button 
                                                 onClick={() => openEditModal(client)}

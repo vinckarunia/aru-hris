@@ -32,6 +32,22 @@ class ClientController extends Controller
     }
 
     /**
+     * Display the specified client details including its departments and projects.
+     *
+     * @param Client $client
+     * @return Response
+     */
+    public function show(Client $client): Response
+    {
+        // Eager load departments and projects (along with project's department relation)
+        $client->load(['departments', 'projects.department']);
+
+        return Inertia::render('Client/Show', [
+            'client' => $client,
+        ]);
+    }
+
+    /**
      * Store a newly created client in storage.
      *
      * @param Request $request
