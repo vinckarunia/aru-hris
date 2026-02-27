@@ -55,7 +55,7 @@ class WorkerController extends Controller
      */
     public function show(Worker $worker): Response
     {
-        $worker->load(['assignments.project', 'assignments.department']);
+        $worker->load(['assignments.project', 'assignments.department', 'familyMembers']);
         return Inertia::render('Worker/Show', ['worker' => $worker]);
     }
 

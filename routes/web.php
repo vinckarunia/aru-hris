@@ -7,6 +7,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\FamilyMemberController;
 use App\Http\Controllers\BulkImportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/import/workers', function () {
         return Inertia::render('Worker/BulkImport');
     })->name('import.workers.view');
+    Route::resource('family-members', App\Http\Controllers\FamilyMemberController::class)->except(['index']);
 
     // Assignment and Contract Routes
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);
