@@ -38,6 +38,11 @@ class WorkerController extends Controller
      * 
      * @return Response
      */
+    public function create(): Response
+    {
+        return Inertia::render('Worker/Create');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
