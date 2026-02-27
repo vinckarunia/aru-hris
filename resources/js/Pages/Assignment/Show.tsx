@@ -42,7 +42,7 @@ export default function Show({ assignment }: Props) {
             </div>
 
             {/* Content Body */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
                 
                 {/* Detail Assignments */}
                 <div className="lg:col-span-1 space-y-6">
@@ -56,7 +56,7 @@ export default function Show({ assignment }: Props) {
                             )}
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <div className="border-b border-slate-50 dark:border-slate-700/50 pb-3">
                                 <p className="text-xs text-slate-400 font-medium mb-1">ID Karyawan Client</p>
                                 <p className="font-mono text-sm text-slate-800 dark:text-slate-200">{assignment.employee_id || '-'}</p>
@@ -65,7 +65,7 @@ export default function Show({ assignment }: Props) {
                                 <p className="text-xs text-slate-400 font-medium mb-1">Tanggal Bergabung</p>
                                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{assignment.hire_date}</p>
                             </div>
-                            <div>
+                            <div className="border-b border-slate-50 dark:border-slate-700/50 pb-3">
                                 <p className="text-xs text-slate-400 font-medium mb-1">Tanggal Berakhir</p>
                                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{assignment.termination_date || '-'}</p>
                             </div>
@@ -80,21 +80,55 @@ export default function Show({ assignment }: Props) {
                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <iconify-icon icon="solar:document-text-bold" className="text-primary"></iconify-icon> Riwayat Kontrak
                             </h3>
-                            <button className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2 opacity-50 cursor-not-allowed" title="Segera Hadir di Tahap 2">
+                            <Link href={route('contracts.create', { assignment_id: assignment.id })} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors">
                                 <iconify-icon icon="solar:add-circle-bold" width="18"></iconify-icon> Buat Kontrak Baru
-                            </button>
+                            </Link>
                         </div>
                         
-                        <div className="p-10 flex-1 flex flex-col items-center justify-center text-center">
-                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center mb-3">
-                                <iconify-icon icon="solar:folder-error-bold" width="32"></iconify-icon>
-                            </div>
-                            <p className="text-slate-500 font-medium">Belum ada kontrak yang dibuat.</p>
-                            <p className="text-xs text-slate-400 mt-1">Tahap 2: Implementasi Pembuatan Kontrak & Detail Gaji/Kompensasi.</p>
+                        <div className="p-6 flex-1">
+                            {assignment.contracts && assignment.contracts.length > 0 ? (
+                                <div className="space-y-4">
+                                    {assignment.contracts.map((contract: any) => (
+                                        <div key={contract.id} className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
+                                                    <iconify-icon icon="solar:file-check-bold" width="24"></iconify-icon>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                                        {contract.contract_type === 'Harian' 
+                                                            ? 'Harian' 
+                                                            : contract.pkwt_type === 'PKWTT' 
+                                                                ? 'PKWTT' 
+                                                                : `PKWT-${contract.pkwt_number}`
+                                                        }
+                                                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] rounded uppercase">
+                                                            {contract.contract_type}
+                                                        </span>
+                                                    </h4>
+                                                    <p className="text-xs text-slate-500 mt-1">
+                                                        Periode: {contract.start_date} s/d {contract.end_date || '-'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Link href={route('contracts.show', contract.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">
+                                                Lihat Detail
+                                            </Link>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center h-full py-10">
+                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                                        <iconify-icon icon="solar:folder-error-bold" width="32"></iconify-icon>
+                                    </div>
+                                    <p className="text-slate-500 font-medium">Belum ada kontrak yang dibuat.</p>
+                                    <p className="text-xs text-slate-400 mt-1">Klik tombol di atas untuk menambahkan kontrak dan rincian gaji.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-
             </div>
         </AdminLayout>
     );

@@ -101,8 +101,7 @@ class AssignmentController extends Controller
      */
     public function show(Assignment $assignment): Response
     {
-        // Load relationships including contracts when we build them in Step 2
-        $assignment->load(['worker', 'project', 'department']);
+        $assignment->load(['worker', 'project', 'department', 'contracts']);
 
         return Inertia::render('Assignment/Show', [
             'assignment' => $assignment,
