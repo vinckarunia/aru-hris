@@ -7,8 +7,9 @@ use App\Models\Contract;
 use App\Models\ContractCompensation;
 use App\Models\FamilyMember;
 use App\Models\Project;
-use App\Models\Department;
 use App\Models\Worker;
+use App\Services\ImportDataCleaner;
+use App\Services\ImportService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,381 +17,333 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Class ProcessBulkImport
  *
- * Background job to parse CSV, clean data, insert into relational databases, 
- * and generate a failed rows CSV if necessary.
+ * Background job that processes a validated CSV import session. Reads the CSV file
+ * from storage, creates Worker, Assignment, Contract, ContractCompensation,
+ * and FamilyMember records using per-row database transactions.
+ *
+ * Progress is tracked in Redis and polled by the frontend in real-time.
+ * Failed rows are collected into a downloadable CSV with error reasons
+ * so users can fix and re-import them through the same tool.
+ *
+ * @package App\Jobs
  */
 class ProcessBulkImport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * @var string
-     */
-    protected $filePath;
-
-    /**
-     * @var array
-     */
-    protected $mapping;
-
-    /**
+     * The number of seconds the job can run before timing out.
+     *
      * @var int
      */
-    protected $userId;
+    public int $timeout = 600;
 
     /**
+     * The number of times the job may be attempted.
+     *
      * @var int
      */
-    protected $defaultProjectId;
+    public int $tries = 1;
+
+    /**
+     * @var string The unique import session ID.
+     */
+    protected string $sessionId;
+
+    /**
+     * @var array<string, int> The column mapping (db_field => csv_column_index).
+     */
+    protected array $mapping;
+
+    /**
+     * @var array The global settings (project_id, department_id, rates, etc.).
+     */
+    protected array $globalSettings;
+
+    /**
+     * @var int The ID of the user who initiated the import.
+     */
+    protected int $userId;
+
+    /**
+     * @var array Per-row conflict actions: [row_number => 'update'|'skip'].
+     */
+    protected array $rowActions;
 
     /**
      * Create a new job instance.
      *
-     * @param string $filePath The storage path of the uploaded CSV.
+     * @param string $sessionId The unique import session ID.
      * @param array $mapping The column mapping from the frontend.
-     * @param int $userId The ID of the user initiating the import.
-     * @param int $defaultProjectId The default project ID for assignments (if needed).
+     * @param array $globalSettings Global settings (project_id, department_id, rates).
+     * @param int $userId The ID of the authenticated user.
+     * @param array $rowActions Per-row conflict actions: [row_number => 'update'|'skip'].
      */
-    public function __construct(string $filePath, array $mapping, int $userId, int $defaultProjectId = 1)
+    public function __construct(string $sessionId, array $mapping, array $globalSettings, int $userId, array $rowActions = [])
     {
-        $this->filePath = $filePath;
+        $this->sessionId = $sessionId;
         $this->mapping = $mapping;
+        $this->globalSettings = $globalSettings;
         $this->userId = $userId;
-        $this->defaultProjectId = $defaultProjectId;
+        $this->rowActions = $rowActions;
+        $this->onQueue('default');
     }
 
     /**
-     * Execute the job.
+     * Execute the import job.
+     *
+     * Processes each CSV row in its own database transaction so that a failure
+     * in one row does not affect others. Updates Redis progress after each row.
+     * Generates a failed rows CSV at the end if any rows failed.
      *
      * @return void
      */
     public function handle(): void
     {
-        $fullPath = Storage::disk('local')->path($this->filePath);
-        if (!file_exists($fullPath)) {
-            Log::error("Import failed: File not found at {$fullPath}");
+        $importService = app(ImportService::class);
+        $cached = $importService->getCachedSession($this->sessionId);
+
+        if (!$cached) {
+            Log::error("ProcessBulkImport: Session not found in Redis for ID: {$this->sessionId}");
+            $importService->updateProgress($this->sessionId, 0, 0, 0, 'failed');
             return;
         }
 
-        $fileHandle = fopen($fullPath, 'r');
-        $headers = fgetcsv($fileHandle); // Skip header row
+        $fullPath = Storage::disk('local')->path($cached['file_path']);
+        if (!file_exists($fullPath)) {
+            Log::error("ProcessBulkImport: File not found at {$fullPath}");
+            $importService->updateProgress($this->sessionId, 0, 0, 0, 'failed');
+            return;
+        }
+
+        $handle = fopen($fullPath, 'r');
+        $headers = fgetcsv($handle);
 
         $failedRows = [];
         $failedHeaders = $headers;
         $failedHeaders[] = 'ERROR_REASON';
-        $failedRows[] = $failedHeaders;
 
-        // Ensure default department exists for assignments
-        $defaultDept = Department::firstOrCreate(
-            ['project_id' => $this->defaultProjectId, 'name' => 'General'],
-            ['name' => 'General']
-        );
+        $processed = 0;
+        $failed = 0;
+        $totalRows = $cached['total_rows'];
 
-        DB::beginTransaction();
-        try {
-            while (($row = fgetcsv($fileHandle)) !== false) {
-                // Skip completely empty rows
-                if (empty(array_filter($row))) continue;
+        while (($row = fgetcsv($handle)) !== false) {
+            // Skip empty rows
+            if (empty(array_filter($row))) {
+                continue;
+            }
 
-                try {
-                    $ktpNumber = $this->extractMappedData($row, 'ktp_number');
-                    $name = $this->extractMappedData($row, 'name');
-                    
-                    // 1. Validate mandatory fields
-                    if (empty($ktpNumber)) {
-                        throw new \Exception("KTP Number is empty.");
-                    }
+            $processed++;
+            $rowIdentifier = ImportDataCleaner::extractField($row, $this->mapping, 'name') ?? "Baris {$processed}";
 
-                    if (Worker::where('ktp_number', $ktpNumber)->exists()) {
-                        throw new \Exception("Duplicate KTP Number. Worker already exists.");
-                    }
+            try {
+                DB::beginTransaction();
 
-                    // 2. Create Worker
-                    $worker = Worker::create([
-                        'nik_aru'               => $this->extractMappedData($row, 'nik_aru'),
-                        'name'                  => $name,
-                        'ktp_number'            => $ktpNumber,
-                        'kk_number'             => $this->extractMappedData($row, 'kk_number'),
-                        'birth_place'           => $this->extractMappedData($row, 'birth_place'),
-                        'birth_date'            => $this->parseDateString($this->extractMappedData($row, 'birth_date')),
-                        'gender'                => strtolower($this->extractMappedData($row, 'gender')) == 'l' ? 'male' : 'female',
-                        'phone'                 => $this->extractMappedData($row, 'phone'),
-                        'education'             => $this->extractMappedData($row, 'education'),
-                        'religion'              => $this->extractMappedData($row, 'religion'),
-                        'tax_status'            => $this->extractMappedData($row, 'tax_status'),
-                        'address_ktp'           => $this->extractMappedData($row, 'address_ktp'),
-                        'address_domicile'      => $this->extractMappedData($row, 'address_domicile'),
-                        'mother_name'           => $this->extractMappedData($row, 'mother_name'),
-                        'npwp'                  => $this->extractMappedData($row, 'npwp'),
-                        'bpjs_kesehatan'        => $this->extractMappedData($row, 'bpjs_kesehatan'),
-                        'bpjs_ketenagakerjaan'  => $this->extractMappedData($row, 'bpjs_ketenagakerjaan'),
-                        'bank_name'             => $this->extractMappedData($row, 'bank_name'),
-                        'bank_account_number'   => $this->extractMappedData($row, 'bank_account_number'),
-                    ]);
+                // 1. Create Worker
+                $workerData = $importService->buildWorkerData($row, $this->mapping);
 
-                    // 3. Create Assignment
-                    $terminationReasonRaw = strtolower($this->extractMappedData($row, 'termination_reason') ?? '');
-                    $parsedTermination = $this->parseTerminationStatus($terminationReasonRaw);
-                    
-                    // Use explicitly mapped termination date if available, else fallback to parsed string
-                    $mappedTermDate = $this->parseDateString($this->extractMappedData($row, 'termination_date'));
-
-                    $assignment = Assignment::create([
-                        'worker_id'          => $worker->id,
-                        'project_id'         => $this->defaultProjectId,
-                        'department_id'      => $defaultDept->id,
-                        'employee_id'        => $this->extractMappedData($row, 'nik_tlj'),
-                        'position'           => $this->extractMappedData($row, 'position'),
-                        'hire_date'          => $this->parseDateString($this->extractMappedData($row, 'hire_date')) ?? Carbon::now()->format('Y-m-d'),
-                        'termination_date'   => $mappedTermDate ?? $parsedTermination['date'],
-                        'termination_reason' => $parsedTermination['reason'],
-                    ]);
-
-                    // 4. Process Contracts (Horizontal to Vertical)
-                    $latestContractId = null;
-                    $latestEndDate = null;
-                    
-                    // Detect Contract Type from CSV (Harian or Kontrak)
-                    $excelContractType = strtolower($this->extractMappedData($row, 'raw_contract_type') ?? '');
-                    $dbContractType = str_contains($excelContractType, 'harian') ? 'Harian' : 'Kontrak';
-                    $evalNotes = $this->extractMappedData($row, 'evaluation_notes');
-
-                    // Loop for PKWT 1 to 8
-                    for ($i = 1; $i <= 8; $i++) {
-                        $start = $this->parseDateString($this->extractMappedData($row, "pkwt_{$i}_start"));
-                        $end = $this->parseDateString($this->extractMappedData($row, "pkwt_{$i}_end"));
-
-                        if ($start) {
-                            $contract = Contract::create([
-                                'assignment_id'    => $assignment->id,
-                                'contract_type'    => $dbContractType,
-                                'pkwt_type'        => $dbContractType === 'Kontrak' ? 'PKWT' : null,
-                                'pkwt_number'      => $dbContractType === 'Kontrak' ? $i : null,
-                                'start_date'       => $start,
-                                'end_date'         => $end,
-                                'evaluation_notes' => $evalNotes,
-                            ]);
-
-                            // Track the latest contract
-                            if (is_null($latestEndDate) || ($end && Carbon::parse($end)->gt(Carbon::parse($latestEndDate)))) {
-                                $latestEndDate = $end;
-                                $latestContractId = $contract->id;
-                            }
-                        }
-                    }
-
-                    // Check for PKWTT (Permanent)
-                    $pkwttStart = $this->parseDateString($this->extractMappedData($row, 'pkwtt_start'));
-                    if ($pkwttStart) {
-                        $contract = Contract::create([
-                            'assignment_id'    => $assignment->id,
-                            'contract_type'    => 'Kontrak', 
-                            'pkwt_type'        => 'PKWTT',
-                            'pkwt_number'      => null, // PKWTT doesn't have a number
-                            'start_date'       => $pkwttStart,
-                            'end_date'         => null,
-                            'evaluation_notes' => $evalNotes,
-                        ]);
-                        $latestContractId = $contract->id; // PKWTT is always the ultimate latest
-                    }
-
-                    // 5. Attach Compensation to the Latest Contract
-                    if ($latestContractId) {
-                        // Extract rates or fallback to defaults
-                        $salaryRate = strtolower($this->extractMappedData($row, 'salary_rate')) ?: 'monthly';
-                        $allowanceRate = strtolower($this->extractMappedData($row, 'allowance_rate')) ?: 'daily';
-                        $overtimeRate = strtolower($this->extractMappedData($row, 'overtime_rate')) ?: 'hourly';
-
-                        ContractCompensation::create([
-                            'contract_id'             => $latestContractId,
-                            'base_salary'             => $this->cleanCurrencyString($this->extractMappedData($row, 'base_salary')),
-                            'salary_rate'             => in_array($salaryRate, ['hourly', 'daily', 'monthly', 'yearly']) ? $salaryRate : 'monthly',
-                            'meal_allowance'          => $this->cleanCurrencyString($this->extractMappedData($row, 'meal_allowance')),
-                            'transport_allowance'     => $this->cleanCurrencyString($this->extractMappedData($row, 'transport_allowance')),
-                            'allowance_rate'          => in_array($allowanceRate, ['hourly', 'daily', 'monthly', 'yearly']) ? $allowanceRate : 'daily',
-                            'overtime_weekday_rate'   => $this->cleanCurrencyString($this->extractMappedData($row, 'overtime_weekday')),
-                            'overtime_holiday_rate'   => $this->cleanCurrencyString($this->extractMappedData($row, 'overtime_holiday')),
-                            'overtime_rate'           => in_array($overtimeRate, ['hourly', 'daily', 'monthly', 'yearly']) ? $overtimeRate : 'hourly',
-                        ]);
-                    }
-
-                    // 6. Process Family Members (Horizontal to Vertical)
-                    $this->insertFamilyMember($worker->id, $row, 'spouse', 'spouse');
-                    $this->insertFamilyMember($worker->id, $row, 'child_1', 'child');
-                    $this->insertFamilyMember($worker->id, $row, 'child_2', 'child');
-                    $this->insertFamilyMember($worker->id, $row, 'child_3', 'child');
-
-                } catch (\Exception $e) {
-                    $failedRow = $row;
-                    $failedRow[] = $e->getMessage() . " di baris NIK: " . ($ktpNumber ?? 'Unknown');
-                    $failedRows[] = $failedRow;
+                // Validate required fields
+                if (empty($workerData['name'])) {
+                    throw new \Exception('Nama karyawan kosong.');
                 }
+                if (empty($workerData['ktp_number'])) {
+                    throw new \Exception('Nomor KTP kosong.');
+                }
+
+                // Check for duplicate KTP — handle via row_actions
+                $existingWorker = Worker::where('ktp_number', $workerData['ktp_number'])->first();
+                $isUpdate = false;
+
+                if ($existingWorker) {
+                    $action = $this->rowActions[(string) $processed] ?? 'skip';
+                    if ($action === 'update') {
+                        $isUpdate = true;
+                    } else {
+                        // Skip this row silently (user chose to skip or no action specified)
+                        DB::commit();
+                        $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
+                        continue;
+                    }
+                }
+
+                if ($isUpdate) {
+                    // Update existing worker data (only non-null fields from CSV)
+                    $updateData = array_filter($workerData, fn($v) => $v !== null && $v !== '');
+                    unset($updateData['ktp_number']); // Don't update the KTP itself
+                    $existingWorker->update($updateData);
+                    $worker = $existingWorker;
+                } else {
+                    $worker = Worker::create($workerData);
+                }
+
+                // 2. Create or update Assignment
+                $assignmentData = $importService->buildAssignmentData($row, $this->mapping, $this->globalSettings);
+                if ($isUpdate) {
+                    // Update existing assignment if exists, otherwise create new
+                    $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
+                    if ($existingAssignment) {
+                        $existingAssignment->update($assignmentData);
+                        $assignment = $existingAssignment;
+                    } else {
+                        $assignmentData['worker_id'] = $worker->id;
+                        $assignment = Assignment::create($assignmentData);
+                    }
+                } else {
+                    $assignmentData['worker_id'] = $worker->id;
+                    $assignment = Assignment::create($assignmentData);
+                }
+
+                // 3. Auto-generate NIK ARU if not provided
+                if (empty($worker->nik_aru)) {
+                    $this->generateNikAru($worker, $assignment);
+                }
+
+                // 4. Create Contracts (PKWT 1-8, PKWTT)
+                $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
+                $latestContractId = null;
+                $latestEndDate = null;
+
+                foreach ($contractsData as $contractData) {
+                    $contractData['assignment_id'] = $assignment->id;
+                    $contract = Contract::create($contractData);
+
+                    // Track the latest contract for compensation attachment
+                    $endDate = $contractData['end_date'];
+                    if ($contractData['pkwt_type'] === 'PKWTT') {
+                        // PKWTT is always the latest
+                        $latestContractId = $contract->id;
+                        $latestEndDate = null;
+                    } elseif (
+                        is_null($latestEndDate) ||
+                        ($endDate && Carbon::parse($endDate)->gt(Carbon::parse($latestEndDate)))
+                    ) {
+                        $latestEndDate = $endDate;
+                        $latestContractId = $contract->id;
+                    }
+                }
+
+                // 5. Attach Compensation to the latest contract
+                if ($latestContractId) {
+                    $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
+                    $compData['contract_id'] = $latestContractId;
+                    ContractCompensation::create($compData);
+                }
+
+                // 6. Create Family Members
+                $familyData = $importService->buildFamilyMembersData($row, $this->mapping);
+                foreach ($familyData as $memberData) {
+                    $memberData['worker_id'] = $worker->id;
+                    FamilyMember::create($memberData);
+                }
+
+                DB::commit();
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $failed++;
+
+                $failedRow = $row;
+                $failedRow[] = $e->getMessage() . " [{$rowIdentifier}]";
+                $failedRows[] = $failedRow;
+
+                Log::warning("ProcessBulkImport: Row {$processed} failed - {$e->getMessage()}");
             }
-            
-            DB::commit();
-            Log::info("Import job completed successfully.");
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Critical error during import: " . $e->getMessage());
-        } finally {
-            fclose($fileHandle);
-            
-            if (count($failedRows) > 1) {
-                $this->generateFailedDump($failedRows);
-            }
-
-            Storage::disk('local')->delete($this->filePath);
+            // Update progress in Redis
+            $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
         }
+
+        fclose($handle);
+
+        // Generate failed rows CSV if any
+        $failedFilePath = null;
+        if (count($failedRows) > 0) {
+            $failedFilePath = $this->generateFailedCsv($failedHeaders, $failedRows);
+        }
+
+        // Mark as completed
+        $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'completed', $failedFilePath);
+
+        // Clean up uploaded file
+        Storage::disk('local')->delete($cached['file_path']);
+
+        Log::info("ProcessBulkImport: Completed. Processed={$processed}, Failed={$failed}, SessionId={$this->sessionId}");
     }
 
     /**
-     * Safely extract data from the CSV row using the provided mapping.
+     * Auto-generate NIK ARU for a worker based on their first assignment's project.
      *
-     * @param array $row The current CSV row data.
-     * @param string $field The logical field name from mapping.
-     * @return string|null
-     */
-    private function extractMappedData(array $row, string $field): ?string
-    {
-        if (isset($this->mapping[$field]) && isset($row[$this->mapping[$field]])) {
-            $val = trim($row[$this->mapping[$field]]);
-            return $val === '' ? null : $val;
-        }
-        return null;
-    }
-
-    /**
-     * Clean currency string (e.g., " Rp 10.000 / Jam " -> 10000).
+     * Mirrors the logic from AssignmentController::store():
+     * Format: PREFIX-YEAR-001
      *
-     * @param string|null $value
-     * @return float
-     */
-    private function cleanCurrencyString(?string $value): float
-    {
-        if (!$value || $value === '-') return 0.0;
-        
-        // Remove everything except numbers (and optionally decimal points if needed)
-        $cleanString = preg_replace('/[^0-9]/', '', $value);
-        return (float) ($cleanString ?: 0);
-    }
-
-    /**
-     * Parse various dirty date formats into standard Y-m-d.
-     * Handles "01/06/2019", "01 Juni 2019", etc.
-     *
-     * @param string|null $dateString
-     * @return string|null
-     */
-    private function parseDateString(?string $dateString): ?string
-    {
-        if (!$dateString || $dateString === '-') return null;
-
-        // Clean string from trailing/leading spaces
-        $dateString = trim($dateString);
-
-        // Convert Indonesian months to English so Carbon can read it
-        $idMonths = ['januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember'];
-        $enMonths = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-        $dateString = str_ireplace($idMonths, $enMonths, $dateString);
-        
-        // Handle slashes to dashes for standardized parsing
-        $dateString = str_replace('/', '-', $dateString);
-
-        try {
-            return Carbon::parse($dateString)->format('Y-m-d');
-        } catch (\Exception $e) {
-            // Log if there's a specific unparseable date format
-            Log::warning("Failed to parse date: {$dateString}");
-            return null;
-        }
-    }
-
-    /**
-     * Parse raw status text from Excel (e.g., "Aktif", "Resign (30/9/2021)")
-     * * @param string $statusString
-     * @return array ['status' => string, 'date' => string|null]
-     */
-    private function parseAssignmentStatus(string $statusString): array
-    {
-        // Default to active if empty or explicitly stated
-        $result = ['status' => 'active', 'date' => null];
-        
-        if (!$statusString || str_contains($statusString, 'aktif') || str_contains($statusString, 'active')) {
-            return $result;
-        }
-
-        // Determine specific termination status
-        if (str_contains($statusString, 'resign')) {
-            $result['status'] = 'resign';
-        } elseif (str_contains($statusString, 'habis kontrak')) {
-            $result['status'] = 'contract expired';
-        } elseif (str_contains($statusString, 'diberhentikan')) {
-            $result['status'] = 'fired';
-        } else {
-            $result['status'] = 'other';
-        }
-
-        // Extract date inside parentheses (e.g., "Resign (30/10/2023)")
-        preg_match('/\((.*?)\)/', $statusString, $matches);
-        if (isset($matches[1])) {
-            $result['date'] = $this->parseDateString($matches[1]);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Helper to insert family member if name exists.
-     *
-     * @param int $workerId
-     * @param array $row
-     * @param string $prefix
-     * @param string $relationshipType
+     * @param Worker $worker The worker model.
+     * @param Assignment $assignment The assignment model.
      * @return void
      */
-    private function insertFamilyMember(int $workerId, array $row, string $prefix, string $relationshipType): void
+    private function generateNikAru(Worker $worker, Assignment $assignment): void
     {
-        $name = $this->extractMappedData($row, "{$prefix}_name");
-        
-        if ($name) {
-            FamilyMember::create([
-                'worker_id'         => $workerId,
-                'relationship_type' => $relationshipType,
-                'name'              => $name,
-                'birth_place'       => $this->extractMappedData($row, "{$prefix}_birth_place"),
-                'birth_date'        => $this->parseDateString($this->extractMappedData($row, "{$prefix}_birth_date")),
-                'nik'               => $this->extractMappedData($row, "{$prefix}_nik"),
-                'bpjs_number'       => $this->extractMappedData($row, "{$prefix}_bpjs"),
-            ]);
+        $project = Project::find($assignment->project_id);
+        if (!$project) {
+            return;
         }
+
+        $nextNumber = $project->id_running_number + 1;
+        $project->update(['id_running_number' => $nextNumber]);
+
+        $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $year = date('Y', strtotime($assignment->hire_date));
+        $newNik = "{$project->prefix}-{$year}-{$paddedNumber}";
+
+        $worker->update(['nik_aru' => $newNik]);
     }
 
     /**
-     * Generate a CSV file containing rows that failed to import.
+     * Generate a CSV file containing rows that failed during import.
      *
-     * @param array $failedRows
-     * @return void
+     * The output CSV includes all original columns plus an ERROR_REASON column,
+     * allowing users to review, fix, and re-import through the same tool.
+     *
+     * @param array $headers The header row including ERROR_REASON.
+     * @param array $failedRows The failed row data.
+     * @return string The storage path of the failed CSV file.
      */
-    private function generateFailedDump(array $failedRows): void
+    private function generateFailedCsv(array $headers, array $failedRows): string
     {
-        $fileName = 'failed_imports/failed_import_' . time() . '.csv';
-        $fileContent = fopen('php://temp', 'r+');
-        
+        $fileName = 'failed_imports/failed_import_' . $this->sessionId . '.csv';
+        $content = fopen('php://temp', 'r+');
+
+        fputcsv($content, $headers);
         foreach ($failedRows as $row) {
-            fputcsv($fileContent, $row);
+            fputcsv($content, $row);
         }
-        
-        rewind($fileContent);
-        Storage::disk('local')->put($fileName, stream_get_contents($fileContent));
-        fclose($fileContent);
 
-        // Optional: Dispatch an event or notification to the user here
+        rewind($content);
+        Storage::disk('local')->put($fileName, stream_get_contents($content));
+        fclose($content);
+
+        return $fileName;
+    }
+
+    /**
+     * Handle a job failure.
+     *
+     * @param \Throwable $exception
+     * @return void
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error("ProcessBulkImport: Job failed - {$exception->getMessage()}", [
+            'session_id' => $this->sessionId,
+            'exception' => $exception,
+        ]);
+
+        $importService = app(ImportService::class);
+        $importService->updateProgress($this->sessionId, 0, 0, 0, 'failed');
     }
 }

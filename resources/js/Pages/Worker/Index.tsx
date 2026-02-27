@@ -76,13 +76,13 @@ export default function Index({ workers }: Props) {
                     <p className="text-sm text-slate-500">Kelola database induk seluruh karyawan yang terafiliasi dengan ARU.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Link 
-                        href={route('import.workers.view')}
+                    <Link
+                        href={route('workers.import.index')}
                         className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
                     >
                         <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import Excel
                     </Link>
-                    <Link 
+                    <Link
                         href={route('workers.create')}
                         className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
                     >
@@ -151,21 +151,21 @@ export default function Index({ workers }: Props) {
                                             </td>
                                             <td className="px-6 py-4">{worker.phone || '-'}</td>
                                             <td className="px-6 py-4 text-right space-x-2">
-                                                <Link 
+                                                <Link
                                                     href={route('workers.show', worker.id)}
                                                     className="p-2 text-sky-500 hover:bg-sky-50 rounded-lg transition-colors inline-block"
                                                     title="Lihat Profil"
                                                 >
                                                     <iconify-icon icon="solar:user-id-bold" width="20"></iconify-icon>
                                                 </Link>
-                                                <Link 
+                                                <Link
                                                     href={route('workers.edit', worker.id)}
                                                     className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
                                                     title="Edit Data"
                                                 >
                                                     <iconify-icon icon="solar:pen-bold" width="20"></iconify-icon>
                                                 </Link>
-                                                <button 
+                                                <button
                                                     onClick={() => openDeleteModal(worker)}
                                                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                     title="Hapus"
