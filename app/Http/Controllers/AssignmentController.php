@@ -67,7 +67,7 @@ class AssignmentController extends Controller
                 if ($hasActive) {
                     $validator->errors()->add(
                         'termination_date', 
-                        'Pekerja ini masih memiliki penempatan aktif. Harap untuk menutup penempatan sebelumnya terlebih dahulu.'
+                        'Karyawan ini masih memiliki penempatan aktif. Harap untuk mengakhiri penempatan sebelumnya terlebih dahulu.'
                     );
                 }
             }
@@ -93,7 +93,7 @@ class AssignmentController extends Controller
             $worker->update(['nik_aru' => $newNik]);
         }
 
-        return redirect()->route('assignments.show', $assignment->id)->with('message', 'Penempatan pekerja berhasil ditambahkan!');
+        return redirect()->route('assignments.show', $assignment->id)->with('message', 'Penempatan karyawan berhasil ditambahkan!');
     }
 
     /**
@@ -151,7 +151,7 @@ class AssignmentController extends Controller
                 if ($hasActive) {
                     $validator->errors()->add(
                         'termination_date', 
-                        'Pekerja ini memiliki penempatan aktif lain. Harap untuk menutup penempatan lainnya terlebih dahulu.'
+                        'Karyawan ini memiliki penempatan aktif lain. Harap untuk mengakhiri penempatan lainnya terlebih dahulu.'
                     );
                 }
             }

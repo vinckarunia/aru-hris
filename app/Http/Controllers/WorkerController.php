@@ -16,54 +16,93 @@ use Illuminate\Validation\Rule;
  */
 class WorkerController extends Controller
 {
+    /**
+     * Display a listing of the workers.
+     *
+     * @return Response
+     */
     public function index(): Response
     {
-        $workers = Worker::latest()->get();
-        return Inertia::render('Worker/Index', ['workers' => $workers]);
+        // Eager load assignments & projects, sort assignments by newest first
+        $workers = Worker::with(['assignments' => function ($query) {
+            $query->orderBy('hire_date', 'desc')->with('project');
+        }])->latest()->get();
+
+        return Inertia::render('Worker/Index', [
+            'workers' => $workers,
+        ]);
     }
 
-    public function create(): Response
-    {
-        return Inertia::render('Worker/Create');
-    }
-
+    /**
+     * Show the form for creating a new worker.
+     * 
+     * @return Response
+     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
 
         Worker::create($validated);
 
-        return redirect()->route('workers.index')->with('message', 'Pekerja berhasil ditambahkan.');
+        return redirect()->route('workers.index')->with('message', 'Karyawan berhasil ditambahkan.');
     }
 
+    /**
+     * Display the specified worker along with their assignments and related project/department details.
+     * 
+     * @param Worker $worker
+     * @return Response
+     */
     public function show(Worker $worker): Response
     {
         $worker->load(['assignments.project', 'assignments.department']);
         return Inertia::render('Worker/Show', ['worker' => $worker]);
     }
 
+    /**
+     * Show the form for editing the specified worker.
+     * 
+     * @param Worker $worker
+     * @return Response
+     */
     public function edit(Worker $worker): Response
     {
         return Inertia::render('Worker/Edit', ['worker' => $worker]);
     }
 
+    /**
+     * Update the specified worker in storage.
+     * 
+     * @param Request $request
+     * @param Worker $worker
+     * @return RedirectResponse
+     */
     public function update(Request $request, Worker $worker): RedirectResponse
     {
         $validated = $request->validate($this->getValidationRules($worker->id), $this->getValidationMessages());
 
         $worker->update($validated);
 
-        return redirect()->route('workers.show', $worker->id)->with('message', 'Data pekerja berhasil diperbarui.');
+        return redirect()->route('workers.show', $worker->id)->with('message', 'Data karyawan berhasil diperbarui.');
     }
 
+    /**
+     * Remove the specified worker from storage.
+     * 
+     * @param Worker $worker
+     * @return RedirectResponse
+     */
     public function destroy(Worker $worker): RedirectResponse
     {
         $worker->delete();
-        return redirect()->route('workers.index')->with('message', 'Pekerja berhasil dihapus.');
+        return redirect()->route('workers.index')->with('message', 'Karyawan berhasil dihapus.');
     }
 
     /**
      * Define the strict validation rules for Indonesian identity numbers.
+     * 
+     * @param int|null $workerId Optional worker ID to ignore for unique checks during updates.
+     * @return array
      */
     private function getValidationRules(?int $workerId = null): array
     {
@@ -92,6 +131,8 @@ class WorkerController extends Controller
 
     /**
      * Custom error messages for digit validations.
+     * 
+     * @return array
      */
     private function getValidationMessages(): array
     {

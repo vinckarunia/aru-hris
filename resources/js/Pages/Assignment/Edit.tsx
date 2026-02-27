@@ -70,7 +70,7 @@ export default function Edit({ assignment, projects }: Props) {
                             <InputError message={errors.position} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="employee_id" value="ID Karyawan di Klien" />
+                            <InputLabel htmlFor="employee_id" value="ID Karyawan di Client" />
                             <TextInput id="employee_id" type="text" className="mt-1 block w-full font-mono" value={data.employee_id} onChange={e => setData('employee_id', e.target.value)} />
                             <InputError message={errors.employee_id} className="mt-1" />
                         </div>
@@ -87,11 +87,11 @@ export default function Edit({ assignment, projects }: Props) {
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="status" value="Status" />
                             <select id="status" className="mt-1 block w-full md:w-1/2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.status} onChange={e => setData('status', e.target.value)}>
-                                <option value="active">Active</option>
-                                <option value="contract expired">Contract Expired</option>
+                                <option value="active">Aktif</option>
+                                <option value="contract expired">Kontrak Habis</option>
                                 <option value="resign">Resign</option>
-                                <option value="fired">Fired</option>
-                                <option value="other">Other</option>
+                                <option value="fired">Diberhentikan</option>
+                                <option value="other">Lainnya</option>
                             </select>
                             <InputError message={errors.status} className="mt-1" />
                         </div>
@@ -99,7 +99,7 @@ export default function Edit({ assignment, projects }: Props) {
                 </div>
 
                 <div className="flex justify-end gap-4">
-                    <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base">
+                    <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base bg-primary hover:bg-primary-dark">
                         Simpan Perubahan
                     </PrimaryButton>
                 </div>

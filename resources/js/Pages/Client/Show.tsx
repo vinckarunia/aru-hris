@@ -254,7 +254,7 @@ export default function Show({ client }: Props) {
                                     <tr><th className="px-6 py-4">No</th><th className="px-6 py-4">Nama Project</th><th className="px-6 py-4">Departemen</th><th className="px-6 py-4">Prefix</th><th className="px-6 py-4 text-right">Aksi</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
-                                    {client.projects.length === 0 ? <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">Belum ada project untuk klien ini.</td></tr> : client.projects.map((proj, idx) => (
+                                    {client.projects.length === 0 ? <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">Belum ada project untuk client ini.</td></tr> : client.projects.map((proj, idx) => (
                                         <tr key={proj.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                             <td className="px-6 py-4">{idx + 1}</td>
                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{proj.name}</td>

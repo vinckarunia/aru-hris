@@ -6,8 +6,23 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 
 /**
- * Interface representing the basic Worker data for the index table.
+ * Type definitions for Worker, Assignment, and Project entities.
+ * These interfaces define the expected structure of data passed to the component.
  */
+interface Project {
+    id: number;
+    name: string;
+}
+
+interface Assignment {
+    id: number;
+    project_id: number;
+    status: string;
+    hire_date: string;
+    termination_date: string | null;
+    project?: Project;
+}
+
 interface Worker {
     id: number;
     nik_aru: string | null;
@@ -15,6 +30,7 @@ interface Worker {
     ktp_number: string;
     phone: string | null;
     gender: 'male' | 'female' | null;
+    assignments?: Assignment[];
 }
 
 /**
@@ -83,8 +99,8 @@ export default function Index({ workers }: Props) {
                             <tr>
                                 <th className="px-6 py-4">No</th>
                                 <th className="px-6 py-4">Nama Lengkap</th>
-                                <th className="px-6 py-4">No. KTP</th>
                                 <th className="px-6 py-4">NIK ARU</th>
+                                <th className="px-6 py-4">Project</th>
                                 <th className="px-6 py-4">Telepon</th>
                                 <th className="px-6 py-4 text-right">Aksi</th>
                             </tr>
@@ -93,51 +109,73 @@ export default function Index({ workers }: Props) {
                             {workers.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-8 text-center text-slate-400 italic">
-                                        Belum ada data pekerja. Silakan tambahkan atau import data.
+                                        Belum ada data karyawan. Silakan tambahkan atau import data.
                                     </td>
                                 </tr>
                             ) : (
-                                workers.map((worker, index) => (
-                                    <tr key={worker.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-6 py-4">{index + 1}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-slate-800 dark:text-slate-200">{worker.name}</div>
-                                            <div className="text-xs text-slate-400 capitalize">{worker.gender === 'male' ? 'Laki-laki' : worker.gender === 'female' ? 'Perempuan' : '-'}</div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-slate-500">{worker.ktp_number}</td>
-                                        <td className="px-6 py-4">
-                                            {worker.nik_aru ? (
-                                                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md font-mono text-xs font-bold">{worker.nik_aru}</span>
-                                            ) : (
-                                                <span className="text-xs text-slate-400 italic">Belum ada</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">{worker.phone || '-'}</td>
-                                        <td className="px-6 py-4 text-right space-x-2">
-                                            <Link 
-                                                href={route('workers.show', worker.id)}
-                                                className="p-2 text-sky-500 hover:bg-sky-50 rounded-lg transition-colors inline-block"
-                                                title="Lihat Profil"
-                                            >
-                                                <iconify-icon icon="solar:user-id-bold" width="20"></iconify-icon>
-                                            </Link>
-                                            <Link 
-                                                href={route('workers.edit', worker.id)}
-                                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
-                                                title="Edit Data"
-                                            >
-                                                <iconify-icon icon="solar:pen-bold" width="20"></iconify-icon>
-                                            </Link>
-                                            <button 
-                                                onClick={() => openDeleteModal(worker)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Hapus"
-                                            >
-                                                <iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
+                                workers.map((worker, index) => {
+                                    const latestAssignment = worker.assignments && worker.assignments.length > 0 ? worker.assignments[0] : null;
+                                    const isActive = latestAssignment && !latestAssignment.termination_date && latestAssignment.status === 'active';
+
+                                    return (
+                                        <tr key={worker.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                            <td className="px-6 py-4">{index + 1}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-slate-800 dark:text-slate-200">{worker.name}</div>
+                                                <div className="text-xs text-slate-400 capitalize">{worker.gender === 'male' ? 'Laki-laki' : worker.gender === 'female' ? 'Perempuan' : '-'}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {worker.nik_aru ? (
+                                                    <span className="px-2 py-1 bg-primary/10 text-primary rounded-md font-mono text-xs font-bold">{worker.nik_aru}</span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">Belum ada</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {latestAssignment ? (
+                                                    <div>
+                                                        <div className="font-semibold text-slate-700 dark:text-slate-300">
+                                                            {latestAssignment.project?.name || '-'}
+                                                        </div>
+                                                        <div className="mt-1">
+                                                            {isActive ? (
+                                                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 rounded text-[10px] font-bold uppercase tracking-wider">Aktif</span>
+                                                            ) : (
+                                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-700 rounded text-[10px] font-bold uppercase tracking-wider">{latestAssignment.status || 'Nonaktif'}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">- Belum ditempatkan -</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">{worker.phone || '-'}</td>
+                                            <td className="px-6 py-4 text-right space-x-2">
+                                                <Link 
+                                                    href={route('workers.show', worker.id)}
+                                                    className="p-2 text-sky-500 hover:bg-sky-50 rounded-lg transition-colors inline-block"
+                                                    title="Lihat Profil"
+                                                >
+                                                    <iconify-icon icon="solar:user-id-bold" width="20"></iconify-icon>
+                                                </Link>
+                                                <Link 
+                                                    href={route('workers.edit', worker.id)}
+                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
+                                                    title="Edit Data"
+                                                >
+                                                    <iconify-icon icon="solar:pen-bold" width="20"></iconify-icon>
+                                                </Link>
+                                                <button 
+                                                    onClick={() => openDeleteModal(worker)}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Hapus"
+                                                >
+                                                    <iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
@@ -152,7 +190,7 @@ export default function Index({ workers }: Props) {
                     </div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Karyawan?</h2>
                     <p className="text-sm text-slate-500 mb-6">
-                        Yakin menghapus data pekerja <b>{selectedWorker?.name}</b>? Data assignment dan dokumen terkait juga akan ikut terhapus.
+                        Yakin menghapus data karyawan <b>{selectedWorker?.name}</b>? Data assignment dan dokumen terkait juga akan ikut terhapus.
                     </p>
                     <div className="flex justify-center gap-3">
                         <SecondaryButton onClick={() => setIsDeleteModalOpen(false)} type="button">Batal</SecondaryButton>

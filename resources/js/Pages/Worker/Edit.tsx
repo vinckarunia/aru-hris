@@ -61,7 +61,7 @@ export default function Edit({ worker }: Props) {
     };
 
     return (
-        <AdminLayout title={`Edit Pekerja - ${worker.name}`} header="Edit Data Pekerja">
+        <AdminLayout title={`Edit Karyawan - ${worker.name}`} header="Edit Data Karyawan">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Edit Data: {worker.name}</h2>

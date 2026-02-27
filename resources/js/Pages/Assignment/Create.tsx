@@ -42,7 +42,7 @@ export default function Create({ worker, projects }: Props) {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Penempatan: {worker.name}</h2>
-                    <p className="text-sm text-slate-500">Form penempatan pekerja ke Project & Departemen.</p>
+                    <p className="text-sm text-slate-500">Form penempatan karyawan ke Project & Departemen.</p>
                 </div>
                 <Link href={route('workers.show', worker.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                     <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon> Kembali
@@ -53,8 +53,8 @@ export default function Create({ worker, projects }: Props) {
                 <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
                 <div className="text-sm font-medium">
                     {worker.nik_aru 
-                        ? `Pekerja ini sudah memiliki NIK ARU (${worker.nik_aru}).` 
-                        : 'Pekerja ini belum memiliki NIK ARU. Sistem akan secara otomatis generate NIK ARU berdasarkan Prefix Project saat disimpan.'}
+                        ? `Karyawan ini sudah memiliki NIK ARU (${worker.nik_aru}).` 
+                        : 'Karyawan ini belum memiliki NIK ARU. Sistem akan secara otomatis generate NIK ARU berdasarkan Prefix Project saat disimpan.'}
                 </div>
             </div>
             {Object.keys(errors).length > 0 && (
@@ -97,8 +97,8 @@ export default function Create({ worker, projects }: Props) {
                             <InputError message={errors.position} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="employee_id" value="ID Karyawan di Klien (Opsional)" />
-                            <TextInput id="employee_id" type="text" className="mt-1 block w-full font-mono" value={data.employee_id} onChange={e => setData('employee_id', e.target.value)} placeholder="Nomor Induk internal perusahaan klien" />
+                            <InputLabel htmlFor="employee_id" value="ID Karyawan di Client (Opsional)" />
+                            <TextInput id="employee_id" type="text" className="mt-1 block w-full font-mono" value={data.employee_id} onChange={e => setData('employee_id', e.target.value)} placeholder="Nomor Induk internal perusahaan client" />
                             <InputError message={errors.employee_id} className="mt-1" />
                         </div>
 
@@ -111,18 +111,18 @@ export default function Create({ worker, projects }: Props) {
                         <div>
                             <InputLabel htmlFor="termination_date" value="Tanggal Berakhir / Keluar" />
                             <TextInput id="termination_date" type="date" className="mt-1 block w-full" value={data.termination_date} onChange={e => setData('termination_date', e.target.value)} />
-                            <p className="text-xs text-slate-500 mt-1">Kosongkan jika pekerja masih aktif di project ini.</p>
+                            <p className="text-xs text-slate-500 mt-1">Kosongkan jika karyawan masih aktif di project ini.</p>
                             <InputError message={errors.termination_date} className="mt-1" />
                         </div>
 
                         <div className="md:col-span-2">
                             <InputLabel htmlFor="status" value="Status Penempatan" />
                             <select id="status" className="mt-1 block w-full md:w-1/2 border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" value={data.status} onChange={e => setData('status', e.target.value)}>
-                                <option value="active">Active (Sedang Berjalan)</option>
-                                <option value="contract expired">Contract Expired (Habis Kontrak)</option>
-                                <option value="resign">Resign (Mengundurkan Diri)</option>
-                                <option value="fired">Fired (PHK)</option>
-                                <option value="other">Other (Lainnya)</option>
+                                <option value="active">Aktif</option>
+                                <option value="contract expired">Habis Kontrak</option>
+                                <option value="resign">Resign</option>
+                                <option value="fired">Diberhentikan</option>
+                                <option value="other">Lainnya</option>
                             </select>
                             <InputError message={errors.status} className="mt-1" />
                         </div>
@@ -130,7 +130,7 @@ export default function Create({ worker, projects }: Props) {
                 </div>
 
                 <div className="flex justify-end gap-4">
-                    <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base">
+                    <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base bg-primary hover:bg-primary-dark">
                         {processing ? 'Menyimpan...' : 'Simpan Penempatan'}
                     </PrimaryButton>
                 </div>

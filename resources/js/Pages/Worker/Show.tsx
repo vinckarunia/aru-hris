@@ -45,13 +45,13 @@ export default function Show({ worker }: Props) {
     };
 
     return (
-        <AdminLayout title={`Profil Pekerja - ${worker.name}`} header="Detail Pekerja">
+        <AdminLayout title={`Profil Karyawan - ${worker.name}`} header="Detail Karyawan">
             {/* Header Profile Card */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 md:p-8 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
                 
                 <div className="flex items-center gap-5 z-10">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-primary/30 border-4 border-white dark:border-slate-800">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-primary/30">
                         {worker.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -83,14 +83,14 @@ export default function Show({ worker }: Props) {
                         <iconify-icon icon="solar:user-id-bold" width="18"></iconify-icon> Profil Lengkap
                     </button>
                     <button onClick={() => setActiveTab('assignments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                        <iconify-icon icon="solar:briefcase-bold" width="18"></iconify-icon> Penempatan & Kontrak
+                        <iconify-icon icon="solar:suitcase-bold" width="18"></iconify-icon> Penempatan & Kontrak
                     </button>
                 </div>
 
                 {activeTab === 'profile' && (
-                    <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    <div className="p-6 md:p-8 grid grid-cols-1 gap-8">
                         
-                        {/* Identitas Utama */}
+                        {/* Profile */}
                         <div>
                             <div className="flex items-center gap-2 mb-4 text-primary">
                                 <iconify-icon icon="solar:card-2-bold" width="24"></iconify-icon>
@@ -106,7 +106,7 @@ export default function Show({ worker }: Props) {
                             </div>
                         </div>
 
-                        {/* Kontak & Domisili */}
+                        {/* Contact & Location */}
                         <div>
                             <div className="flex items-center gap-2 mb-4 text-emerald-500">
                                 <iconify-icon icon="solar:map-point-bold" width="24"></iconify-icon>
@@ -118,7 +118,7 @@ export default function Show({ worker }: Props) {
                             </div>
                         </div>
 
-                        {/* Administrasi & Finansial */}
+                        {/* Administration */}
                         <div>
                             <div className="flex items-center gap-2 mb-4 text-amber-500">
                                 <iconify-icon icon="solar:wallet-bold" width="24"></iconify-icon>
@@ -144,24 +144,42 @@ export default function Show({ worker }: Props) {
                             </Link>
                         </div>
 
-                        {/* Nantinya di sini kita bisa me-mapping daftar assignment yang dimiliki oleh worker */}
+                        {/* Assignments */}
                         {worker.assignments && worker.assignments.length > 0 ? (
                             <div className="space-y-4">
-                                {worker.assignments.map((assign: any) => (
-                                    <div key={assign.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <div>
-                                            <h4 className="font-bold text-slate-800 dark:text-white">{assign.position || 'Tidak ada jabatan'}</h4>
-                                            <p className="text-sm text-slate-500 mt-1">{assign.project?.name} - {assign.department?.name}</p>
+                                {worker.assignments.map((assign: any) => {
+                                    const isActive = !assign.termination_date && assign.status === 'active';
+
+                                    return (
+                                        <div key={assign.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                            <div>
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <h4 className="font-bold text-slate-800 dark:text-white">{assign.position || 'Tidak ada jabatan'}</h4>
+                                                    {isActive ? (
+                                                        <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold uppercase tracking-wider">Aktif</span>
+                                                    ) : (
+                                                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-700 rounded-md text-[10px] font-bold uppercase tracking-wider">{assign.status || 'Nonaktif'}</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
+                                                    <iconify-icon icon="solar:buildings-bold" className="mr-1"></iconify-icon>
+                                                    {assign.project?.name} - {assign.department?.name}
+                                                </p>
+                                                <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                                    <iconify-icon icon="solar:calendar-bold-duotone"></iconify-icon>
+                                                    {assign.hire_date} s/d {assign.termination_date || 'Sekarang'}
+                                                </p>
+                                            </div>
+                                            <Link href={route('assignments.show', assign.id)} className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors text-center whitespace-nowrap">
+                                                Lihat Detail & Kontrak
+                                            </Link>
                                         </div>
-                                        <Link href={route('assignments.show', assign.id)} className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors">
-                                            Lihat Detail & Kontrak
-                                        </Link>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
-                                <p className="text-slate-500 mb-2">Pekerja ini belum ditempatkan di project mana pun.</p>
+                                <p className="text-slate-500 mb-2">Karyawan ini belum ditempatkan di project mana pun.</p>
                             </div>
                         )}
                     </div>

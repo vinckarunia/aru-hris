@@ -38,10 +38,10 @@ export default function Create() {
     };
 
     return (
-        <AdminLayout title="Tambah Pekerja Baru" header="Data Pekerja">
+        <AdminLayout title="Tambah Karyawan Baru" header="Data Karyawan">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Tambah Pekerja Baru</h2>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Tambah Karyawan Baru</h2>
                     <p className="text-sm text-slate-500">Silakan lengkapi form pendaftaran karyawan di bawah ini.</p>
                 </div>
                 <Link href={route('workers.index')} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
@@ -241,7 +241,7 @@ export default function Create() {
                         Batal
                     </Link>
                     <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/30 transition-all">
-                        {processing ? 'Menyimpan...' : 'Simpan Data Pekerja'}
+                        {processing ? 'Menyimpan...' : 'Simpan Data Karyawan'}
                     </PrimaryButton>
                 </div>
             </form>

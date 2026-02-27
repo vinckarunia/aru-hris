@@ -144,7 +144,7 @@ export default function Index({ projects, clients, departments }: Props) {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Daftar Project</h2>
-                    <p className="text-sm text-slate-500">Kelola daftar project dari berbagai klien.</p>
+                    <p className="text-sm text-slate-500">Kelola daftar project dari berbagai client.</p>
                 </div>
                 <button onClick={openAddModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">
                     <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Project
@@ -233,7 +233,7 @@ export default function Index({ projects, clients, departments }: Props) {
                             <InputLabel value="Departemen (Pilih minimal satu)" />
                             <div className="mt-2 grid grid-cols-2 gap-3">
                                 {availableDepartments.length === 0 ? (
-                                    <p className="text-xs text-slate-500 col-span-2 italic">Belum ada departemen untuk klien ini.</p>
+                                    <p className="text-xs text-slate-500 col-span-2 italic">Belum ada departemen untuk client ini.</p>
                                 ) : (
                                     availableDepartments.map(d => (
                                         <label key={d.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
