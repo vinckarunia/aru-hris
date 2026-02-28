@@ -162,7 +162,7 @@ export default function Create({ assignment }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                            <TextInput id="end_date" type="date" className="mt-1 block w-full" value={data.end_date} onChange={e => setData('end_date', e.target.value)} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
+                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => setData('end_date', e.target.value)} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
                             <p className="text-xs text-slate-500 mt-1">Kosongkan jika PKWTT</p>
                             <InputError message={errors.end_date} className="mt-1" />
                         </div>

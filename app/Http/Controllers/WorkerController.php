@@ -25,7 +25,11 @@ class WorkerController extends Controller
     {
         // Eager load assignments & projects, sort assignments by newest first
         $workers = Worker::with(['assignments' => function ($query) {
-            $query->orderBy('hire_date', 'desc')->with('project');
+            $query->orderBy('hire_date', 'desc')
+                  ->with([
+                      'project',
+                      'contracts' => fn ($q) => $q->orderBy('start_date', 'desc'),
+                  ]);
         }])->latest()->get();
 
         return Inertia::render('Worker/Index', [

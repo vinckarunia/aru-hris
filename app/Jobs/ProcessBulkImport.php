@@ -199,10 +199,8 @@ class ProcessBulkImport implements ShouldQueue
                     $assignment = Assignment::create($assignmentData);
                 }
 
-                // 3. Auto-generate NIK ARU if not provided
-                if (empty($worker->nik_aru)) {
-                    $this->generateNikAru($worker, $assignment);
-                }
+                // Auto-generate NIK ARU — always fresh per assignment (reflects the active project).
+                $this->generateNikAru($worker, $assignment);
 
                 // 4. Create Contracts (PKWT 1-8, PKWTT)
                 $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
@@ -277,13 +275,12 @@ class ProcessBulkImport implements ShouldQueue
     }
 
     /**
-     * Auto-generate NIK ARU for a worker based on their first assignment's project.
+     * Auto-generate NIK ARU for a worker based on their assignment's project.
      *
-     * Mirrors the logic from AssignmentController::store():
-     * Format: PREFIX-YEAR-001
+     * NIK is always (re-)generated to reflect the active project. Format: PREFIX-YEAR-001.
      *
-     * @param Worker $worker The worker model.
-     * @param Assignment $assignment The assignment model.
+     * @param  Worker     $worker     The worker model.
+     * @param  Assignment $assignment The assignment model.
      * @return void
      */
     private function generateNikAru(Worker $worker, Assignment $assignment): void
@@ -297,8 +294,8 @@ class ProcessBulkImport implements ShouldQueue
         $project->update(['id_running_number' => $nextNumber]);
 
         $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-        $year = date('Y', strtotime($assignment->hire_date));
-        $newNik = "{$project->prefix}-{$year}-{$paddedNumber}";
+        $year         = date('Y', strtotime($assignment->hire_date));
+        $newNik       = "{$project->prefix}-{$year}-{$paddedNumber}";
 
         $worker->update(['nik_aru' => $newNik]);
     }

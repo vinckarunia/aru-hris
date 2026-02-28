@@ -52,16 +52,19 @@ export default function Create({ worker, projects }: Props) {
             <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800/30 flex items-start gap-3 text-amber-600 dark:text-amber-400">
                 <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
                 <div className="text-sm font-medium">
-                    {worker.nik_aru 
-                        ? `Karyawan ini sudah memiliki NIK ARU (${worker.nik_aru}).` 
-                        : 'Karyawan ini belum memiliki NIK ARU. Sistem akan secara otomatis generate NIK ARU berdasarkan Prefix Project saat disimpan.'}
+                    Sistem akan otomatis men-generate NIK ARU berdasarkan Prefix Project saat assignment disimpan.
+                    {worker.nik_aru && (
+                        <span className="ml-1">
+                            NIK ARU sebelumnya (<span className="font-mono">{worker.nik_aru}</span>) akan digantikan oleh NIK baru sesuai project yang dipilih.
+                        </span>
+                    )}
                 </div>
             </div>
             {Object.keys(errors).length > 0 && (
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800/30 flex items-start gap-3 text-red-600 dark:text-red-400 shadow-sm">
                     <iconify-icon icon="solar:danger-triangle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
                     <div className="text-sm font-medium w-full text-red-800 dark:text-red-300">
-                        {errors.termination_date}    
+                        {errors.termination_date}
                     </div>
                 </div>
             )}

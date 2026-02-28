@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Worker;
+
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -38,21 +39,24 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Store a newly created assignment and generate NIK ARU if needed.
+     * Store a newly created assignment and generate a fresh NIK ARU for the worker.
+     *
+     * A new NIK ARU is always generated based on the selected project's prefix,
+     * reflecting the worker's active placement context.
      */
     public function store(Request $request): RedirectResponse
     {
         $validator = Validator::make($request->all(), [
-            'worker_id' => 'required|exists:workers,id',
-            'project_id' => 'required|exists:projects,id',
-            'department_id' => 'required|exists:departments,id',
-            'employee_id' => [
+            'worker_id'        => 'required|exists:workers,id',
+            'project_id'       => 'required|exists:projects,id',
+            'department_id'    => 'required|exists:departments,id',
+            'employee_id'      => [
                 'nullable', 'string', 'max:255',
-                Rule::unique('assignments')->where('project_id', $request->project_id)
+                Rule::unique('assignments')->where('project_id', $request->project_id),
             ],
-            'position' => 'nullable|string|max:255',
-            'hire_date' => 'required|date',
-            'status' => 'nullable|in:active,contract expired,resign,fired,other',
+            'position'         => 'nullable|string|max:255',
+            'hire_date'        => 'required|date',
+            'status'           => 'nullable|in:active,contract expired,resign,fired,other',
             'termination_date' => 'nullable|date|after_or_equal:hire_date',
         ], [
             'employee_id.unique' => 'ID Karyawan ini sudah digunakan di Project tersebut.',
@@ -63,10 +67,10 @@ class AssignmentController extends Controller
                 $hasActive = Assignment::where('worker_id', $request->worker_id)
                     ->whereNull('termination_date')
                     ->exists();
-                    
+
                 if ($hasActive) {
                     $validator->errors()->add(
-                        'termination_date', 
+                        'termination_date',
                         'Karyawan ini masih memiliki penempatan aktif. Harap untuk mengakhiri penempatan sebelumnya terlebih dahulu.'
                     );
                 }
@@ -77,23 +81,17 @@ class AssignmentController extends Controller
 
         $assignment = Assignment::create($validated);
 
-        // --- NIK ARU AUTO-GENERATION LOGIC ---
-        $worker = Worker::find($validated['worker_id']);
-        if (empty($worker->nik_aru)) {
+        // Generate a fresh NIK ARU based on the assigned project.
+        // NIK is always (re-)generated on a new active assignment.
+        if (is_null($validated['termination_date'] ?? null)) {
+            $worker  = Worker::find($validated['worker_id']);
             $project = Project::find($validated['project_id']);
-            
-            $nextNumber = $project->id_running_number + 1;
-            $project->update(['id_running_number' => $nextNumber]);
-
-            // Format: PREFIX-YEAR-001
-            $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-            $year = date('Y', strtotime($validated['hire_date']));
-            $newNik = "{$project->prefix}-{$year}-{$paddedNumber}";
-            
+            $newNik  = $this->generateNikForProject($project, $validated['hire_date']);
             $worker->update(['nik_aru' => $newNik]);
         }
 
-        return redirect()->route('assignments.show', $assignment->id)->with('message', 'Penempatan karyawan berhasil ditambahkan!');
+        return redirect()->route('assignments.show', $assignment->id)
+            ->with('message', 'Penempatan karyawan berhasil ditambahkan!');
     }
 
     /**
@@ -123,20 +121,25 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Update the specified assignment.
+     * Update the specified assignment and sync worker's NIK ARU accordingly.
+     *
+     * Rules:
+     * - Same project: NIK remains unchanged.
+     * - Different project (still active): NIK is re-generated from the new project's prefix.
+     * - Assignment terminated (termination_date set): NIK is cleared to null.
      */
     public function update(Request $request, Assignment $assignment): RedirectResponse
     {
         $validator = Validator::make($request->all(), [
-            'project_id' => 'required|exists:projects,id',
-            'department_id' => 'required|exists:departments,id',
-            'employee_id' => [
+            'project_id'       => 'required|exists:projects,id',
+            'department_id'    => 'required|exists:departments,id',
+            'employee_id'      => [
                 'nullable', 'string', 'max:255',
-                Rule::unique('assignments')->where('project_id', $request->project_id)->ignore($assignment->id)
+                Rule::unique('assignments')->where('project_id', $request->project_id)->ignore($assignment->id),
             ],
-            'position' => 'nullable|string|max:255',
-            'hire_date' => 'required|date',
-            'status' => 'nullable|in:active,contract expired,resign,fired,other',
+            'position'         => 'nullable|string|max:255',
+            'hire_date'        => 'required|date',
+            'status'           => 'nullable|in:active,contract expired,resign,fired,other',
             'termination_date' => 'nullable|date|after_or_equal:hire_date',
         ]);
 
@@ -146,10 +149,10 @@ class AssignmentController extends Controller
                     ->where('id', '!=', $assignment->id)
                     ->whereNull('termination_date')
                     ->exists();
-                    
+
                 if ($hasActive) {
                     $validator->errors()->add(
-                        'termination_date', 
+                        'termination_date',
                         'Karyawan ini memiliki penempatan aktif lain. Harap untuk mengakhiri penempatan lainnya terlebih dahulu.'
                     );
                 }
@@ -158,19 +161,64 @@ class AssignmentController extends Controller
 
         $validated = $validator->validate();
 
+        $wasActive      = is_null($assignment->termination_date);
+        $isNowActive    = is_null($validated['termination_date'] ?? null);
+        $projectChanged = (int) $assignment->project_id !== (int) $validated['project_id'];
+
         $assignment->update($validated);
 
-        return redirect()->route('assignments.show', $assignment->id)->with('message', 'Data penempatan berhasil diperbarui.');
+        $worker = Worker::find($assignment->worker_id);
+
+        if (!$isNowActive) {
+            // Assignment has been terminated — clear the worker's NIK.
+            $worker->update(['nik_aru' => null]);
+        } elseif ($projectChanged) {
+            // Worker moved to a different project — generate a new NIK.
+            $project = Project::find($validated['project_id']);
+            $newNik  = $this->generateNikForProject($project, $validated['hire_date']);
+            $worker->update(['nik_aru' => $newNik]);
+        }
+        // Same project and still active: NIK is left unchanged.
+
+        return redirect()->route('assignments.show', $assignment->id)
+            ->with('message', 'Data penempatan berhasil diperbarui.');
     }
 
     /**
      * Remove the specified assignment.
+     *
+     * Clears the worker's NIK ARU since there is no longer an active placement.
      */
     public function destroy(Assignment $assignment): RedirectResponse
     {
-        $workerId = $assignment->worker_id;
+        $worker = Worker::find($assignment->worker_id);
         $assignment->delete();
 
-        return redirect()->route('workers.show', $workerId)->with('message', 'Penempatan berhasil dihapus.');
+        // After deletion, clear the worker's NIK — they have no active assignment.
+        $worker->update(['nik_aru' => null]);
+
+        return redirect()->route('workers.show', $worker->id)
+            ->with('message', 'Penempatan berhasil dihapus.');
+    }
+
+    /**
+     * Generate a new NIK ARU for a given project.
+     *
+     * Increments the project's running number and formats the NIK as:
+     * {PREFIX}-{HIRE_YEAR}-{PADDED_NUMBER} (e.g. "ARU-2026-001").
+     *
+     * @param  Project $project   The project to generate the NIK for.
+     * @param  string  $hireDate  The hire date string used to extract the year.
+     * @return string             The generated NIK ARU string.
+     */
+    private function generateNikForProject(Project $project, string $hireDate): string
+    {
+        $nextNumber = $project->id_running_number + 1;
+        $project->update(['id_running_number' => $nextNumber]);
+
+        $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $year         = date('Y', strtotime($hireDate));
+
+        return "{$project->prefix}-{$year}-{$paddedNumber}";
     }
 }

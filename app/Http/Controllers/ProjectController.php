@@ -55,9 +55,10 @@ class ProjectController extends Controller
             'departments:id,name',
             'assignments' => function ($query) {
                 $query->with([
-                          'worker:id,nik_aru,name',
-                          'department:id,name',
-                      ]);
+                    'worker:id,nik_aru,name',
+                    'department:id,name',
+                    'contracts' => fn ($q) => $q->orderBy('start_date', 'desc'),
+                ]);
             },
         ]);
 

@@ -23,6 +23,18 @@ interface Worker {
 }
 
 /**
+ * Represents a contract associated with an assignment.
+ */
+interface Contract {
+    id: number;
+    contract_type: string;
+    pkwt_type: string | null;
+    pkwt_number: number;
+    start_date: string;
+    end_date: string | null;
+}
+
+/**
  * Represents a single assignment record linking a worker to this project.
  */
 interface Assignment {
@@ -35,6 +47,7 @@ interface Assignment {
     status: string | null;
     worker: Worker | null;
     department: Department | null;
+    contracts: Contract[];
 }
 
 /**
@@ -81,12 +94,33 @@ const PER_PAGE = 10;
 export default function Show({ project }: Props) {
     const [currentPage, setCurrentPage] = useState<number>(1);
 
-    const activeCount = project.assignments.filter(
-        a => a.status?.toLowerCase() === 'active' || a.status?.toLowerCase() === 'aktif'
+    /**
+     * Deduplicate assignments so each worker appears only once.
+     * The active assignment (no termination_date) is preferred;
+     * otherwise the first-encountered record is kept.
+     */
+    const uniqueWorkerAssignments = Object.values(
+        project.assignments.reduce((acc, a) => {
+            const wid = a.worker_id;
+            if (!acc[wid]) {
+                acc[wid] = a;
+            } else {
+                const existingIsActive = acc[wid].termination_date === null;
+                const currentIsActive = a.termination_date === null;
+                if (!existingIsActive && currentIsActive) {
+                    acc[wid] = a;
+                }
+            }
+            return acc;
+        }, {} as Record<number, Assignment>)
+    );
+
+    const activeCount = uniqueWorkerAssignments.filter(
+        a => a.termination_date === null
     ).length;
 
-    /** Slice of assignments to display on the current page. */
-    const paginatedAssignments = project.assignments.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Slice of deduplicated assignments to display on the current page. */
+    const paginatedAssignments = uniqueWorkerAssignments.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
     /** Global row offset for the current page. */
     const rowOffset = (currentPage - 1) * PER_PAGE;
 
@@ -129,7 +163,7 @@ export default function Show({ project }: Props) {
                                 ))}
                             </div>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            <span>{project.assignments.length} Karyawan</span>
+                            <span>{uniqueWorkerAssignments.length} Karyawan</span>
                             {activeCount > 0 && (
                                 <>
                                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
@@ -169,7 +203,7 @@ export default function Show({ project }: Props) {
                             <iconify-icon icon="solar:user-id-bold" width="18" class="text-primary"></iconify-icon>
                             Daftar Karyawan
                         </h3>
-                        <p className="text-xs text-slate-500 mt-0.5">{activeCount} aktif dari {project.assignments.length} total penugasan</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{activeCount} aktif dari {uniqueWorkerAssignments.length} karyawan</p>
                     </div>
                 </div>
 
@@ -182,12 +216,14 @@ export default function Show({ project }: Props) {
                                 <th className="px-6 py-4">NIK ARU</th>
                                 <th className="px-6 py-4">Departemen</th>
                                 <th className="px-6 py-4">Posisi</th>
+                                <th className="px-6 py-4">Kontrak</th>
                                 <th className="px-6 py-4">Tgl Masuk</th>
+                                <th className="px-6 py-4">Tgl Keluar</th>
                                 <th className="px-6 py-4">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
-                            {project.assignments.length === 0 ? (
+                            {uniqueWorkerAssignments.length === 0 ? (
                                 <tr>
                                     <td colSpan={9} className="px-6 py-10">
                                         <EmptyState icon="solar:user-id-bold" message="Belum ada karyawan terdaftar di project ini." />
@@ -231,10 +267,30 @@ export default function Show({ project }: Props) {
                                         <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                             {assignment.position ?? <span className="text-slate-400 italic text-xs">-</span>}
                                         </td>
+                                        <td className="px-6 py-4">
+                                            {assignment.contracts && assignment.contracts.length > 0 ? (() => {
+                                                const c = assignment.contracts[0];
+                                                const label = c.pkwt_type ?? c.contract_type;
+                                                const isPkwtt = c.pkwt_type === 'PKWTT';
+                                                return (
+                                                    <span className="px-2 py-1 text-sm font-medium   text-slate-800 dark:text-slate-200">
+                                                        {label} {!isPkwtt && c.pkwt_number ? `${c.pkwt_number}` : ''}
+                                                    </span>
+                                                );
+                                            })() : (
+                                                <span className="text-slate-400 italic text-xs">-</span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-slate-500">
                                             {assignment.hire_date
                                                 ? new Date(assignment.hire_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-                                                : <span className="text-slate-400 italic text-xs">-</span>
+                                                : <span className="text-slate-400 italic">-</span>
+                                            }
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500">
+                                            {assignment.termination_date
+                                                ? new Date(assignment.termination_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                : <span className="text-emerald-600 font-medium">Aktif</span>
                                             }
                                         </td>
                                         <td className="px-6 py-4">
@@ -247,7 +303,7 @@ export default function Show({ project }: Props) {
                     </table>
                 </div>
                 <Pagination
-                    totalItems={project.assignments.length}
+                    totalItems={uniqueWorkerAssignments.length}
                     itemsPerPage={PER_PAGE}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}

@@ -28,6 +28,7 @@ export default function Edit({ assignment, projects }: Props) {
 
     const selectedProject = projects.find(p => p.id.toString() === data.project_id);
     const availableDepartments = selectedProject ? selectedProject.departments : [];
+    const originalProjectId = assignment.project_id.toString();
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,6 +47,22 @@ export default function Edit({ assignment, projects }: Props) {
             </div>
 
             <form onSubmit={submit} className="space-y-6">
+
+                {/* NIK ARU info banner */}
+                <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800/30 flex items-start gap-3 text-amber-600 dark:text-amber-400">
+                    <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
+                    <div className="text-sm font-medium space-y-1">
+                        {assignment.worker.nik_aru && (
+                            <p>NIK ARU saat ini: <span className="font-mono">{assignment.worker.nik_aru}</span></p>
+                        )}
+                        {data.termination_date
+                            ? <p>Penempatan akan diakhiri — NIK ARU karyawan akan dikosongkan otomatis.</p>
+                            : data.project_id !== originalProjectId
+                                ? <p>Project berubah — NIK ARU baru akan di-generate berdasarkan prefix project yang dipilih.</p>
+                                : <p>Project sama — NIK ARU tidak akan berubah.</p>
+                        }
+                    </div>
+                </div>
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>

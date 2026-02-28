@@ -24,6 +24,16 @@ interface Assignment {
     hire_date: string;
     termination_date: string | null;
     project?: Project;
+    contracts?: Contract[];
+}
+
+interface Contract {
+    id: number;
+    contract_type: string;
+    pkwt_type: string | null;
+    pkwt_number: number;
+    start_date: string;
+    end_date: string | null;
 }
 
 interface Worker {
@@ -156,12 +166,25 @@ export default function Index({ workers }: Props) {
                                             </td>
                                             <td className="px-6 py-4">
                                                 {latestAssignment ? (
-                                                    <div>
+                                                    <div className="flex flex-col gap-1">
                                                         <div className="font-semibold text-slate-700 dark:text-slate-300">
                                                             {latestAssignment.project?.name || '-'}
                                                         </div>
-                                                        <div className="mt-1">
+                                                        <div className="flex flex-wrap gap-1 items-center">
                                                             <StatusBadge status={latestAssignment.status} />
+                                                            {latestAssignment.contracts && latestAssignment.contracts.length > 0 && (() => {
+                                                                const c = latestAssignment.contracts[0];
+                                                                const label = c.pkwt_type ?? c.contract_type;
+                                                                const isPkwtt = c.pkwt_type === 'PKWTT';
+                                                                return (
+                                                                    <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold border ${isPkwtt
+                                                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400'
+                                                                            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 uppercase'
+                                                                        }`}>
+                                                                        {label}{!isPkwtt && c.pkwt_number ? `${c.pkwt_number}` : ''}
+                                                                    </span>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     </div>
                                                 ) : (
