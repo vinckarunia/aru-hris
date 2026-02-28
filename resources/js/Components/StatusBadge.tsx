@@ -20,7 +20,8 @@ const translateStatus = (status: string | null | undefined) => {
         const rates: Record<string, string> = {
             active: 'Aktif',
             resign: 'Resign',
-            contract_end: 'Kontrak Selesai'
+            contract_end: 'Kontrak Selesai',
+            fired: 'Diberhentikan'
         };
         return status && rates[status] ? rates[status] : status;
     };
@@ -36,7 +37,7 @@ const getColorClass = (status: string | null | undefined): string => {
         case 'active':
         case 'aktif':
             return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400';
-        case 'resign':
+        case 'fired':
             return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400';
         case 'contract_end':
         case 'contract end':

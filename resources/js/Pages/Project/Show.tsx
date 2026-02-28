@@ -135,10 +135,17 @@ export default function Show({ project }: Props) {
                             href={route('clients.show', project.client_id)}
                             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm"
                         >
-                            <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon>
-                            Kembali ke {project.client.short_name}
+                            <iconify-icon icon="solar:buildings-2-bold" width="18"></iconify-icon>
+                            Lihat {project.client.short_name}
                         </Link>
                     )}
+                    <Link
+                        href={route('projects.index')}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm"
+                    >
+                        <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon>
+                        Kembali
+                    </Link>
                 </div>
             </div>
 
