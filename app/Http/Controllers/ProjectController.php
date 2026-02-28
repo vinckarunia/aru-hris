@@ -54,8 +54,7 @@ class ProjectController extends Controller
             'client:id,full_name,short_name',
             'departments:id,name',
             'assignments' => function ($query) {
-                $query->where('status', 'active')
-                      ->with([
+                $query->with([
                           'worker:id,nik_aru,name',
                           'department:id,name',
                       ]);
