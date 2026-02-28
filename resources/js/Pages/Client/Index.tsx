@@ -212,12 +212,12 @@ export default function Index({ clients, projects, workers }: Props) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
+                                            <span className="px-2 py-1 font-semibold text-slate-800 dark:text-slate-200">
                                                 {projects.filter(project => project.client_id === client.id).length}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
+                                            <span className="px-2 py-1 font-semibold text-slate-800 dark:text-slate-200">
                                                 {(() => {
                                                     // Get all project IDs belonging to this client.
                                                     const clientProjectIds = new Set(

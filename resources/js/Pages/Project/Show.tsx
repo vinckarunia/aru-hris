@@ -173,7 +173,6 @@ export default function Show({ project }: Props) {
                                 <th className="px-6 py-4">Posisi</th>
                                 <th className="px-6 py-4">Tgl Masuk</th>
                                 <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Detail</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
@@ -229,17 +228,6 @@ export default function Show({ project }: Props) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <StatusBadge status={assignment.status} />
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            {assignment.worker && (
-                                                <Link
-                                                    href={route('workers.show', assignment.worker.id)}
-                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg inline-flex items-center transition-colors"
-                                                    title="Lihat detail karyawan"
-                                                >
-                                                    <iconify-icon icon="solar:eye-bold" width="18"></iconify-icon>
-                                                </Link>
-                                            )}
                                         </td>
                                     </tr>
                                 ))

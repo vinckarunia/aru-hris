@@ -18,10 +18,10 @@ interface Props {
  */
 const translateStatus = (status: string | null | undefined) => {
         const rates: Record<string, string> = {
-            active: 'Aktif',
-            resign: 'Resign',
-            contract_end: 'Kontrak Selesai',
-            fired: 'Diberhentikan'
+            'active': 'Aktif',
+            'resign': 'Resign',
+            'contract expired': 'Kontrak Habis',
+            'fired': 'Diberhentikan'
         };
         return status && rates[status] ? rates[status] : status;
     };
@@ -39,8 +39,7 @@ const getColorClass = (status: string | null | undefined): string => {
             return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400';
         case 'fired':
             return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400';
-        case 'contract_end':
-        case 'contract end':
+        case 'contract expired':
             return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400';
         default:
             return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';

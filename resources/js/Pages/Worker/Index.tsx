@@ -30,6 +30,7 @@ interface Worker {
     nik_aru: string | null;
     name: string;
     ktp_number: string;
+    birth_date: string;
     phone: string | null;
     gender: 'male' | 'female' | null;
     assignments?: Assignment[];
@@ -67,6 +68,15 @@ export default function Index({ workers }: Props) {
                 onSuccess: () => setIsDeleteModalOpen(false),
             });
         }
+    };
+
+
+    /** Calculates the age of a worker based on their birth date. */
+    const calculateAge = (worker: Worker) => {
+        const today = new Date();
+        const birthDateObj = new Date(worker.birth_date);
+        const age = today.getFullYear() - birthDateObj.getFullYear();
+        return age;
     };
 
     return (
@@ -125,6 +135,7 @@ export default function Index({ workers }: Props) {
                                             <td className="px-6 py-4">
                                                 <div className="font-bold text-slate-800 dark:text-slate-200">{worker.name}</div>
                                                 <div className="text-xs text-slate-400 capitalize">{worker.gender === 'male' ? 'Laki-laki' : worker.gender === 'female' ? 'Perempuan' : '-'}</div>
+                                                <div className="text-xs text-slate-400 capitalize">{calculateAge(worker)}<span> Tahun</span></div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {worker.nik_aru ? (
