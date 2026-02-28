@@ -6,6 +6,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
+import Pagination from '@/Components/Pagination';
 
 /**
  * Type definitions for Worker, Assignment, and Project entities.
@@ -49,11 +50,20 @@ interface Props {
  * Displays a table list of all registered workers.
  * Provides links to view details, edit, and a modal for deletion.
  */
+/** Number of workers displayed per page. */
+const PER_PAGE = 10;
+
 export default function Index({ workers }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
 
     const { delete: destroy, processing } = useForm();
+
+    /** Slice of workers to display on the current page. */
+    const paginatedWorkers = workers.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Global row offset for the current page (e.g. page 2 starts at 11). */
+    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     /** Opens confirmation modal for deletion. */
     const openDeleteModal = (worker: Worker) => {
@@ -125,13 +135,13 @@ export default function Index({ workers }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                workers.map((worker, index) => {
+                                paginatedWorkers.map((worker, index) => {
                                     const latestAssignment = worker.assignments && worker.assignments.length > 0 ? worker.assignments[0] : null;
                                     const isActive = latestAssignment && !latestAssignment.termination_date && latestAssignment.status === 'active';
 
                                     return (
                                         <tr key={worker.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                            <td className="px-6 py-4">{index + 1}</td>
+                                            <td className="px-6 py-4">{rowOffset + index + 1}</td>
                                             <td className="px-6 py-4">
                                                 <div className="font-bold text-slate-800 dark:text-slate-200">{worker.name}</div>
                                                 <div className="text-xs text-slate-400 capitalize">{worker.gender === 'male' ? 'Laki-laki' : worker.gender === 'female' ? 'Perempuan' : '-'}</div>
@@ -189,6 +199,12 @@ export default function Index({ workers }: Props) {
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    totalItems={workers.length}
+                    itemsPerPage={PER_PAGE}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {/* Delete Confirmation Modal */}

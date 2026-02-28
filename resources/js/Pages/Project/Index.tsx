@@ -8,6 +8,7 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import Pagination from '@/Components/Pagination';
 
 /**
  * Represents a client company entity.
@@ -57,11 +58,20 @@ interface Props {
  *
  * @param {Props} props - The component props containing lists of projects, clients, and departments.
  */
+/** Number of projects displayed per page. */
+const PER_PAGE = 10;
+
 export default function Index({ projects, clients, departments }: Props) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+
+    /** Slice of projects to display on the current page. */
+    const paginatedProjects = projects.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Global row offset for the current page. */
+    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     // Form state initialized with an array for department_ids
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
@@ -168,9 +178,9 @@ export default function Index({ projects, clients, departments }: Props) {
                             {projects.length === 0 ? (
                                 <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">Belum ada data project.</td></tr>
                             ) : (
-                                projects.map((project, index) => (
+                                paginatedProjects.map((project, index) => (
                                     <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                        <td className="px-6 py-4">{index + 1}</td>
+                                        <td className="px-6 py-4">{rowOffset + index + 1}</td>
                                         <td className="px-6 py-4">
                                             <Link href={route('projects.show', project.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
                                                 {project.name}
@@ -207,6 +217,12 @@ export default function Index({ projects, clients, departments }: Props) {
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    totalItems={projects.length}
+                    itemsPerPage={PER_PAGE}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {/* Modal for Add / Edit Project */}

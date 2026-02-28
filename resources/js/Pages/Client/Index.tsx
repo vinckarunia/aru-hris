@@ -8,6 +8,7 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import Pagination from '@/Components/Pagination';
 
 /**
  * Interface for the Client data structure.
@@ -70,11 +71,20 @@ interface Props {
  * @param {Props} props - The component props containing the list of clients.
  * @returns {JSX.Element} The rendered Client management page.
  */
+/** Number of clients displayed per page. */
+const PER_PAGE = 10;
+
 export default function Index({ clients, projects, workers }: Props) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+
+    /** Slice of clients to display on the current page. */
+    const paginatedClients = clients.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Global row offset for the current page. */
+    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     // Initialize Inertia form hook with new schema
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
@@ -197,9 +207,9 @@ export default function Index({ clients, projects, workers }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                clients.map((client, index) => (
+                                paginatedClients.map((client, index) => (
                                     <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-6 py-4">{index + 1}</td>
+                                        <td className="px-6 py-4">{rowOffset + index + 1}</td>
                                         <td className="px-6 py-4">
                                             <Link href={route('clients.show', client.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
                                                 {client.full_name}
@@ -258,6 +268,12 @@ export default function Index({ clients, projects, workers }: Props) {
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    totalItems={clients.length}
+                    itemsPerPage={PER_PAGE}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {/* Modal for Add / Edit Client */}

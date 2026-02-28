@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Link } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
+import Pagination from '@/Components/Pagination';
 
 /**
  * Represents a department within a project.
@@ -74,10 +75,20 @@ interface Props {
  *
  * @param {Props} props - The component props containing the project data.
  */
+/** Number of assignments displayed per page. */
+const PER_PAGE = 10;
+
 export default function Show({ project }: Props) {
+    const [currentPage, setCurrentPage] = useState<number>(1);
+
     const activeCount = project.assignments.filter(
         a => a.status?.toLowerCase() === 'active' || a.status?.toLowerCase() === 'aktif'
     ).length;
+
+    /** Slice of assignments to display on the current page. */
+    const paginatedAssignments = project.assignments.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Global row offset for the current page. */
+    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     return (
         <AdminLayout title={`Detail Project - ${project.name}`} header="Detail Project">
@@ -183,9 +194,9 @@ export default function Show({ project }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                project.assignments.map((assignment, idx) => (
+                                paginatedAssignments.map((assignment, idx) => (
                                     <tr key={assignment.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-6 py-4 text-slate-400">{idx + 1}</td>
+                                        <td className="px-6 py-4 text-slate-400">{rowOffset + idx + 1}</td>
                                         <td className="px-6 py-4">
                                             {assignment.worker ? (
                                                 <Link
@@ -207,7 +218,7 @@ export default function Show({ project }: Props) {
                                                 <span className="text-slate-400 italic text-xs">-</span>
                                             )}
                                         </td>
-                                        
+
                                         <td className="px-6 py-4">
                                             {assignment.department ? (
                                                 <span className="text-[11px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
@@ -235,6 +246,12 @@ export default function Show({ project }: Props) {
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    totalItems={project.assignments.length}
+                    itemsPerPage={PER_PAGE}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </AdminLayout>
     );

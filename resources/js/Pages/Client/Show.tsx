@@ -10,6 +10,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
+import Pagination from '@/Components/Pagination';
 
 /**
  * Represents a department within a client company.
@@ -83,8 +84,34 @@ interface Props {
  *
  * @param {Props} props - The component props containing the client and workers data.
  */
+/** Number of items displayed per page in each tab table. */
+const PER_PAGE = 10;
+
 export default function Show({ client, workers }: Props) {
     const [activeTab, setActiveTab] = useState<'departments' | 'projects' | 'workers'>('departments');
+
+    /** Resets all tab pages to 1 and switches the active tab. */
+    const switchTab = (tab: 'departments' | 'projects' | 'workers') => {
+        setDeptPage(1);
+        setProjPage(1);
+        setWorkerPage(1);
+        setActiveTab(tab);
+    };
+
+    // Pagination states for each tab
+    const [deptPage, setDeptPage] = useState<number>(1);
+    const [projPage, setProjPage] = useState<number>(1);
+    const [workerPage, setWorkerPage] = useState<number>(1);
+
+    // Sliced arrays for display
+    const paginatedDepts = client.departments.slice((deptPage - 1) * PER_PAGE, deptPage * PER_PAGE);
+    const paginatedProjs = client.projects.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
+    const paginatedWorkers = workers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
+
+    // Row offsets per tab
+    const deptOffset = (deptPage - 1) * PER_PAGE;
+    const projOffset = (projPage - 1) * PER_PAGE;
+    const workerOffset = (workerPage - 1) * PER_PAGE;
     // ==========================================
     // STATE & FORM FOR DEPARTMENT
     // ==========================================
@@ -212,19 +239,19 @@ export default function Show({ client, workers }: Props) {
             {/* Content Tabs */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card overflow-hidden">
                 <div className="flex overflow-x-auto border-b border-slate-100 dark:border-slate-700">
-                    <button onClick={() => setActiveTab('departments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'departments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    <button onClick={() => switchTab('departments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'departments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:users-group-two-rounded-bold" width="18"></iconify-icon> Departemen
                         {client.departments.length > 0 && (
                             <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{client.departments.length}</span>
                         )}
                     </button>
-                    <button onClick={() => setActiveTab('projects')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'projects' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    <button onClick={() => switchTab('projects')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'projects' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:folder-with-files-bold" width="18"></iconify-icon> Project
                         {client.projects.length > 0 && (
                             <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{client.projects.length}</span>
                         )}
                     </button>
-                    <button onClick={() => setActiveTab('workers')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'workers' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    <button onClick={() => switchTab('workers')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'workers' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:user-id-bold" width="18"></iconify-icon>
                         Karyawan
                         {workers.length > 0 && (
@@ -249,9 +276,9 @@ export default function Show({ client, workers }: Props) {
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {client.departments.length === 0 ? (
                                         <tr><td colSpan={3} className="px-6 py-6"><EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada departemen." /></td></tr>
-                                    ) : client.departments.map((dept, idx) => (
+                                    ) : paginatedDepts.map((dept, idx) => (
                                         <tr key={dept.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                            <td className="px-6 py-4">{idx + 1}</td>
+                                            <td className="px-6 py-4">{deptOffset + idx + 1}</td>
                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{dept.name}</td>
                                             <td className="px-6 py-4 text-right space-x-2">
                                                 <button onClick={() => openEditDept(dept)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
@@ -262,6 +289,12 @@ export default function Show({ client, workers }: Props) {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination
+                            totalItems={client.departments.length}
+                            itemsPerPage={PER_PAGE}
+                            currentPage={deptPage}
+                            onPageChange={setDeptPage}
+                        />
                     </div>
                 )}
                 {/* Tab: Projects */}
@@ -281,9 +314,9 @@ export default function Show({ client, workers }: Props) {
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {client.projects.length === 0 ? (
                                         <tr><td colSpan={5} className="px-6 py-6"><EmptyState icon="solar:folder-with-files-bold" message="Belum ada project untuk client ini." /></td></tr>
-                                    ) : client.projects.map((proj, idx) => (
+                                    ) : paginatedProjs.map((proj, idx) => (
                                         <tr key={proj.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                            <td className="px-6 py-4">{idx + 1}</td>
+                                            <td className="px-6 py-4">{projOffset + idx + 1}</td>
                                             <td className="px-6 py-4">
                                                 <Link href={route('projects.show', proj.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
                                                     {proj.name}
@@ -313,6 +346,12 @@ export default function Show({ client, workers }: Props) {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination
+                            totalItems={client.projects.length}
+                            itemsPerPage={PER_PAGE}
+                            currentPage={projPage}
+                            onPageChange={setProjPage}
+                        />
                     </div>
                 )}
                 {/* Tab: Workers (Karyawan) */}
@@ -345,12 +384,12 @@ export default function Show({ client, workers }: Props) {
                                             </td>
                                         </tr>
                                     ) : (
-                                        workers.map((worker, idx) => {
+                                        paginatedWorkers.map((worker, idx) => {
                                             // Use the most recent assignment for display
                                             const latestAssignment = worker.assignments[worker.assignments.length - 1] ?? null;
                                             return (
                                                 <tr key={worker.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-400">{idx + 1}</td>
+                                                    <td className="px-6 py-4 text-slate-400">{workerOffset + idx + 1}</td>
                                                     <td className="px-6 py-4">
                                                         <Link href={route('workers.show', worker.id)} className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
                                                             {worker.name}
@@ -396,6 +435,12 @@ export default function Show({ client, workers }: Props) {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination
+                            totalItems={workers.length}
+                            itemsPerPage={PER_PAGE}
+                            currentPage={workerPage}
+                            onPageChange={setWorkerPage}
+                        />
                     </div>
                 )}
             </div>
