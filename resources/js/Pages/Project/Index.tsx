@@ -12,41 +12,41 @@ import DangerButton from '@/Components/DangerButton';
 /**
  * Represents a client company entity.
  */
-interface Client { 
-    id: number; 
-    full_name: string; 
-    short_name: string; 
+interface Client {
+    id: number;
+    full_name: string;
+    short_name: string;
 }
 
 /**
  * Represents a department within a client company.
  */
-interface Department { 
-    id: number; 
-    client_id: number; 
-    name: string; 
+interface Department {
+    id: number;
+    client_id: number;
+    name: string;
 }
 
 /**
  * Represents a project that can be associated with multiple departments.
  */
-interface Project { 
-    id: number; 
-    client_id: number; 
-    name: string; 
-    prefix: string; 
-    id_running_number: number; 
-    client?: Client; 
-    departments?: Department[]; // Changed to array for Many-to-Many
+interface Project {
+    id: number;
+    client_id: number;
+    name: string;
+    prefix: string;
+    id_running_number: number;
+    client?: Client;
+    departments?: Department[];
 }
 
 /**
  * Props for the Project Index component.
  */
-interface Props { 
-    projects: Project[]; 
-    clients: Client[]; 
-    departments: Department[]; 
+interface Props {
+    projects: Project[];
+    clients: Client[];
+    departments: Department[];
 }
 
 /**
@@ -89,41 +89,41 @@ export default function Index({ projects, clients, departments }: Props) {
     };
 
     /** Opens modal for adding a new project. */
-    const openAddModal = () => { 
-        setModalMode('add'); 
-        setSelectedProject(null); 
-        reset(); 
-        clearErrors(); 
-        setIsModalOpen(true); 
+    const openAddModal = () => {
+        setModalMode('add');
+        setSelectedProject(null);
+        reset();
+        clearErrors();
+        setIsModalOpen(true);
     };
 
     /** * Opens modal for editing an existing project.
      * @param {Project} project - The project to edit.
      */
-    const openEditModal = (project: Project) => { 
-        setModalMode('edit'); 
-        setSelectedProject(project); 
-        setData({ 
-            client_id: project.client_id.toString(), 
-            department_ids: project.departments?.map(d => d.id) || [], 
-            name: project.name, 
-            prefix: project.prefix 
-        }); 
-        clearErrors(); 
-        setIsModalOpen(true); 
+    const openEditModal = (project: Project) => {
+        setModalMode('edit');
+        setSelectedProject(project);
+        setData({
+            client_id: project.client_id.toString(),
+            department_ids: project.departments?.map(d => d.id) || [],
+            name: project.name,
+            prefix: project.prefix
+        });
+        clearErrors();
+        setIsModalOpen(true);
     };
 
     /** Opens confirmation modal for deletion. */
-    const openDeleteModal = (project: Project) => { 
-        setSelectedProject(project); 
-        setIsDeleteModalOpen(true); 
+    const openDeleteModal = (project: Project) => {
+        setSelectedProject(project);
+        setIsDeleteModalOpen(true);
     };
 
     /** Closes the form modal and resets state. */
-    const closeModal = () => { 
-        setIsModalOpen(false); 
-        reset(); 
-        clearErrors(); 
+    const closeModal = () => {
+        setIsModalOpen(false);
+        reset();
+        clearErrors();
     };
 
     /** Handles form submission for both create and update. */
@@ -171,7 +171,12 @@ export default function Index({ projects, clients, departments }: Props) {
                                 projects.map((project, index) => (
                                     <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                         <td className="px-6 py-4">{index + 1}</td>
-                                        <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{project.name}</td>
+                                        <td className="px-6 py-4">
+                                            <Link href={route('projects.show', project.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                {project.name}
+                                                <iconify-icon icon="solar:arrow-right-up-linear" width="14" class="text-slate-400 group-hover:text-primary transition-colors"></iconify-icon>
+                                            </Link>
+                                        </td>
                                         <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                             <div className="font-medium text-slate-700 dark:text-slate-300">
                                                 <Link href={route('clients.show', project.client_id)} className="text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
@@ -213,13 +218,13 @@ export default function Index({ projects, clients, departments }: Props) {
                     <div className="space-y-4">
                         <div>
                             <InputLabel htmlFor="client_id" value="Perusahaan Client" />
-                            <select 
-                                id="client_id" 
-                                value={data.client_id} 
-                                onChange={(e) => { 
-                                    setData('client_id', e.target.value); 
+                            <select
+                                id="client_id"
+                                value={data.client_id}
+                                onChange={(e) => {
+                                    setData('client_id', e.target.value);
                                     setData('department_ids', []); // Reset checkbox when client changes
-                                }} 
+                                }}
                                 className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
                             >
                                 <option value="" disabled>-- Pilih Client --</option>
@@ -237,8 +242,8 @@ export default function Index({ projects, clients, departments }: Props) {
                                 ) : (
                                     availableDepartments.map(d => (
                                         <label key={d.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 checked={data.department_ids.includes(d.id)}
                                                 onChange={() => handleDepartmentToggle(d.id)}
                                                 className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
@@ -268,7 +273,7 @@ export default function Index({ projects, clients, departments }: Props) {
                             <InputError message={errors.prefix} className="mt-2" />
                         </div>
                     </div>
-                    
+
                     <div className="mt-6 flex justify-end gap-3">
                         <SecondaryButton onClick={closeModal} type="button" className="font-semibold transition-all flex items-center gap-2 text-sm">Batal</SecondaryButton>
                         <PrimaryButton disabled={processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">

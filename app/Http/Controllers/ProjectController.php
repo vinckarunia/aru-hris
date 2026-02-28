@@ -18,6 +18,11 @@ use Illuminate\Validation\Rule;
  */
 class ProjectController extends Controller
 {
+    /**
+     * Display a listing of all projects.
+     *
+     * @return Response
+     */
     public function index(): Response
     {
         // Eager load relationships
@@ -28,9 +33,37 @@ class ProjectController extends Controller
         $departments = Department::orderBy('name')->get(['id', 'client_id', 'name']);
 
         return Inertia::render('Project/Index', [
-            'projects' => $projects,
-            'clients' => $clients,
+            'projects'    => $projects,
+            'clients'     => $clients,
             'departments' => $departments,
+        ]);
+    }
+
+    /**
+     * Display the specified project's detail page, including affiliated workers.
+     *
+     * Workers are resolved through the project's assignments, each carrying
+     * the worker and department data for display.
+     *
+     * @param Project $project
+     * @return Response
+     */
+    public function show(Project $project): Response
+    {
+        $project->load([
+            'client:id,full_name,short_name',
+            'departments:id,name',
+            'assignments' => function ($query) {
+                $query->where('status', 'active')
+                      ->with([
+                          'worker:id,nik_aru,name',
+                          'department:id,name',
+                      ]);
+            },
+        ]);
+
+        return Inertia::render('Project/Show', [
+            'project' => $project,
         ]);
     }
 

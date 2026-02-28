@@ -29,7 +29,7 @@ export default function Show({ contract }: any) {
     };
 
     return (
-        <AdminLayout title={`Detail Kontrak - ${contract.assignment.worker.name}`} header="Detail Kontrak & Kompensasi">
+        <AdminLayout title={`Detail Kontrak - ${contract.assignment.worker.name}`} header="Detail Kontrak">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">

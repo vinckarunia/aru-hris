@@ -1,6 +1,8 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
+import StatusBadge from '@/Components/StatusBadge';
+import EmptyState from '@/Components/EmptyState';
 
 interface Assignment {
     id: number; worker_id: number; employee_id: string | null; position: string | null;
@@ -43,17 +45,13 @@ export default function Show({ assignment }: Props) {
 
             {/* Content Body */}
             <div className="grid grid-cols-1 gap-6">
-                
+
                 {/* Detail Assignments */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-slate-800 dark:text-white">Status Penempatan</h3>
-                            {isActive ? (
-                                <span className="px-3 py-1 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 rounded-lg text-xs font-bold uppercase tracking-wider">Aktif</span>
-                            ) : (
-                                <span className="px-3 py-1 bg-slate-100 text-slate-600 dark:bg-slate-700 rounded-lg text-xs font-bold uppercase tracking-wider">{assignment.status}</span>
-                            )}
+                            <StatusBadge status={assignment.status} />
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
@@ -84,7 +82,7 @@ export default function Show({ assignment }: Props) {
                                 <iconify-icon icon="solar:add-circle-bold" width="18"></iconify-icon> Buat Kontrak Baru
                             </Link>
                         </div>
-                        
+
                         <div className="p-6 flex-1">
                             {assignment.contracts && assignment.contracts.length > 0 ? (
                                 <div className="space-y-4">
@@ -96,13 +94,13 @@ export default function Show({ assignment }: Props) {
                                                 </div>
                                                 <div>
                                                     <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                                        {contract.contract_type === 'Harian' 
-                                                            ? 'Harian' 
-                                                            : contract.pkwt_type === 'PKWTT' 
-                                                                ? 'PKWTT' 
+                                                        {contract.contract_type === 'Harian'
+                                                            ? 'Harian'
+                                                            : contract.pkwt_type === 'PKWTT'
+                                                                ? 'PKWTT'
                                                                 : `PKWT-${contract.pkwt_number}`
                                                         }
-                                                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] rounded uppercase">
+                                                        <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full uppercase">
                                                             {contract.contract_type}
                                                         </span>
                                                     </h4>
@@ -111,19 +109,15 @@ export default function Show({ assignment }: Props) {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <Link href={route('contracts.show', contract.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">
+                                            <Link href={route('contracts.show', contract.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
                                                 Lihat Detail
                                             </Link>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center text-center h-full py-10">
-                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center mb-3">
-                                        <iconify-icon icon="solar:folder-error-bold" width="32"></iconify-icon>
-                                    </div>
-                                    <p className="text-slate-500 font-medium">Belum ada kontrak yang dibuat.</p>
-                                    <p className="text-xs text-slate-400 mt-1">Klik tombol di atas untuk menambahkan kontrak dan rincian gaji.</p>
+                                <div className="flex flex-col items-center justify-center text-center h-full py-4">
+                                    <EmptyState icon="solar:document-text-bold" message="Belum ada kontrak yang dibuat." subMessage="Klik tombol di atas untuk menambahkan kontrak dan rincian gaji." />
                                 </div>
                             )}
                         </div>

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Worker;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,14 +27,25 @@ class ClientController extends Controller
     {
         // Fetch clients ordered by the latest created
         $clients = Client::latest()->get();
+        $projects = Project::whereHas('client')->get();
+        $workers = Worker::whereHas('assignments')
+            ->with(['assignments' => function ($query) {
+                $query->with(['project:id,name', 'department:id,name']);
+            }])
+            ->get();
 
         return Inertia::render('Client/Index', [
             'clients' => $clients,
+            'projects' => $projects,
+            'workers' => $workers,
         ]);
     }
 
     /**
-     * Display the specified client details including its departments and projects.
+     * Display the specified client details including its departments, projects, and affiliated workers.
+     *
+     * Workers are resolved by traversing the chain:
+     * Client → Projects → Assignments → Worker.
      *
      * @param Client $client
      * @return Response
@@ -42,8 +55,25 @@ class ClientController extends Controller
         // Eager load departments and projects (along with project's department relation)
         $client->load(['departments', 'projects.departments']);
 
+        // Collect all project IDs belonging to this client
+        $projectIds = $client->projects->pluck('id');
+
+        // Fetch workers who have at least one ACTIVE assignment within this client's projects.
+        // Only the active assignments are eager-loaded for display.
+        $workers = Worker::whereHas('assignments', function ($query) use ($projectIds) {
+                $query->whereIn('project_id', $projectIds)
+                      ->where('status', 'active');
+            })
+            ->with(['assignments' => function ($query) use ($projectIds) {
+                $query->whereIn('project_id', $projectIds)
+                      ->where('status', 'active')
+                      ->with(['project:id,name', 'department:id,name']);
+            }])
+            ->get(['id', 'nik_aru', 'name']);
+
         return Inertia::render('Client/Show', [
-            'client' => $client,
+            'client'  => $client,
+            'workers' => $workers,
         ]);
     }
 

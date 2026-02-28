@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('departments', DepartmentController::class)->except(['index', 'create', 'show', 'edit']);
 
     // Project Routes
-    Route::resource('projects', ProjectController::class)->except(['create', 'show', 'edit']);
+    Route::resource('projects', ProjectController::class)->except(['create', 'edit']);
 
     // Worker Import Routes (must be declared BEFORE the resource route
     // to prevent 'workers/{worker}' from matching 'workers/import')

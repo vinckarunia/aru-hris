@@ -20,10 +20,45 @@ interface Client {
 }
 
 /**
+ * Represents a project that can be associated with multiple departments.
+ */
+interface Project {
+    id: number;
+    client_id: number;
+    name: string;
+    prefix: string;
+    id_running_number: number;
+}
+
+/**
+ * Represents an assignment connecting a worker to a project/department.
+ */
+interface Assignment {
+    id: number;
+    worker_id: number;
+    project_id: number;
+    department_id: number;
+    position: string | null;
+    status: string | null;
+    project: { id: number; name: string } | null;
+    department: { id: number; name: string } | null;
+}
+
+/**
+ * Represents a worker affiliated with this client via an assignment.
+ */
+interface AffiliatedWorker {
+    id: number;
+    assignments: Assignment[];
+}
+
+/**
  * Props for the Client Index component.
  */
 interface Props {
     clients: Client[];
+    projects: Project[];
+    workers: AffiliatedWorker[];
 }
 
 /**
@@ -35,7 +70,7 @@ interface Props {
  * @param {Props} props - The component props containing the list of clients.
  * @returns {JSX.Element} The rendered Client management page.
  */
-export default function Index({ clients }: Props) {
+export default function Index({ clients, projects, workers }: Props) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -122,6 +157,8 @@ export default function Index({ clients }: Props) {
         }
     };
 
+
+
     return (
         <AdminLayout title="Kelola Client" header="Data Client">
             <div className="flex justify-between items-center mb-6">
@@ -129,7 +166,7 @@ export default function Index({ clients }: Props) {
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Daftar Client</h2>
                     <p className="text-sm text-slate-500">Kelola perusahaan client yang bekerja sama dengan ARU.</p>
                 </div>
-                <button 
+                <button
                     onClick={openAddModal}
                     className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
                 >
@@ -146,8 +183,10 @@ export default function Index({ clients }: Props) {
                             <tr>
                                 <th className="px-6 py-4">No</th>
                                 <th className="px-6 py-4">Nama Client</th>
-                                <th className="px-6 py-4">Kode Client</th>
-                                <th className="px-6 py-4 text-right">Action</th>
+                                <th className="px-6 py-4">Kode</th>
+                                <th className="px-6 py-4">Project</th>
+                                <th className="px-6 py-4">Karyawan Aktif</th>
+                                <th className="px-6 py-4 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
@@ -161,25 +200,51 @@ export default function Index({ clients }: Props) {
                                 clients.map((client, index) => (
                                     <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                         <td className="px-6 py-4">{index + 1}</td>
-                                        <td className="px-6 py-4">  
-                                            <Link href={route('clients.show', client.id)} className="text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
-                                                <span className="font-medium">{client.full_name}</span>
+                                        <td className="px-6 py-4">
+                                            <Link href={route('clients.show', client.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                {client.full_name}
+                                                <iconify-icon icon="solar:arrow-right-up-outline" width="16" className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-primary"></iconify-icon>
                                             </Link>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
                                                 {client.short_name}
                                             </span>
-                                        </td> 
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                {projects.filter(project => project.client_id === client.id).length}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                {(() => {
+                                                    // Get all project IDs belonging to this client.
+                                                    const clientProjectIds = new Set(
+                                                        projects
+                                                            .filter(p => p.client_id === client.id)
+                                                            .map(p => p.id)
+                                                    );
+                                                    // Count workers with at least one active assignment in those projects.
+                                                    return workers.filter(w =>
+                                                        w.assignments.some(a =>
+                                                            a.project !== null &&
+                                                            clientProjectIds.has(a.project_id) &&
+                                                            (a.status?.toLowerCase() === 'active' || a.status?.toLowerCase() === 'aktif')
+                                                        )
+                                                    ).length;
+                                                })()}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 text-right space-x-2">
-                                            <button 
+                                            <button
                                                 onClick={() => openEditModal(client)}
                                                 className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                                 title="Edit"
                                             >
                                                 <iconify-icon icon="solar:pen-bold" width="20"></iconify-icon>
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => openDeleteModal(client)}
                                                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Hapus"

@@ -8,6 +8,8 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import StatusBadge from '@/Components/StatusBadge';
+import EmptyState from '@/Components/EmptyState';
 
 /**
  * Interface for Family Member
@@ -161,7 +163,7 @@ export default function Show({ worker }: Props) {
             {/* Header Profile Card */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 md:p-8 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-                
+
                 <div className="flex items-center gap-5 z-10">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-primary/30">
                         {worker.name.substring(0, 2).toUpperCase()}
@@ -272,15 +274,15 @@ export default function Show({ worker }: Props) {
                                             </div>
                                             <div className="space-y-1.5 mt-4">
                                                 <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                    <iconify-icon icon="solar:calendar-bold" className="text-slate-400"></iconify-icon> 
+                                                    <iconify-icon icon="solar:calendar-bold" className="text-slate-400"></iconify-icon>
                                                     {member.birth_place || '-'}, {formatDate(member.birth_date)}
                                                 </p>
                                                 <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                    <iconify-icon icon="solar:card-2-bold" className="text-slate-400"></iconify-icon> 
+                                                    <iconify-icon icon="solar:card-2-bold" className="text-slate-400"></iconify-icon>
                                                     NIK: <span className="font-mono">{member.nik || '-'}</span>
                                                 </p>
                                                 <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                    <iconify-icon icon="solar:health-bold" className="text-slate-400"></iconify-icon> 
+                                                    <iconify-icon icon="solar:health-bold" className="text-slate-400"></iconify-icon>
                                                     BPJS: <span className="font-mono">{member.bpjs_number || '-'}</span>
                                                 </p>
                                             </div>
@@ -297,9 +299,7 @@ export default function Show({ worker }: Props) {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
-                                <p className="text-slate-500 mb-2">Belum ada data keluarga yang ditambahkan.</p>
-                            </div>
+                            <EmptyState icon="solar:users-group-rounded-bold" message="Belum ada data keluarga yang ditambahkan." subMessage="Klik tombol di atas untuk menambahkan." />
                         )}
                     </div>
                 )}
@@ -316,18 +316,12 @@ export default function Show({ worker }: Props) {
                         {worker.assignments && worker.assignments.length > 0 ? (
                             <div className="space-y-4">
                                 {worker.assignments.map((assign: any) => {
-                                    const isActive = !assign.termination_date && assign.status === 'active';
-
                                     return (
                                         <div key={assign.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                             <div>
                                                 <div className="flex flex-wrap items-center gap-3">
                                                     <h4 className="font-bold text-slate-800 dark:text-white">{assign.position || 'Tidak ada jabatan'}</h4>
-                                                    {isActive ? (
-                                                        <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 rounded-md text-[10px] font-bold uppercase tracking-wider">Aktif</span>
-                                                    ) : (
-                                                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-700 rounded-md text-[10px] font-bold uppercase tracking-wider">{assign.status || 'Nonaktif'}</span>
-                                                    )}
+                                                    <StatusBadge status={assign.status} />
                                                 </div>
                                                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
                                                     <iconify-icon icon="solar:buildings-bold" className="mr-1"></iconify-icon>
@@ -346,9 +340,7 @@ export default function Show({ worker }: Props) {
                                 })}
                             </div>
                         ) : (
-                            <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
-                                <p className="text-slate-500 mb-2">Karyawan ini belum ditempatkan di project mana pun.</p>
-                            </div>
+                            <EmptyState icon="solar:suitcase-bold" message="Karyawan ini belum ditempatkan di project mana pun." subMessage="Klik tombol di atas untuk menambahkan penempatan baru." />
                         )}
                     </div>
                 )}
@@ -374,7 +366,7 @@ export default function Show({ worker }: Props) {
                                 id="relationship_type"
                                 value={data.relationship_type}
                                 onChange={(e) => setData('relationship_type', e.target.value as any)}
-                                className="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-slate-900 dark:text-gray-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
                             >
                                 <option value="spouse">Suami / Istri</option>
                                 <option value="child">Anak</option>

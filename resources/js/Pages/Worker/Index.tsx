@@ -4,6 +4,8 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import StatusBadge from '@/Components/StatusBadge';
+import EmptyState from '@/Components/EmptyState';
 
 /**
  * Type definitions for Worker, Assignment, and Project entities.
@@ -108,8 +110,8 @@ export default function Index({ workers }: Props) {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                             {workers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-400 italic">
-                                        Belum ada data karyawan. Silakan tambahkan atau import data.
+                                    <td colSpan={6} className="px-6 py-10">
+                                        <EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada data karyawan." subMessage="Silakan tambahkan atau import data." />
                                     </td>
                                 </tr>
                             ) : (
@@ -138,11 +140,7 @@ export default function Index({ workers }: Props) {
                                                             {latestAssignment.project?.name || '-'}
                                                         </div>
                                                         <div className="mt-1">
-                                                            {isActive ? (
-                                                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 rounded text-[10px] font-bold uppercase tracking-wider">Aktif</span>
-                                                            ) : (
-                                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-700 rounded text-[10px] font-bold uppercase tracking-wider">{latestAssignment.status || 'Nonaktif'}</span>
-                                                            )}
+                                                            <StatusBadge status={latestAssignment.status} />
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -153,7 +151,7 @@ export default function Index({ workers }: Props) {
                                             <td className="px-6 py-4 text-right space-x-2">
                                                 <Link
                                                     href={route('workers.show', worker.id)}
-                                                    className="p-2 text-sky-500 hover:bg-sky-50 rounded-lg transition-colors inline-block"
+                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
                                                     title="Lihat Profil"
                                                 >
                                                     <iconify-icon icon="solar:user-id-bold" width="20"></iconify-icon>
