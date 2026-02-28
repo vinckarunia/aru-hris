@@ -1,5 +1,6 @@
 import { useState, PropsWithChildren } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { PageProps } from '@/types';
 
 /**
  * Props for the AdminLayout component.
@@ -24,9 +25,9 @@ interface Props {
  */
 export default function AdminLayout({ title, header, children }: PropsWithChildren<Props>) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    
+
     // Retrieve the authenticated user data from Inertia's shared props
-    const user = usePage<{ auth: { user: { name: string; email: string } } }>().props.auth.user;
+    const user = usePage<PageProps>().props.auth.user;
 
     /**
      * Extracts initials from a given full name.
@@ -48,7 +49,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
             <Head title={title} />
 
             {/* Mobile Menu Overlay */}
-            <div 
+            <div
                 className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
             ></div>
@@ -67,7 +68,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
 
                 {/* Navigation Links */}
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-4">
-                    
+
                     {/* General Section */}
                     <div>
                         <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">General</div>
@@ -108,7 +109,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                             <h1 className="text-xl font-semibold text-slate-800 dark:text-white tracking-tight">{header || title}</h1>
                         </div>
                     </div>
-                    
+
                     {/* User Profile Info */}
                     <div className="flex items-center gap-3 pl-1">
                         <div className="hidden sm:block text-right">
