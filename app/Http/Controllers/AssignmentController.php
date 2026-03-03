@@ -86,7 +86,7 @@ class AssignmentController extends Controller
         if (is_null($validated['termination_date'] ?? null)) {
             $worker  = Worker::find($validated['worker_id']);
             $project = Project::find($validated['project_id']);
-            $newNik  = $this->generateNikForProject($project, $validated['hire_date']);
+            $newNik  = $this->generateNikForProject($project);
             $worker->update(['nik_aru' => $newNik]);
         }
 
@@ -175,7 +175,7 @@ class AssignmentController extends Controller
         } elseif ($projectChanged) {
             // Worker moved to a different project — generate a new NIK.
             $project = Project::find($validated['project_id']);
-            $newNik  = $this->generateNikForProject($project, $validated['hire_date']);
+            $newNik  = $this->generateNikForProject($project);
             $worker->update(['nik_aru' => $newNik]);
         }
         // Same project and still active: NIK is left unchanged.
@@ -205,20 +205,35 @@ class AssignmentController extends Controller
      * Generate a new NIK ARU for a given project.
      *
      * Increments the project's running number and formats the NIK as:
-     * {PREFIX}-{HIRE_YEAR}-{PADDED_NUMBER} (e.g. "ARU-2026-001").
+     * {PREFIX}{PADDED_NUMBER} (e.g. "ARU001").
      *
      * @param  Project $project   The project to generate the NIK for.
-     * @param  string  $hireDate  The hire date string used to extract the year.
      * @return string             The generated NIK ARU string.
      */
-    private function generateNikForProject(Project $project, string $hireDate): string
+    private function generateNikForProject(Project $project): string
     {
-        $nextNumber = $project->id_running_number + 1;
+        $prefix = (string) $project->prefix;
+
+        // Get the highest number currently used by workers for this prefix.
+        // This handles cases where NIKs were imported and are higher than the current id_running_number.
+        $maxWorkerNikNumber = \App\Models\Worker::whereNotNull('nik_aru')
+            ->where('nik_aru', 'like', $prefix . '%')
+            ->pluck('nik_aru')
+            ->map(function ($nik) use ($prefix) {
+                // Extract only the numeric part after the prefix
+                $numberPart = substr($nik, strlen($prefix));
+                return is_numeric($numberPart) ? (int) $numberPart : 0;
+            })
+            ->max() ?? 0;
+
+        // Determine the next number by comparing the project's recorded running number vs actual max from workers
+        $currentMax = max((int) $project->id_running_number, $maxWorkerNikNumber);
+        $nextNumber = $currentMax + 1;
+
         $project->update(['id_running_number' => $nextNumber]);
 
         $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-        $year         = date('Y', strtotime($hireDate));
 
-        return "{$project->prefix}-{$year}-{$paddedNumber}";
+        return "{$prefix}{$paddedNumber}";
     }
 }

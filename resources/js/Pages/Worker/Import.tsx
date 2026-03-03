@@ -10,7 +10,7 @@ import axios from 'axios';
 /** Represents a client containing multiple projects. */
 interface Client {
     id: number;
-    name: string;
+    full_name: string;
 }
 
 /** Represents a department within a project. */
@@ -597,7 +597,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
                                 >
                                     <option value="">-- Pilih Client --</option>
-                                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                                 </select>
                             </div>
 

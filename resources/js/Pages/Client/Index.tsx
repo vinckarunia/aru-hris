@@ -202,7 +202,7 @@ export default function Index({ clients, projects, workers }: Props) {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                             {clients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400 italic">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-400 italic">
                                         Belum ada data client. Silakan tambahkan baru.
                                     </td>
                                 </tr>

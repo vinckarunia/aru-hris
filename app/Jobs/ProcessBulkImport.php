@@ -321,7 +321,8 @@ class ProcessBulkImport implements ShouldQueue
     /**
      * Auto-generate NIK ARU for a worker based on their assignment's project.
      *
-     * NIK is always (re-)generated to reflect the active project. Format: PREFIX-YEAR-001.
+     * Will skip generation if the worker already has an imported NIK ARU.
+     * Format: {PREFIX}{PADDED_NUMBER} (e.g., "ARU001").
      *
      * @param  Worker     $worker     The worker model.
      * @param  Assignment $assignment The assignment model.
@@ -329,17 +330,35 @@ class ProcessBulkImport implements ShouldQueue
      */
     private function generateNikAru(Worker $worker, Assignment $assignment): void
     {
+        // Skip if NIK ARU was already provided during import
+        if (!empty($worker->nik_aru)) {
+            return;
+        }
+
         $project = Project::find($assignment->project_id);
         if (!$project) {
             return;
         }
 
-        $nextNumber = $project->id_running_number + 1;
+        $prefix = (string) $project->prefix;
+
+        $maxWorkerNikNumber = \App\Models\Worker::whereNotNull('nik_aru')
+            ->where('nik_aru', 'like', $prefix . '%')
+            ->pluck('nik_aru')
+            ->map(function ($nik) use ($prefix) {
+                // Extract only the numeric part after the prefix
+                $numberPart = substr($nik, strlen($prefix));
+                return is_numeric($numberPart) ? (int) $numberPart : 0;
+            })
+            ->max() ?? 0;
+
+        $currentMax = max((int) $project->id_running_number, $maxWorkerNikNumber);
+        $nextNumber = $currentMax + 1;
+
         $project->update(['id_running_number' => $nextNumber]);
 
         $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-        $year         = date('Y', strtotime($assignment->hire_date));
-        $newNik       = "{$project->prefix}-{$year}-{$paddedNumber}";
+        $newNik       = "{$prefix}{$paddedNumber}";
 
         $worker->update(['nik_aru' => $newNik]);
     }

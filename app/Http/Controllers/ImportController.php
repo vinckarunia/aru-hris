@@ -55,7 +55,7 @@ class ImportController extends Controller
      */
     public function index(): Response
     {
-        $clients = Client::orderBy('name')->get();
+        $clients = Client::orderBy('full_name')->get();
         $projects = Project::with('departments')->orderBy('name')->get();
 
         return Inertia::render('Worker/Import', [
@@ -72,7 +72,7 @@ class ImportController extends Controller
      */
     public function globalOptions(): JsonResponse
     {
-        $clients = Client::orderBy('name')->get();
+        $clients = Client::orderBy('full_name')->get();
         $projects = Project::with('departments')->orderBy('name')->get();
 
         return response()->json([
