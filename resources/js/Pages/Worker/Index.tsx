@@ -18,8 +18,17 @@ interface SortConfig {
  * Type definitions for Worker, Assignment, and Project entities.
  * These interfaces define the expected structure of data passed to the component.
  */
+interface Client {
+    id: number;
+    name: string;
+    full_name: string;
+    short_name: string;
+    projects?: Project[];
+}
+
 interface Project {
     id: number;
+    client_id?: number;
     name: string;
 }
 
@@ -58,6 +67,7 @@ interface Worker {
  */
 interface Props {
     workers: Worker[];
+    clients: Client[];
 }
 
 /**
@@ -69,19 +79,78 @@ interface Props {
 /** Number of workers displayed per page. */
 const PER_PAGE = 10;
 
-export default function Index({ workers }: Props) {
+export default function Index({ workers, clients }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
+    // Filter State
+    const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+    const [filterStatus, setFilterStatus] = useState<string>('all');
+    const [filterClientId, setFilterClientId] = useState<string>('all');
+    const [filterProjectId, setFilterProjectId] = useState<string>('all');
+
     const { delete: destroy, processing } = useForm();
 
-    const filteredWorkers = workers.filter(worker =>
-        worker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (worker.nik_aru && worker.nik_aru.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    // Reset project filter if client changes
+    const handleClientFilterChange = (clientId: string) => {
+        setFilterClientId(clientId);
+        setFilterProjectId('all');
+        setCurrentPage(1);
+    };
+
+    const activeFilterCount = (filterStatus !== 'all' ? 1 : 0) +
+        (filterClientId !== 'all' ? 1 : 0) +
+        (filterProjectId !== 'all' ? 1 : 0);
+
+    // Derived lists for dropdowns based on selections
+    const selectedClientObj = clients.find(c => c.id.toString() === filterClientId);
+    const availableProjects = selectedClientObj?.projects || [];
+
+    // Base Search logic + Filter logic
+    const filteredWorkers = workers.filter(worker => {
+        // Search Logic
+        const matchesSearch = worker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (worker.nik_aru && worker.nik_aru.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        // Find latest assignment for status & project filtering
+        const latestAssignment = worker.assignments && worker.assignments.length > 0 ? worker.assignments[0] : null;
+
+        // Filter Logic: Status
+        let matchesStatus = true;
+        if (filterStatus !== 'all') {
+            const currentStatus = latestAssignment?.status || 'none';
+            matchesStatus = currentStatus === filterStatus;
+            // e.g 'active', 'resign', 'end_contract', 'none'
+        }
+
+        // Filter Logic: Project & Client context
+        let matchesProjectContext = true;
+        if (filterClientId !== 'all') {
+            // If client filter is set, check if the worker's latest assignment belongs to *any* project in that client
+            // Wait, the assignment model only gives project ID, not client ID, but we have `clients` array containing their projects.
+            const isAssignedToClient = latestAssignment &&
+                clients.find(c => c.id.toString() === filterClientId)?.projects?.some(p => p.id === latestAssignment.project_id);
+
+            if (!isAssignedToClient) {
+                matchesProjectContext = false;
+            }
+
+            // If project is ALSO specifically chosen
+            if (matchesProjectContext && filterProjectId !== 'all') {
+                if (latestAssignment?.project_id?.toString() !== filterProjectId) {
+                    matchesProjectContext = false;
+                }
+            }
+        } else if (filterProjectId !== 'all') {
+            // If only project is selected (can happen if UI allows it differently, but just in case)
+            matchesProjectContext = latestAssignment?.project_id?.toString() === filterProjectId;
+        }
+
+        return matchesSearch && matchesStatus && matchesProjectContext;
+    });
 
     /** Handles sorting logic for regular and shift-clicks (multi-sort). */
     const handleSort = (key: string, e: React.MouseEvent) => {
@@ -210,23 +279,101 @@ export default function Index({ workers }: Props) {
                 </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:w-96">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+            {/* Search Bar & Filters */}
+            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-stretch gap-4">
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+                    {/* Search */}
+                    <div className="relative w-full md:w-96 flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari karyawan berdasarkan nama atau NIK..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Cari karyawan berdasarkan nama atau NIK..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
-                    />
+                    {/* Toggle Filters Button */}
+                    <div className="w-full md:w-auto flex justify-end">
+                        <SecondaryButton
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className={`flex items-center gap-2 h-10 px-4 transition-colors ${activeFilterCount > 0 ? 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10' : ''
+                                }`}
+                        >
+                            <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
+                            Filter
+                            {activeFilterCount > 0 && (
+                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-[10px] font-bold h-4 w-4 rounded-full">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                            <iconify-icon
+                                icon={isFilterOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                                width="14"
+                                className="ml-1 opacity-50"
+                            ></iconify-icon>
+                        </SecondaryButton>
+                    </div>
                 </div>
+
+                {/* Filter Dropdown/Panel */}
+                {isFilterOpen && (
+                    <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeIn">
+                        {/* Status Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
+                            <select
+                                value={filterStatus}
+                                onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                                className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                            >
+                                <option value="all">Semua Status</option>
+                                <option value="active">Aktif</option>
+                                <option value="resign">Resign</option>
+                                <option value="end_contract">Habis Kontrak</option>
+                                <option value="none">Belum Ditempatkan</option>
+                            </select>
+                        </div>
+
+                        {/* Client Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Client</label>
+                            <select
+                                value={filterClientId}
+                                onChange={(e) => handleClientFilterChange(e.target.value)}
+                                className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                            >
+                                <option value="all">Semua Client</option>
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id.toString()}>{c.full_name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Project Filter - Dependent on Client */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Project</label>
+                            <select
+                                value={filterProjectId}
+                                onChange={(e) => { setFilterProjectId(e.target.value); setCurrentPage(1); }}
+                                disabled={filterClientId === 'all'}
+                                className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm disabled:bg-slate-50 disabled:dark:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            >
+                                <option value="all">
+                                    {filterClientId === 'all' ? 'Pilih Client Terlebih Dahulu' : 'Semua Project'}
+                                </option>
+                                {availableProjects.map(p => (
+                                    <option key={p.id} value={p.id.toString()}>{p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Workers Data Table */}

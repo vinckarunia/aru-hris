@@ -89,15 +89,32 @@ export default function Index({ clients, projects, workers }: Props) {
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
-    const filteredClients = clients.filter(client =>
-        client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.short_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filter State
+    const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+    const [filterHasActive, setFilterHasActive] = useState<string>('all'); // 'all', 'yes', 'no'
 
     // Initialize Inertia form hook with new schema
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         full_name: '',
         short_name: '',
+    });
+
+    const activeFilterCount = filterHasActive !== 'all' ? 1 : 0;
+
+    // Filter AND Search logic combined
+    const filteredClients = clients.filter(client => {
+        // Search logic
+        const matchesSearch = client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            client.short_name.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // Filter logic: Has Active Projects
+        let matchesFilter = true;
+        if (filterHasActive !== 'all') {
+            const hasActiveProject = projects.some(p => p.client_id === client.id); // Or check workers if "active" means workers active. Let's stick to "has ANY projects" = active project
+            matchesFilter = filterHasActive === 'yes' ? hasActiveProject : !hasActiveProject;
+        }
+
+        return matchesSearch && matchesFilter;
     });
 
     /** Handles sorting logic for regular and shift-clicks (multi-sort). */
@@ -284,23 +301,66 @@ export default function Index({ clients, projects, workers }: Props) {
                 </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:w-96">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+            {/* Search Bar & Filters */}
+            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-stretch gap-4">
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+                    {/* Search */}
+                    <div className="relative w-full md:w-96 flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari client berdasarkan nama atau kode..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Cari client berdasarkan nama atau kode..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
-                    />
+                    {/* Toggle Filters Button */}
+                    <div className="w-full md:w-auto flex justify-end">
+                        <SecondaryButton
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className={`flex items-center gap-2 h-10 px-4 transition-colors ${activeFilterCount > 0 ? 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10' : ''
+                                }`}
+                        >
+                            <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
+                            Filter
+                            {activeFilterCount > 0 && (
+                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-[10px] font-bold h-4 w-4 rounded-full">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                            <iconify-icon
+                                icon={isFilterOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                                width="14"
+                                className="ml-1 opacity-50"
+                            ></iconify-icon>
+                        </SecondaryButton>
+                    </div>
                 </div>
+
+                {/* Filter Dropdown/Panel */}
+                {isFilterOpen && (
+                    <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeIn">
+                        {/* Status Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status Kepemilikan Project</label>
+                            <select
+                                value={filterHasActive}
+                                onChange={(e) => { setFilterHasActive(e.target.value); setCurrentPage(1); }}
+                                className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                            >
+                                <option value="all">Semua Client</option>
+                                <option value="yes">Memiliki Project</option>
+                                <option value="no">Belum Punya Project</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Client Data Table */}

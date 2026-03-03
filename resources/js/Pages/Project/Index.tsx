@@ -76,11 +76,26 @@ export default function Index({ projects, clients, departments }: Props) {
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
-    const filteredProjects = projects.filter(project =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.prefix.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (project.client && project.client.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    // Filter State
+    const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+    const [filterClientId, setFilterClientId] = useState<string>('all');
+
+    const activeFilterCount = filterClientId !== 'all' ? 1 : 0;
+
+    const filteredProjects = projects.filter(project => {
+        // Search Logic
+        const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            project.prefix.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (project.client && project.client.full_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        // Filter Logic
+        let matchesFilter = true;
+        if (filterClientId !== 'all') {
+            matchesFilter = project.client_id.toString() === filterClientId;
+        }
+
+        return matchesSearch && matchesFilter;
+    });
 
     // Form state initialized with an array for department_ids
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
@@ -249,23 +264,67 @@ export default function Index({ projects, clients, departments }: Props) {
                 </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:w-96">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+            {/* Search Bar & Filters */}
+            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-stretch gap-4">
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+                    {/* Search */}
+                    <div className="relative w-full md:w-96 flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari project berdasarkan nama, prefix, atau client..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Cari project berdasarkan nama, prefix, atau client..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
-                    />
+                    {/* Toggle Filters Button */}
+                    <div className="w-full md:w-auto flex justify-end">
+                        <SecondaryButton
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className={`flex items-center gap-2 h-10 px-4 transition-colors ${activeFilterCount > 0 ? 'bg-primary/5 border-primary/20 text-primary hover:bg-primary/10' : ''
+                                }`}
+                        >
+                            <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
+                            Filter
+                            {activeFilterCount > 0 && (
+                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-[10px] font-bold h-4 w-4 rounded-full">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                            <iconify-icon
+                                icon={isFilterOpen ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"}
+                                width="14"
+                                className="ml-1 opacity-50"
+                            ></iconify-icon>
+                        </SecondaryButton>
+                    </div>
                 </div>
+
+                {/* Filter Dropdown/Panel */}
+                {isFilterOpen && (
+                    <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeIn">
+                        {/* Client Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Client</label>
+                            <select
+                                value={filterClientId}
+                                onChange={(e) => { setFilterClientId(e.target.value); setCurrentPage(1); }}
+                                className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                            >
+                                <option value="all">Semua Client</option>
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id.toString()}>{c.full_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Project Data Table */}

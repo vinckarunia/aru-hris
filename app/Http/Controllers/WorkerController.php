@@ -23,6 +23,12 @@ class WorkerController extends Controller
      */
     public function index(): Response
     {
+        // Process distinct clients for the filter dropdown
+        $clients = \App\Models\Client::select('id', 'full_name')
+            ->orderBy('full_name')
+            ->with('projects:id,client_id,name')
+            ->get();
+
         // Eager load assignments & projects, sort assignments by newest first
         $workers = Worker::with(['assignments' => function ($query) {
             $query->orderBy('hire_date', 'desc')
@@ -34,6 +40,7 @@ class WorkerController extends Controller
 
         return Inertia::render('Worker/Index', [
             'workers' => $workers,
+            'clients' => $clients,
         ]);
     }
 
