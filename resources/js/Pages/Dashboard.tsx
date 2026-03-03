@@ -182,13 +182,13 @@ export default function Dashboard({ dashboardData }: Props) {
                 {/* Main Content Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    {/* Main Flow: Charts & Data Grid */}
+                    {/* Charts & Data Grid */}
                     <div className="lg:col-span-2 space-y-6">
 
-                        {/* FR-DASH-03: Charts */}
+                        {/* Charts */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            {/* Pie Chart: Worker Distribution */}
+                            {/* Worker Distribution */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                     <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
@@ -223,7 +223,7 @@ export default function Dashboard({ dashboardData }: Props) {
                                 </div>
                             </div>
 
-                            {/* Bar Chart: Employment Status Demographics */}
+                            {/* Employment Status Demographics */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                     <iconify-icon icon="solar:chart-square-bold" className="text-primary"></iconify-icon>
@@ -254,7 +254,7 @@ export default function Dashboard({ dashboardData }: Props) {
 
                         </div>
 
-                        {/* FR-DASH-04: Data Grid */}
+                        {/* Data Grid */}
                         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                                 <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -301,10 +301,10 @@ export default function Dashboard({ dashboardData }: Props) {
 
                     </div>
 
-                    {/* Side Column: Actionable Alerts & Quick Actions */}
+                    {/* Actionable Alerts & Quick Actions */}
                     <div className="space-y-6">
 
-                        {/* FR-DASH-05: Quick Actions */}
+                        {/* Quick Actions */}
                         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
                             <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                 <iconify-icon icon="solar:electric-plug-bold" className="text-primary"></iconify-icon>
@@ -338,7 +338,7 @@ export default function Dashboard({ dashboardData }: Props) {
                             </div>
                         </div>
 
-                        {/* FR-DASH-02: Actionable Alerts */}
+                        {/* Actionable Alerts */}
                         <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 shadow-sm border border-red-100 dark:border-red-900/50">
                             <h3 className="font-bold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2">
                                 <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
@@ -368,32 +368,8 @@ export default function Dashboard({ dashboardData }: Props) {
                                         <p className="text-sm text-slate-500 italic px-2">Tidak ada kontrak yang akan segera berakhir.</p>
                                     )}
                                 </div>
-
-                                <div className="pt-4 border-t border-red-200 dark:border-red-800/30">
-                                    <h4 className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">Karyawan Idle Terlama</h4>
-                                    {alerts.idle_workers.length > 0 ? (
-                                        <ul className="space-y-2">
-                                            {alerts.idle_workers.map((worker) => (
-                                                <li key={worker.id} className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-lg text-sm border border-red-200 dark:border-red-800/50 flex justify-between items-center">
-                                                    <div>
-                                                        <Link href={route('workers.show', worker.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
-                                                            {worker.name}
-                                                        </Link>
-                                                        <p className="text-xs text-slate-500 mt-0.5">{worker.nik_aru || 'NIK Belum Ditetapkan'}</p>
-                                                    </div>
-                                                    <span className="text-orange-500 font-semibold text-xs whitespace-nowrap bg-orange-100 dark:bg-orange-900/40 px-2 py-1 rounded-md">
-                                                        {calculateIdleDuration(worker.assignments[0]?.termination_date)} Hari
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p className="text-sm text-slate-500 italic px-2">Tidak ada karyawan idle.</p>
-                                    )}
-                                </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>

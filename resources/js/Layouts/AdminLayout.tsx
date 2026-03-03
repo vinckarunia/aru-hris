@@ -133,7 +133,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         
                         {/* Desktop Sidebar Toggle Hamburger */}
                         <button onClick={toggleSidebar} className="hidden lg:flex p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
-                            <iconify-icon icon={isSidebarCollapsed ? "solar:hamburger-menu-linear" : "solar:double-alt-arrow-left-linear"} width="24" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                            <iconify-icon icon="solar:hamburger-menu-linear" width="24" className="group-hover:scale-110 transition-transform"></iconify-icon>
                         </button>
 
                         <div className="hidden sm:block">
