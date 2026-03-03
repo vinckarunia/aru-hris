@@ -7,6 +7,12 @@ import axios from 'axios';
 // TYPE DEFINITIONS
 // ============================================================================
 
+/** Represents a client containing multiple projects. */
+interface Client {
+    id: number;
+    name: string;
+}
+
 /** Represents a department within a project. */
 interface Department {
     id: number;
@@ -19,6 +25,7 @@ interface Project {
     id: number;
     name: string;
     prefix: string;
+    client_id: number;
     departments: Department[];
 }
 
@@ -34,8 +41,9 @@ interface DbColumnGroup {
     options: DbColumnOption[];
 }
 
-/** Global settings for the import (project, department, rates, etc). */
+/** Global settings for the import (client, project, department, rates, etc). */
 interface GlobalSettings {
+    client_id: number | null;
     project_id: number | null;
     department_id: number | null;
     salary_rate: string;
@@ -92,6 +100,7 @@ interface ProgressData {
 
 /** Props passed from ImportController::index(). */
 interface Props {
+    clients: Client[];
     projects: Project[];
     dbColumns: DbColumnGroup[];
 }
@@ -131,7 +140,7 @@ const CONTRACT_TYPE_OPTIONS = [
  * @param {Props} props - Projects and DB columns from the backend.
  * @returns {JSX.Element} The rendered import wizard page.
  */
-export default function Import({ projects, dbColumns }: Props) {
+export default function Import({ clients, projects, dbColumns }: Props) {
     // ---- Step Management ----
     const [currentStep, setCurrentStep] = useState<number>(1);
     const steps = [
@@ -153,6 +162,7 @@ export default function Import({ projects, dbColumns }: Props) {
     // ---- Mapping & Global Settings State ----
     const [mapping, setMapping] = useState<Record<string, number>>({});
     const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
+        client_id: null,
         project_id: null,
         department_id: null,
         salary_rate: 'monthly',
@@ -257,6 +267,11 @@ export default function Import({ projects, dbColumns }: Props) {
         return Object.keys(mapping).find(key => mapping[key] === index) || '';
     };
 
+    /** Get projects filtered by the selected client. */
+    const filteredProjects = globalSettings.client_id
+        ? projects.filter(p => p.client_id === globalSettings.client_id)
+        : projects;
+
     /** Get departments filtered by the selected project. */
     const filteredDepartments = projects.find(p => p.id === globalSettings.project_id)?.departments || [];
 
@@ -281,6 +296,14 @@ export default function Import({ projects, dbColumns }: Props) {
         }
         if (!hasDeptMapping && !globalSettings.department_id) {
             alert('Silakan pilih Departemen di pengaturan global, atau mapping kolom "Nama Departemen" dari CSV.');
+            return;
+        }
+
+        // If they mapped the project/department name but didn't pick global Project/Department ID,
+        // they MUST pick a Client to allow auto-creation.
+        if ((hasProjectMapping && !globalSettings.project_id && !globalSettings.client_id) ||
+            (hasDeptMapping && !globalSettings.department_id && !globalSettings.client_id)) {
+            alert('Jika Anda melakukan mapping nama Project/Departemen dari CSV, silakan pilih setidaknya "Client" di Pengaturan Global agar sistem dapat membuatkannya secara otomatis jika tidak ditemukan.');
             return;
         }
 
@@ -559,7 +582,25 @@ export default function Import({ projects, dbColumns }: Props) {
                             <h4 className="text-sm font-bold text-slate-700 dark:text-white">Pengaturan Global</h4>
                             <span className="text-[11px] text-slate-400 ml-1">Parameter default yang diterapkan ke seluruh baris data</span>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                            {/* Client */}
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Client {((mapping['project_name'] !== undefined || mapping['department_name'] !== undefined) && !globalSettings.project_id && !globalSettings.department_id) ? <span className="text-red-500">*</span> : ''}
+                                </label>
+                                <select
+                                    value={globalSettings.client_id ?? ''}
+                                    onChange={(e) => {
+                                        const cid = e.target.value ? Number(e.target.value) : null;
+                                        setGlobalSettings(prev => ({ ...prev, client_id: cid, project_id: null, department_id: null }));
+                                    }}
+                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
+                                >
+                                    <option value="">-- Pilih Client --</option>
+                                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+
                             {/* Project */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -574,7 +615,7 @@ export default function Import({ projects, dbColumns }: Props) {
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
                                 >
                                     <option value="">-- Pilih Project --</option>
-                                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    {filteredProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                             </div>
 

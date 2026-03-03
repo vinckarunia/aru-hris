@@ -645,15 +645,25 @@ class ImportService
         $c = ImportDataCleaner::class;
 
         // Resolve project: CSV column first, fall back to global setting
+        $projectName = ImportDataCleaner::extractField($row, $mapping, 'project_name');
         $projectResolved = $this->resolveProjectId($row, $mapping, $globalSettings);
+        
         if (!$projectResolved) {
-            $errors[] = 'Project tidak ditemukan. Pastikan nama project di CSV benar atau pilih di pengaturan global.';
+            // If project not found but client_id is set and projectName is in CSV, it will be auto-created
+            if (empty($globalSettings['client_id']) || empty($projectName)) {
+                $errors[] = 'Project tidak ditemukan. Pastikan nama project di CSV benar atau pilih di pengaturan global.';
+            }
         }
 
         // Resolve department: CSV column first, fall back to global setting
+        $deptName = ImportDataCleaner::extractField($row, $mapping, 'department_name');
         $departmentResolved = $this->resolveDepartmentId($row, $mapping, $globalSettings, $projectResolved);
+        
         if (!$departmentResolved) {
-            $errors[] = 'Departemen tidak ditemukan. Pastikan nama departemen di CSV benar atau pilih di pengaturan global.';
+            // If department not found but client_id is set and deptName is in CSV, it will be auto-created
+            if (empty($globalSettings['client_id']) || empty($deptName)) {
+                $errors[] = 'Departemen tidak ditemukan. Pastikan nama departemen di CSV benar atau pilih di pengaturan global.';
+            }
         }
 
         // Hire date

@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Assignment;
 use App\Models\Contract;
 use App\Models\ContractCompensation;
+use App\Models\Department;
 use App\Models\FamilyMember;
 use App\Models\Project;
 use App\Models\Worker;
@@ -180,6 +181,49 @@ class ProcessBulkImport implements ShouldQueue
                     $worker = $existingWorker;
                 } else {
                     $worker = Worker::create($workerData);
+                }
+
+                // 1.5 Pre-process Project and Department Auto-Creation
+                $projectName = ImportDataCleaner::extractField($row, $this->mapping, 'project_name');
+                $projectToBind = null;
+                if ($projectName && !empty($this->globalSettings['client_id'])) {
+                    $existingProject = Project::where('name', 'ilike', trim($projectName))->first();
+                    if (!$existingProject) {
+                        $existingProject = Project::create([
+                            'client_id' => $this->globalSettings['client_id'],
+                            'name' => trim($projectName),
+                            'prefix' => strtoupper(substr(trim($projectName), 0, 3)),
+                            'id_running_number' => 0
+                        ]);
+                    }
+                    $this->globalSettings['project_id'] = $existingProject->id;
+                    $projectToBind = $existingProject;
+                }
+
+                $deptName = ImportDataCleaner::extractField($row, $this->mapping, 'department_name');
+                if ($deptName && !empty($this->globalSettings['client_id'])) {
+                    $query = Department::where('name', 'ilike', trim($deptName));
+                    if ($projectToBind) {
+                        $query->where('client_id', $projectToBind->client_id);
+                    }
+                    $existingDept = $query->first();
+
+                    if (!$existingDept) {
+                        $existingDept = Department::create([
+                            'client_id' => $this->globalSettings['client_id'],
+                            'name' => trim($deptName)
+                        ]);
+                    }
+                    $this->globalSettings['department_id'] = $existingDept->id;
+
+                    if ($projectToBind) {
+                        $projectToBind->departments()->syncWithoutDetaching([$existingDept->id]);
+                    } elseif (!empty($this->globalSettings['project_id'])) {
+                        $p = Project::find($this->globalSettings['project_id']);
+                        if ($p) {
+                            $p->departments()->syncWithoutDetaching([$existingDept->id]);
+                        }
+                    }
                 }
 
                 // 2. Create or update Assignment

@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Models\Client;
 
 /**
  * Class ImportController
@@ -54,9 +55,11 @@ class ImportController extends Controller
      */
     public function index(): Response
     {
+        $clients = Client::orderBy('name')->get();
         $projects = Project::with('departments')->orderBy('name')->get();
 
         return Inertia::render('Worker/Import', [
+            'clients' => $clients,
             'projects' => $projects,
             'dbColumns' => ImportService::DB_COLUMNS,
         ]);
@@ -69,9 +72,11 @@ class ImportController extends Controller
      */
     public function globalOptions(): JsonResponse
     {
+        $clients = Client::orderBy('name')->get();
         $projects = Project::with('departments')->orderBy('name')->get();
 
         return response()->json([
+            'clients' => $clients,
             'projects' => $projects,
         ]);
     }
@@ -131,6 +136,7 @@ class ImportController extends Controller
             'session_id' => ['required', 'string'],
             'mapping' => ['required', 'array'],
             'global_settings' => ['required', 'array'],
+            'global_settings.client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'global_settings.project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'global_settings.department_id' => ['nullable', 'integer', 'exists:departments,id'],
         ], [
