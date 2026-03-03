@@ -8,6 +8,12 @@ import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
 
+type SortDirection = 'asc' | 'desc';
+interface SortConfig {
+    key: string;
+    direction: SortDirection;
+}
+
 /**
  * Type definitions for Worker, Assignment, and Project entities.
  * These interfaces define the expected structure of data passed to the component.
@@ -68,6 +74,7 @@ export default function Index({ workers }: Props) {
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
     const { delete: destroy, processing } = useForm();
 
@@ -76,10 +83,70 @@ export default function Index({ workers }: Props) {
         (worker.nik_aru && worker.nik_aru.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
+    /** Handles sorting logic for regular and shift-clicks (multi-sort). */
+    const handleSort = (key: string, e: React.MouseEvent) => {
+        setSortConfigs(prevConfigs => {
+            const existingIndex = prevConfigs.findIndex(config => config.key === key);
+            let newConfigs = [...prevConfigs];
+
+            if (e.shiftKey) {
+                // Multi-column sorting
+                if (existingIndex >= 0) {
+                    if (newConfigs[existingIndex].direction === 'asc') {
+                        newConfigs[existingIndex].direction = 'desc';
+                    } else {
+                        newConfigs.splice(existingIndex, 1);
+                    }
+                } else {
+                    newConfigs.push({ key, direction: 'asc' });
+                }
+            } else {
+                // Single column sorting
+                if (existingIndex >= 0) {
+                    if (newConfigs.length === 1 && newConfigs[0].direction === 'asc') {
+                        newConfigs = [{ key, direction: 'desc' }];
+                    } else if (newConfigs.length === 1 && newConfigs[0].direction === 'desc') {
+                        newConfigs = [];
+                    } else {
+                        newConfigs = [{ key, direction: 'asc' }];
+                    }
+                } else {
+                    newConfigs = [{ key, direction: 'asc' }];
+                }
+            }
+            return newConfigs;
+        });
+    };
+
+    /** Retrieves the value from a worker object based on a key path. */
+    const getSortValue = (worker: Worker, key: string): any => {
+        if (key === 'project_name') {
+            const latestAssignment = worker.assignments && worker.assignments.length > 0 ? worker.assignments[0] : null;
+            return latestAssignment?.project?.name || '';
+        }
+        return worker[key as keyof Worker] ?? '';
+    };
+
+    const sortedWorkers = [...filteredWorkers].sort((a, b) => {
+        for (const config of sortConfigs) {
+            let valA = getSortValue(a, config.key);
+            let valB = getSortValue(b, config.key);
+
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+
+            if (valA < valB) return config.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return config.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+    });
+
     /** Slice of workers to display on the current page. */
-    const paginatedWorkers = filteredWorkers.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-    /** Global row offset for the current page (e.g. page 2 starts at 11). */
+    const paginatedWorkers = sortedWorkers.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
     const rowOffset = (currentPage - 1) * PER_PAGE;
+
 
     /** Opens confirmation modal for deletion. */
     const openDeleteModal = (worker: Worker) => {
@@ -103,6 +170,20 @@ export default function Index({ workers }: Props) {
         const birthDateObj = new Date(worker.birth_date);
         const age = today.getFullYear() - birthDateObj.getFullYear();
         return age;
+    };
+
+    /** Helper to render the sort indicator icon based on sort status. */
+    const renderSortIndicator = (key: string) => {
+        const configIndex = sortConfigs.findIndex(c => c.key === key);
+        if (configIndex === -1) return <iconify-icon icon="solar:sort-vertical-linear" className="text-slate-300 group-hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></iconify-icon>;
+
+        const isAsc = sortConfigs[configIndex].direction === 'asc';
+        return (
+            <div className="flex items-center gap-1 text-primary">
+                <iconify-icon icon={isAsc ? 'solar:sort-from-bottom-to-top-bold' : 'solar:sort-from-top-to-bottom-bold'}></iconify-icon>
+                {sortConfigs.length > 1 && <span className="text-[10px] font-bold">{configIndex + 1}</span>}
+            </div>
+        );
     };
 
     return (
@@ -154,11 +235,44 @@ export default function Index({ workers }: Props) {
                     <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">No</th>
-                                <th className="px-6 py-4">Nama Lengkap</th>
-                                <th className="px-6 py-4">NIK ARU</th>
-                                <th className="px-6 py-4">Project</th>
-                                <th className="px-6 py-4">Telepon</th>
+                                <th className="px-6 py-4 w-16">No</th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('name', e)}
+                                    title="Klik untuk mengurutkan (Tekan Shift untuk sortir multi-kolom)"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Nama Lengkap
+                                        {renderSortIndicator('name')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('nik_aru', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        NIK ARU
+                                        {renderSortIndicator('nik_aru')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('project_name', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Project
+                                        {renderSortIndicator('project_name')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('phone', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Telepon
+                                        {renderSortIndicator('phone')}
+                                    </div>
+                                </th>
                                 <th className="px-6 py-4 text-right">Aksi</th>
                             </tr>
                         </thead>

@@ -10,6 +10,12 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import Pagination from '@/Components/Pagination';
 
+type SortDirection = 'asc' | 'desc';
+interface SortConfig {
+    key: string;
+    direction: SortDirection;
+}
+
 /**
  * Represents a client company entity.
  */
@@ -68,17 +74,13 @@ export default function Index({ projects, clients, departments }: Props) {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
     const filteredProjects = projects.filter(project =>
         project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.prefix.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (project.client && project.client.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-
-    /** Slice of projects to display on the current page. */
-    const paginatedProjects = filteredProjects.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-    /** Global row offset for the current page. */
-    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     // Form state initialized with an array for department_ids
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
@@ -104,6 +106,71 @@ export default function Index({ projects, clients, departments }: Props) {
             setData('department_ids', [...currentIds, id]);
         }
     };
+
+    /** Handles sorting logic for regular and shift-clicks (multi-sort). */
+    const handleSort = (key: string, e: React.MouseEvent) => {
+        setSortConfigs(prevConfigs => {
+            const existingIndex = prevConfigs.findIndex(config => config.key === key);
+            let newConfigs = [...prevConfigs];
+
+            if (e.shiftKey) {
+                // Multi-column sorting
+                if (existingIndex >= 0) {
+                    if (newConfigs[existingIndex].direction === 'asc') {
+                        newConfigs[existingIndex].direction = 'desc';
+                    } else {
+                        newConfigs.splice(existingIndex, 1);
+                    }
+                } else {
+                    newConfigs.push({ key, direction: 'asc' });
+                }
+            } else {
+                // Single column sorting
+                if (existingIndex >= 0) {
+                    if (newConfigs.length === 1 && newConfigs[0].direction === 'asc') {
+                        newConfigs = [{ key, direction: 'desc' }];
+                    } else if (newConfigs.length === 1 && newConfigs[0].direction === 'desc') {
+                        newConfigs = [];
+                    } else {
+                        newConfigs = [{ key, direction: 'asc' }];
+                    }
+                } else {
+                    newConfigs = [{ key, direction: 'asc' }];
+                }
+            }
+            return newConfigs;
+        });
+    };
+
+    /** Retrieves the value from a project object based on a key path. */
+    const getSortValue = (project: Project, key: string): any => {
+        if (key === 'client_name') {
+            return project.client?.full_name || '';
+        }
+        return project[key as keyof Project] ?? '';
+    };
+
+    /** Sorts the filtered projects based on sort configurations. */
+    const sortedProjects = [...filteredProjects].sort((a, b) => {
+        for (const config of sortConfigs) {
+            let valA = getSortValue(a, config.key);
+            let valB = getSortValue(b, config.key);
+
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+
+            if (valA < valB) return config.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return config.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+    });
+
+    /** Slice of projects to display on the current page. */
+    const paginatedProjects = sortedProjects.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Global row offset for the current page. */
+    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     /** Opens modal for adding a new project. */
     const openAddModal = () => {
@@ -155,6 +222,20 @@ export default function Index({ projects, clients, departments }: Props) {
         if (selectedProject) destroy(route('projects.destroy', selectedProject.id), { onSuccess: () => setIsDeleteModalOpen(false) });
     };
 
+    /** Helper to render the sort indicator icon based on sort status. */
+    const renderSortIndicator = (key: string) => {
+        const configIndex = sortConfigs.findIndex(c => c.key === key);
+        if (configIndex === -1) return <iconify-icon icon="solar:sort-vertical-linear" className="text-slate-300 group-hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></iconify-icon>;
+
+        const isAsc = sortConfigs[configIndex].direction === 'asc';
+        return (
+            <div className="flex items-center gap-1 text-primary">
+                <iconify-icon icon={isAsc ? 'solar:sort-from-bottom-to-top-bold' : 'solar:sort-from-top-to-bottom-bold'}></iconify-icon>
+                {sortConfigs.length > 1 && <span className="text-[10px] font-bold">{configIndex + 1}</span>}
+            </div>
+        );
+    };
+
     return (
         <AdminLayout title="Kelola Project" header="Data Project">
             {/* Header Actions */}
@@ -193,10 +274,35 @@ export default function Index({ projects, clients, departments }: Props) {
                     <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">No</th>
-                                <th className="px-6 py-4">Nama Project</th>
-                                <th className="px-6 py-4">Client & Departemen</th>
-                                <th className="px-6 py-4">Prefix</th>
+                                <th className="px-6 py-4 w-16">No</th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('name', e)}
+                                    title="Klik untuk mengurutkan (Tekan Shift untuk sortir multi-kolom)"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Nama Project
+                                        {renderSortIndicator('name')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('client_name', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Client & Departemen
+                                        {renderSortIndicator('client_name')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('prefix', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Prefix
+                                        {renderSortIndicator('prefix')}
+                                    </div>
+                                </th>
                                 <th className="px-6 py-4 text-right">Aksi</th>
                             </tr>
                         </thead>

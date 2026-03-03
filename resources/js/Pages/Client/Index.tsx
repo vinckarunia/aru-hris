@@ -10,6 +10,12 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import Pagination from '@/Components/Pagination';
 
+type SortDirection = 'asc' | 'desc';
+interface SortConfig {
+    key: string;
+    direction: SortDirection;
+}
+
 /**
  * Interface for the Client data structure.
  */
@@ -81,22 +87,97 @@ export default function Index({ clients, projects, workers }: Props) {
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
     const filteredClients = clients.filter(client =>
         client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         client.short_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    /** Slice of clients to display on the current page. */
-    const paginatedClients = filteredClients.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-    /** Global row offset for the current page. */
-    const rowOffset = (currentPage - 1) * PER_PAGE;
-
     // Initialize Inertia form hook with new schema
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         full_name: '',
         short_name: '',
     });
+
+    /** Handles sorting logic for regular and shift-clicks (multi-sort). */
+    const handleSort = (key: string, e: React.MouseEvent) => {
+        setSortConfigs(prevConfigs => {
+            const existingIndex = prevConfigs.findIndex(config => config.key === key);
+            let newConfigs = [...prevConfigs];
+
+            if (e.shiftKey) {
+                // Multi-column sorting
+                if (existingIndex >= 0) {
+                    if (newConfigs[existingIndex].direction === 'asc') {
+                        newConfigs[existingIndex].direction = 'desc';
+                    } else {
+                        newConfigs.splice(existingIndex, 1);
+                    }
+                } else {
+                    newConfigs.push({ key, direction: 'asc' });
+                }
+            } else {
+                // Single column sorting
+                if (existingIndex >= 0) {
+                    if (newConfigs.length === 1 && newConfigs[0].direction === 'asc') {
+                        newConfigs = [{ key, direction: 'desc' }];
+                    } else if (newConfigs.length === 1 && newConfigs[0].direction === 'desc') {
+                        newConfigs = [];
+                    } else {
+                        newConfigs = [{ key, direction: 'asc' }];
+                    }
+                } else {
+                    newConfigs = [{ key, direction: 'asc' }];
+                }
+            }
+            return newConfigs;
+        });
+    };
+
+    /** Retrieves the value from a client object based on a key path. */
+    const getSortValue = (client: Client, key: string): any => {
+        if (key === 'project_count') {
+            return projects.filter(project => project.client_id === client.id).length;
+        }
+        if (key === 'worker_count') {
+            const clientProjectIds = new Set(
+                projects
+                    .filter(p => p.client_id === client.id)
+                    .map(p => p.id)
+            );
+            return workers.filter(w =>
+                w.assignments.some(a =>
+                    a.project !== null &&
+                    clientProjectIds.has(a.project_id) &&
+                    (a.status?.toLowerCase() === 'active' || a.status?.toLowerCase() === 'aktif')
+                )
+            ).length;
+        }
+        return client[key as keyof Client] ?? '';
+    };
+
+    /** Sorts the filtered clients based on sort configurations. */
+    const sortedClients = [...filteredClients].sort((a, b) => {
+        for (const config of sortConfigs) {
+            let valA = getSortValue(a, config.key);
+            let valB = getSortValue(b, config.key);
+
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+
+            if (valA < valB) return config.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return config.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+    });
+
+    /** Slice of clients to display on the current page. */
+    const paginatedClients = sortedClients.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    /** Global row offset for the current page. */
+    const rowOffset = (currentPage - 1) * PER_PAGE;
 
     /**
      * Opens the modal in "add" mode and resets form state.
@@ -173,7 +254,19 @@ export default function Index({ clients, projects, workers }: Props) {
         }
     };
 
+    /** Helper to render the sort indicator icon based on sort status. */
+    const renderSortIndicator = (key: string) => {
+        const configIndex = sortConfigs.findIndex(c => c.key === key);
+        if (configIndex === -1) return <iconify-icon icon="solar:sort-vertical-linear" className="text-slate-300 group-hover:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></iconify-icon>;
 
+        const isAsc = sortConfigs[configIndex].direction === 'asc';
+        return (
+            <div className="flex items-center gap-1 text-primary">
+                <iconify-icon icon={isAsc ? 'solar:sort-from-bottom-to-top-bold' : 'solar:sort-from-top-to-bottom-bold'}></iconify-icon>
+                {sortConfigs.length > 1 && <span className="text-[10px] font-bold">{configIndex + 1}</span>}
+            </div>
+        );
+    };
 
     return (
         <AdminLayout title="Kelola Client" header="Data Client">
@@ -216,11 +309,44 @@ export default function Index({ clients, projects, workers }: Props) {
                     <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">No</th>
-                                <th className="px-6 py-4">Nama Client</th>
-                                <th className="px-6 py-4">Kode</th>
-                                <th className="px-6 py-4">Project</th>
-                                <th className="px-6 py-4">Karyawan Aktif</th>
+                                <th className="px-6 py-4 w-16">No</th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('full_name', e)}
+                                    title="Klik untuk mengurutkan (Tekan Shift untuk sortir multi-kolom)"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Nama Client
+                                        {renderSortIndicator('full_name')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('short_name', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Kode
+                                        {renderSortIndicator('short_name')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('project_count', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Project
+                                        {renderSortIndicator('project_count')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('worker_count', e)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Karyawan Aktif
+                                        {renderSortIndicator('worker_count')}
+                                    </div>
+                                </th>
                                 <th className="px-6 py-4 text-right">Aksi</th>
                             </tr>
                         </thead>

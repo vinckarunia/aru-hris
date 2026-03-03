@@ -12,6 +12,12 @@ import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
 
+type SortDirection = 'asc' | 'desc';
+interface SortConfig {
+    key: string;
+    direction: SortDirection;
+}
+
 /**
  * Represents a department within a client company.
  */
@@ -103,10 +109,123 @@ export default function Show({ client, workers }: Props) {
     const [projPage, setProjPage] = useState<number>(1);
     const [workerPage, setWorkerPage] = useState<number>(1);
 
+    // Sorting states
+    const [deptSortConfigs, setDeptSortConfigs] = useState<SortConfig[]>([]);
+    const [projSortConfigs, setProjSortConfigs] = useState<SortConfig[]>([]);
+    const [workerSortConfigs, setWorkerSortConfigs] = useState<SortConfig[]>([]);
+
+    const handleSort = (
+        key: string,
+        e: React.MouseEvent,
+        configs: SortConfig[],
+        setConfigs: React.Dispatch<React.SetStateAction<SortConfig[]>>
+    ) => {
+        e.preventDefault();
+        if (e.shiftKey) {
+            setConfigs((prev) => {
+                const existingIndex = prev.findIndex((config) => config.key === key);
+                if (existingIndex !== -1) {
+                    const currentDirection = prev[existingIndex].direction;
+                    if (currentDirection === 'asc') {
+                        const newConfigs = [...prev];
+                        newConfigs[existingIndex] = { key, direction: 'desc' };
+                        return newConfigs;
+                    } else {
+                        return prev.filter((config) => config.key !== key);
+                    }
+                } else {
+                    return [...prev, { key, direction: 'asc' }];
+                }
+            });
+        } else {
+            setConfigs((prev) => {
+                if (prev.length === 1 && prev[0].key === key) {
+                    if (prev[0].direction === 'asc') {
+                        return [{ key, direction: 'desc' }];
+                    } else {
+                        return [];
+                    }
+                }
+                return [{ key, direction: 'asc' }];
+            });
+        }
+    };
+
+    const getSortValue = (obj: any, key: string) => {
+        if (!obj) return '';
+
+        // Handle nested keys if needed (e.g. client.name)
+        if (key.includes('.')) {
+            const keys = key.split('.');
+            let val = obj;
+            for (const k of keys) {
+                if (val === null || val === undefined) return '';
+                val = val[k];
+            }
+            return (val || '').toString().toLowerCase();
+        }
+
+        // Custom keys for Workers with assignments
+        switch (key) {
+            case 'project_name':
+                return obj.assignments && obj.assignments.length > 0
+                    ? (obj.assignments[0].project?.name || '').toLowerCase()
+                    : '';
+            case 'position':
+                return obj.assignments && obj.assignments.length > 0
+                    ? (obj.assignments[obj.assignments.length - 1].position || '').toLowerCase()
+                    : '';
+            case 'status':
+                return obj.assignments && obj.assignments.length > 0
+                    ? (obj.assignments[obj.assignments.length - 1].status || '').toLowerCase()
+                    : '';
+            default:
+                return (obj[key] || '').toString().toLowerCase();
+        }
+    };
+
+    const sortData = <T,>(data: T[], configs: SortConfig[]) => {
+        if (configs.length === 0) return data;
+
+        return [...data].sort((a, b) => {
+            for (const config of configs) {
+                const aValue = getSortValue(a, config.key);
+                const bValue = getSortValue(b, config.key);
+
+                if (aValue < bValue) return config.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return config.direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const renderSortIndicator = (key: string, configs: SortConfig[]) => {
+        const index = configs.findIndex((config) => config.key === key);
+        if (index === -1) return null;
+
+        const isAsc = configs[index].direction === 'asc';
+        const icon = isAsc ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear";
+
+        return (
+            <span className="inline-flex items-center ml-1 space-x-0.5">
+                <iconify-icon icon={icon} width="14"></iconify-icon>
+                {configs.length > 1 && (
+                    <span className="text-[10px] font-bold bg-primary/10 text-primary w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                        {index + 1}
+                    </span>
+                )}
+            </span>
+        );
+    };
+
     // Sliced arrays for display
-    const paginatedDepts = client.departments.slice((deptPage - 1) * PER_PAGE, deptPage * PER_PAGE);
-    const paginatedProjs = client.projects.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
-    const paginatedWorkers = workers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
+    const sortedDepts = sortData(client.departments, deptSortConfigs);
+    const sortedProjs = sortData(client.projects, projSortConfigs);
+    const sortedWorkers = sortData(workers, workerSortConfigs);
+
+    const paginatedDepts = sortedDepts.slice((deptPage - 1) * PER_PAGE, deptPage * PER_PAGE);
+    const paginatedProjs = sortedProjs.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
+    const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
 
     // Row offsets per tab
     const deptOffset = (deptPage - 1) * PER_PAGE;
@@ -271,7 +390,16 @@ export default function Show({ client, workers }: Props) {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left whitespace-nowrap">
                                 <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
-                                    <tr><th className="px-6 py-4">No</th><th className="px-6 py-4">Nama Departemen</th><th className="px-6 py-4 text-right">Aksi</th></tr>
+                                    <tr>
+                                        <th className="px-6 py-4">No</th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, deptSortConfigs, setDeptSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Nama Departemen
+                                                {renderSortIndicator('name', deptSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4 text-right">Aksi</th>
+                                    </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {client.departments.length === 0 ? (
@@ -309,7 +437,23 @@ export default function Show({ client, workers }: Props) {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left whitespace-nowrap">
                                 <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
-                                    <tr><th className="px-6 py-4">No</th><th className="px-6 py-4">Nama Project</th><th className="px-6 py-4">Departemen</th><th className="px-6 py-4">Prefix</th><th className="px-6 py-4 text-right">Aksi</th></tr>
+                                    <tr>
+                                        <th className="px-6 py-4">No</th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, projSortConfigs, setProjSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Nama Project
+                                                {renderSortIndicator('name', projSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4">Departemen</th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('prefix', e, projSortConfigs, setProjSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Prefix
+                                                {renderSortIndicator('prefix', projSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4 text-right">Aksi</th>
+                                    </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {client.projects.length === 0 ? (
@@ -368,11 +512,36 @@ export default function Show({ client, workers }: Props) {
                                 <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                                     <tr>
                                         <th className="px-6 py-4">No</th>
-                                        <th className="px-6 py-4">Nama Karyawan</th>
-                                        <th className="px-6 py-4">NIK ARU</th>
-                                        <th className="px-6 py-4">Project</th>
-                                        <th className="px-6 py-4">Posisi</th>
-                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, workerSortConfigs, setWorkerSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Nama Karyawan
+                                                {renderSortIndicator('name', workerSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('nik_aru', e, workerSortConfigs, setWorkerSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                NIK ARU
+                                                {renderSortIndicator('nik_aru', workerSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('project_name', e, workerSortConfigs, setWorkerSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Project
+                                                {renderSortIndicator('project_name', workerSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('position', e, workerSortConfigs, setWorkerSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Posisi
+                                                {renderSortIndicator('position', workerSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('status', e, workerSortConfigs, setWorkerSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Status
+                                                {renderSortIndicator('status', workerSortConfigs)}
+                                            </div>
+                                        </th>
                                         <th className="px-6 py-4 text-right">Detail</th>
                                     </tr>
                                 </thead>
