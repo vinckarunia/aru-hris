@@ -67,11 +67,17 @@ export default function Index({ workers }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
     const { delete: destroy, processing } = useForm();
 
+    const filteredWorkers = workers.filter(worker =>
+        worker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (worker.nik_aru && worker.nik_aru.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
     /** Slice of workers to display on the current page. */
-    const paginatedWorkers = workers.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    const paginatedWorkers = filteredWorkers.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
     /** Global row offset for the current page (e.g. page 2 starts at 11). */
     const rowOffset = (currentPage - 1) * PER_PAGE;
 
@@ -123,6 +129,25 @@ export default function Index({ workers }: Props) {
                 </div>
             </div>
 
+            {/* Search Bar */}
+            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:w-96">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Cari karyawan berdasarkan nama atau NIK..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                    />
+                </div>
+            </div>
+
             {/* Workers Data Table */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card overflow-hidden">
                 <div className="overflow-x-auto">
@@ -138,10 +163,14 @@ export default function Index({ workers }: Props) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
-                            {workers.length === 0 ? (
+                            {filteredWorkers.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-10">
-                                        <EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada data karyawan." subMessage="Silakan tambahkan atau import data." />
+                                        {workers.length === 0 ? (
+                                            <EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada data karyawan." subMessage="Silakan tambahkan atau import data." />
+                                        ) : (
+                                            <EmptyState icon="solar:magnifer-linear" message="Data tidak ditemukan." subMessage="Coba gunakan kata kunci pencarian yang lain." />
+                                        )}
                                     </td>
                                 </tr>
                             ) : (
@@ -178,8 +207,8 @@ export default function Index({ workers }: Props) {
                                                                 const isPkwtt = c.pkwt_type === 'PKWTT';
                                                                 return (
                                                                     <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold border ${isPkwtt
-                                                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400'
-                                                                            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 uppercase'
+                                                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400'
+                                                                        : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 uppercase'
                                                                         }`}>
                                                                         {label}{!isPkwtt && c.pkwt_number ? `${c.pkwt_number}` : ''}
                                                                     </span>
@@ -223,7 +252,7 @@ export default function Index({ workers }: Props) {
                     </table>
                 </div>
                 <Pagination
-                    totalItems={workers.length}
+                    totalItems={filteredWorkers.length}
                     itemsPerPage={PER_PAGE}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}

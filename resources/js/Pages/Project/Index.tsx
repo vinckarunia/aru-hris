@@ -67,9 +67,16 @@ export default function Index({ projects, clients, departments }: Props) {
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [searchQuery, setSearchQuery] = useState<string>('');
+
+    const filteredProjects = projects.filter(project =>
+        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.prefix.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (project.client && project.client.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     /** Slice of projects to display on the current page. */
-    const paginatedProjects = projects.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    const paginatedProjects = filteredProjects.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
     /** Global row offset for the current page. */
     const rowOffset = (currentPage - 1) * PER_PAGE;
 
@@ -161,6 +168,25 @@ export default function Index({ projects, clients, departments }: Props) {
                 </button>
             </div>
 
+            {/* Search Bar */}
+            <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:w-96">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <iconify-icon icon="solar:magnifer-linear" className="text-slate-400" width="20"></iconify-icon>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Cari project berdasarkan nama, prefix, atau client..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="pl-10 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
+                    />
+                </div>
+            </div>
+
             {/* Project Data Table */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card overflow-hidden">
                 <div className="overflow-x-auto">
@@ -175,8 +201,8 @@ export default function Index({ projects, clients, departments }: Props) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
-                            {projects.length === 0 ? (
-                                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">Belum ada data project.</td></tr>
+                            {filteredProjects.length === 0 ? (
+                                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">{projects.length === 0 ? 'Belum ada data project.' : 'Data project tidak ditemukan.'}</td></tr>
                             ) : (
                                 paginatedProjects.map((project, index) => (
                                     <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
@@ -218,7 +244,7 @@ export default function Index({ projects, clients, departments }: Props) {
                     </table>
                 </div>
                 <Pagination
-                    totalItems={projects.length}
+                    totalItems={filteredProjects.length}
                     itemsPerPage={PER_PAGE}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
