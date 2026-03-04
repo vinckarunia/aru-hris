@@ -3,7 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
-use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\AssignmentController;
@@ -33,7 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Client Routes
     Route::resource('clients', ClientController::class)->except(['create', 'edit']);
-    Route::resource('departments', DepartmentController::class)->except(['index', 'create', 'show', 'edit']);
+    Route::resource('branches', BranchController::class)->except(['index', 'create', 'show', 'edit']);
 
     // Project Routes
     Route::resource('projects', ProjectController::class)->except(['create', 'edit']);

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Project;
-use App\Models\Department;
+use App\Models\Branch;
 use App\Models\Worker;
 use App\Models\Contract;
 use App\Models\ContractCompensation;
@@ -14,12 +14,12 @@ use App\Models\Document;
 /**
  * Class Assignment
  *
- * Represents a worker's active or past assignment to a specific project and department.
+ * Represents a worker's active or past assignment to a specific project and branch.
  *
  * @property int $id
  * @property int $worker_id Foreign key to workers table
  * @property int $project_id Foreign key to projects table
- * @property int $department_id Foreign key to departments table
+ * @property int $branch_id Foreign key to branches table
  * @property string|null $employee_id Client's internal employee ID
  * @property string|null $position Job position/title
  * @property string $hire_date Date when the assignment started
@@ -47,7 +47,7 @@ class Assignment extends Model
     protected $fillable = [
         'worker_id',
         'project_id',
-        'department_id',
+        'branch_id',
         'employee_id',
         'position',
         'hire_date',
@@ -66,13 +66,13 @@ class Assignment extends Model
     }
 
     /**
-     * Get the specific department within the project for this assignment.
+     * Get the specific branch within the project for this assignment.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function department()
+    public function branch()
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Branch::class);
     }
 
     /**

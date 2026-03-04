@@ -13,20 +13,20 @@ interface Client {
     full_name: string;
 }
 
-/** Represents a department within a project. */
-interface Department {
+/** Represents a branch within a project. */
+interface Branch {
     id: number;
     name: string;
     client_id: number;
 }
 
-/** Represents a project with its associated departments. */
+/** Represents a project with its associated branches. */
 interface Project {
     id: number;
     name: string;
     prefix: string;
     client_id: number;
-    departments: Department[];
+    branches: Branch[];
 }
 
 /** A single mappable database column option. */
@@ -41,11 +41,11 @@ interface DbColumnGroup {
     options: DbColumnOption[];
 }
 
-/** Global settings for the import (client, project, department, rates, etc). */
+/** Global settings for the import (client, project, branch, rates, etc). */
 interface GlobalSettings {
     client_id: number | null;
     project_id: number | null;
-    department_id: number | null;
+    branch_id: number | null;
     salary_rate: string;
     allowance_rate: string;
     overtime_rate: string;
@@ -164,7 +164,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
     const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
         client_id: null,
         project_id: null,
-        department_id: null,
+        branch_id: null,
         salary_rate: 'monthly',
         allowance_rate: 'daily',
         overtime_rate: 'hourly',
@@ -272,8 +272,8 @@ export default function Import({ clients, projects, dbColumns }: Props) {
         ? projects.filter(p => p.client_id === globalSettings.client_id)
         : projects;
 
-    /** Get departments filtered by the selected project. */
-    const filteredDepartments = projects.find(p => p.id === globalSettings.project_id)?.departments || [];
+    /** Get branches filtered by the selected project. */
+    const filteredBranches = projects.find(p => p.id === globalSettings.project_id)?.branches || [];
 
     // ========================================================================
     // STEP 3: VALIDATION
@@ -288,22 +288,22 @@ export default function Import({ clients, projects, dbColumns }: Props) {
 
         // Only require global project/department if not mapped from CSV columns
         const hasProjectMapping = mapping['project_name'] !== undefined;
-        const hasDeptMapping = mapping['department_name'] !== undefined;
+        const hasBranchMapping = mapping['branch_name'] !== undefined;
 
         if (!hasProjectMapping && !globalSettings.project_id) {
             alert('Silakan pilih Project di pengaturan global, atau mapping kolom "Nama Project" dari CSV.');
             return;
         }
-        if (!hasDeptMapping && !globalSettings.department_id) {
-            alert('Silakan pilih Departemen di pengaturan global, atau mapping kolom "Nama Departemen" dari CSV.');
+        if (!hasBranchMapping && !globalSettings.branch_id) {
+            alert('Silakan pilih Cabang di pengaturan global, atau mapping kolom "Nama Cabang" dari CSV.');
             return;
         }
 
-        // If they mapped the project/department name but didn't pick global Project/Department ID,
+        // If they mapped the project/branch name but didn't pick global Project/Branch ID,
         // they MUST pick a Client to allow auto-creation.
         if ((hasProjectMapping && !globalSettings.project_id && !globalSettings.client_id) ||
-            (hasDeptMapping && !globalSettings.department_id && !globalSettings.client_id)) {
-            alert('Jika Anda melakukan mapping nama Project/Departemen dari CSV, silakan pilih setidaknya "Client" di Pengaturan Global agar sistem dapat membuatkannya secara otomatis jika tidak ditemukan.');
+            (hasBranchMapping && !globalSettings.branch_id && !globalSettings.client_id)) {
+            alert('Jika Anda melakukan mapping nama Project/Cabang dari CSV, silakan pilih setidaknya "Client" di Pengaturan Global agar sistem dapat membuatkannya secara otomatis jika tidak ditemukan.');
             return;
         }
 
@@ -586,13 +586,13 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                             {/* Client */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Client {((mapping['project_name'] !== undefined || mapping['department_name'] !== undefined) && !globalSettings.project_id && !globalSettings.department_id) ? <span className="text-red-500">*</span> : ''}
+                                    Client {((mapping['project_name'] !== undefined || mapping['branch_name'] !== undefined) && !globalSettings.project_id && !globalSettings.branch_id) ? <span className="text-red-500">*</span> : ''}
                                 </label>
                                 <select
                                     value={globalSettings.client_id ?? ''}
                                     onChange={(e) => {
                                         const cid = e.target.value ? Number(e.target.value) : null;
-                                        setGlobalSettings(prev => ({ ...prev, client_id: cid, project_id: null, department_id: null }));
+                                        setGlobalSettings(prev => ({ ...prev, client_id: cid, project_id: null, branch_id: null }));
                                     }}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
                                 >
@@ -610,7 +610,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                     value={globalSettings.project_id ?? ''}
                                     onChange={(e) => {
                                         const pid = e.target.value ? Number(e.target.value) : null;
-                                        setGlobalSettings(prev => ({ ...prev, project_id: pid, department_id: null }));
+                                        setGlobalSettings(prev => ({ ...prev, project_id: pid, branch_id: null }));
                                     }}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
                                 >
@@ -619,19 +619,19 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                 </select>
                             </div>
 
-                            {/* Department (cascading) */}
+                            {/* Branch (cascading) */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Departemen {mapping['department_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari CSV)</span> : <span className="text-red-500">*</span>}
+                                    Cabang {mapping['branch_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari CSV)</span> : <span className="text-red-500">*</span>}
                                 </label>
                                 <select
-                                    value={globalSettings.department_id ?? ''}
-                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, department_id: e.target.value ? Number(e.target.value) : null }))}
+                                    value={globalSettings.branch_id ?? ''}
+                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, branch_id: e.target.value ? Number(e.target.value) : null }))}
                                     disabled={!globalSettings.project_id}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
                                 >
-                                    <option value="">-- Pilih Dept --</option>
-                                    {filteredDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                    <option value="">-- Pilih Cabang --</option>
+                                    {filteredBranches.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                                 </select>
                             </div>
 

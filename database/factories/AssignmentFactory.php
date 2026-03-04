@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Assignment;
 use App\Models\Worker;
 use App\Models\Project;
-use App\Models\Department;
+use App\Models\Branch;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Assignment>
@@ -34,7 +34,7 @@ class AssignmentFactory extends Factory
             'worker_id' => Worker::factory(),
             'project_id' => Project::inRandomOrder()->first()->id ?? Project::factory(),
             'employee_id' => $this->faker->unique()->numerify('ARU-####'),
-            'department_id' => Department::inRandomOrder()->first()->id ?? Department::factory(),
+            'branch_id' => Branch::inRandomOrder()->first()->id ?? Branch::factory(),
             'hire_date' => $hireDate,
             'termination_date' => $terminationDate,
             'position' => $this->faker->jobTitle(),

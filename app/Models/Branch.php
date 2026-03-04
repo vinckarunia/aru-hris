@@ -5,23 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Client;
-use App\Models\Branch;
 use App\Models\Assignment;
+use App\Models\Project;
 
 /**
- * Class Project
+ * Class Branch
  *
- * Represents a project assigned to a specific branch of a client.
+ * Represents a branch (cabang) within a client company.
  *
  * @property int $id
  * @property int $client_id Foreign key referencing the clients table.
- * @property string $name The name of the project.
- * @property string $prefix The prefix used for generating worker IDs within this project.
- * @property int $id_running_number The auto-incrementing number for worker ID generation.
+ * @property string $name The name of the branch.
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
-class Project extends Model
+class Branch extends Model
 {
     use HasFactory;
 
@@ -33,12 +31,10 @@ class Project extends Model
     protected $fillable = [
         'client_id',
         'name',
-        'prefix',
-        'id_running_number',
     ];
 
     /**
-     * Get the client that owns the project.
+     * Get the client that owns the branch.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
@@ -48,17 +44,17 @@ class Project extends Model
     }
 
     /**
-     * Get the branches (cabang) associated with the project.
+     * Get the projects associated with the branch.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function branches()
+    public function projects()
     {
-        return $this->belongsToMany(Branch::class, 'branch_project');
+        return $this->belongsToMany(Project::class, 'branch_project');
     }
 
     /**
-     * Get the assignments associated with the project.
+     * Get the assignments associated with the branch.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */

@@ -30,7 +30,7 @@ class ClientController extends Controller
         $projects = Project::whereHas('client')->get();
         $workers = Worker::whereHas('assignments')
             ->with(['assignments' => function ($query) {
-                $query->with(['project:id,name', 'department:id,name']);
+                $query->with(['project:id,name', 'branch:id,name']);
             }])
             ->get();
 
@@ -42,7 +42,7 @@ class ClientController extends Controller
     }
 
     /**
-     * Display the specified client details including its departments, projects, and affiliated workers.
+     * Display the specified client details including its branches, projects, and affiliated workers.
      *
      * Workers are resolved by traversing the chain:
      * Client → Projects → Assignments → Worker.
@@ -52,8 +52,8 @@ class ClientController extends Controller
      */
     public function show(Client $client): Response
     {
-        // Eager load departments and projects (along with project's department relation)
-        $client->load(['departments', 'projects.departments']);
+        // Eager load branches and projects (along with project's branch relation)
+        $client->load(['branches', 'projects.branches']);
 
         // Collect all project IDs belonging to this client
         $projectIds = $client->projects->pluck('id');
@@ -67,7 +67,7 @@ class ClientController extends Controller
             ->with(['assignments' => function ($query) use ($projectIds) {
                 $query->whereIn('project_id', $projectIds)
                       ->where('status', 'active')
-                      ->with(['project:id,name', 'department:id,name']);
+                      ->with(['project:id,name', 'branch:id,name']);
             }])
             ->get(['id', 'nik_aru', 'name']);
 

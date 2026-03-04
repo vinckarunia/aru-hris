@@ -31,7 +31,7 @@ class ContractController extends Controller
     public function create(Request $request): Response
     {
         $request->validate(['assignment_id' => 'required|exists:assignments,id']);
-        $assignment = Assignment::with(['worker', 'project', 'department'])->findOrFail($request->assignment_id);
+        $assignment = Assignment::with(['worker', 'project', 'branch'])->findOrFail($request->assignment_id);
 
         return Inertia::render('Contract/Create', ['assignment' => $assignment]);
     }
@@ -83,7 +83,7 @@ class ContractController extends Controller
      */
     public function show(Contract $contract): Response
     {
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.department']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
         return Inertia::render('Contract/Show', ['contract' => $contract]);
     }
 

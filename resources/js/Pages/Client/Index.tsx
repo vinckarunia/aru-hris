@@ -27,7 +27,7 @@ interface Client {
 }
 
 /**
- * Represents a project that can be associated with multiple departments.
+ * Represents a project that can be associated with multiple branches.
  */
 interface Project {
     id: number;
@@ -38,17 +38,17 @@ interface Project {
 }
 
 /**
- * Represents an assignment connecting a worker to a project/department.
+ * Represents an assignment connecting a worker to a project/branch.
  */
 interface Assignment {
     id: number;
     worker_id: number;
     project_id: number;
-    department_id: number;
+    branch_id: number;
     position: string | null;
     status: string | null;
     project: { id: number; name: string } | null;
-    department: { id: number; name: string } | null;
+    branch: { id: number; name: string } | null;
 }
 
 /**

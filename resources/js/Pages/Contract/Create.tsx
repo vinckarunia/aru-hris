@@ -1,7 +1,7 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect } from 'react';  
+import { useEffect } from 'react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
@@ -14,7 +14,7 @@ interface Assignment {
     id: number;
     worker: { id: number; name: string; nik_aru: string; };
     project: { name: string; prefix: string; };
-    department: { name: string; };
+    branch: { name: string; };
     position: string;
 }
 
@@ -55,11 +55,11 @@ export default function Create({ assignment }: Props) {
         if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
-            
+
             if (end >= start) {
                 const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                 const diffMonths = Math.round(diffDays / 30.437);
-                
+
                 setData('duration_months', diffMonths.toString());
             } else {
                 setData('duration_months', '0');
@@ -107,10 +107,10 @@ export default function Create({ assignment }: Props) {
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <div>
                             <InputLabel htmlFor="contract_type" value="Jenis Kontrak" />
-                            <select 
-                                id="contract_type" 
-                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700" 
-                                value={data.contract_type} 
+                            <select
+                                id="contract_type"
+                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700"
+                                value={data.contract_type}
                                 onChange={e => {
                                     const type = e.target.value;
                                     setData('contract_type', type);
@@ -128,10 +128,10 @@ export default function Create({ assignment }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_type" value="Status Ketenagakerjaan" />
-                            <select 
-                                id="pkwt_type" 
-                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" 
-                                value={data.pkwt_type} 
+                            <select
+                                id="pkwt_type"
+                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                                value={data.pkwt_type}
                                 onChange={e => setData('pkwt_type', e.target.value)}
                                 disabled={data.contract_type === 'Harian'}
                             >
@@ -143,15 +143,15 @@ export default function Create({ assignment }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_number" value="PKWT Ke-" />
-                            <TextInput 
-                                id="pkwt_number" 
-                                type="number" 
-                                className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" 
-                                value={data.pkwt_number} 
-                                onChange={e => setData('pkwt_number', e.target.value)} 
-                                disabled={data.contract_type === 'PKWTT' || data.contract_type === 'Harian'} 
-                                placeholder="Contoh: PKWT 1 isi dengan 1" 
-                                required min="1" 
+                            <TextInput
+                                id="pkwt_number"
+                                type="number"
+                                className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                                value={data.pkwt_number}
+                                onChange={e => setData('pkwt_number', e.target.value)}
+                                disabled={data.contract_type === 'PKWTT' || data.contract_type === 'Harian'}
+                                placeholder="Contoh: PKWT 1 isi dengan 1"
+                                required min="1"
                             />
                             <InputError message={errors.pkwt_number} className="mt-1" />
                         </div>
@@ -168,13 +168,13 @@ export default function Create({ assignment }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
-                            <TextInput 
-                                id="duration_months" 
-                                type="text" 
-                                className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700" 
-                                value={data.duration_months ? `${data.duration_months} Bulan` : ''} 
-                                disabled 
-                                placeholder="Permanen" 
+                            <TextInput
+                                id="duration_months"
+                                type="text"
+                                className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700"
+                                value={data.duration_months ? `${data.duration_months} Bulan` : ''}
+                                disabled
+                                placeholder="Permanen"
                             />
                             <InputError message={errors.duration_months} className="mt-1" />
                         </div>
@@ -193,7 +193,7 @@ export default function Create({ assignment }: Props) {
                         <h3 className="font-bold text-emerald-800 dark:text-emerald-400">Rincian Gaji dan Tunjangan</h3>
                     </div>
                     <div className="p-6 grid grid-cols-1">
-                        
+
                         {/* Salary */}
                         <div className="space-y-4 mb-10">
                             <h4 className="font-bold text-slate-700 border-b pb-2">Gaji Pokok</h4>

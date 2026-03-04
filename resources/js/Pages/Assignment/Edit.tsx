@@ -6,9 +6,9 @@ import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
-interface Department { id: number; name: string; }
-interface Project { id: number; name: string; prefix: string; departments: Department[]; }
-interface Assignment { id: number; worker_id: number; project_id: number; department_id: number; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: number, name: string; nik_aru: string | null; } }
+interface Branch { id: number; name: string; }
+interface Project { id: number; name: string; prefix: string; branches: Branch[]; }
+interface Assignment { id: number; worker_id: number; project_id: number; branch_id: number; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: number, name: string; nik_aru: string | null; } }
 
 interface Props { assignment: Assignment; projects: Project[]; }
 
@@ -18,7 +18,7 @@ interface Props { assignment: Assignment; projects: Project[]; }
 export default function Edit({ assignment, projects }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         project_id: assignment.project_id.toString(),
-        department_id: assignment.department_id.toString(),
+        branch_id: assignment.branch_id.toString(),
         employee_id: assignment.employee_id || '',
         position: assignment.position || '',
         hire_date: assignment.hire_date || '',
@@ -27,7 +27,7 @@ export default function Edit({ assignment, projects }: Props) {
     });
 
     const selectedProject = projects.find(p => p.id.toString() === data.project_id);
-    const availableDepartments = selectedProject ? selectedProject.departments : [];
+    const availableBranches = selectedProject ? selectedProject.branches : [];
     const originalProjectId = assignment.project_id.toString();
 
     const submit = (e: React.FormEvent) => {
@@ -67,19 +67,19 @@ export default function Edit({ assignment, projects }: Props) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <InputLabel htmlFor="project_id" value="Project" />
-                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('department_id', ''); }} required>
+                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_id', ''); }} required>
                                 <option value="">-- Pilih Project --</option>
                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                             <InputError message={errors.project_id} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="department_id" value="Departemen Spesifik" />
-                            <select id="department_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md disabled:opacity-50" value={data.department_id} onChange={e => setData('department_id', e.target.value)} disabled={!data.project_id} required>
-                                <option value="">-- Pilih Departemen --</option>
-                                {availableDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            <InputLabel htmlFor="branch_id" value="Cabang Spesifik" />
+                            <select id="branch_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md disabled:opacity-50" value={data.branch_id} onChange={e => setData('branch_id', e.target.value)} disabled={!data.project_id} required>
+                                <option value="">-- Pilih Cabang --</option>
+                                {availableBranches.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
-                            <InputError message={errors.department_id} className="mt-1" />
+                            <InputError message={errors.branch_id} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="position" value="Jabatan / Posisi" />

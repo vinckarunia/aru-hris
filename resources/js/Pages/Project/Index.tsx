@@ -26,16 +26,16 @@ interface Client {
 }
 
 /**
- * Represents a department within a client company.
+ * Represents a branch within a client company.
  */
-interface Department {
+interface Branch {
     id: number;
     client_id: number;
     name: string;
 }
 
 /**
- * Represents a project that can be associated with multiple departments.
+ * Represents a project that can be associated with multiple branches.
  */
 interface Project {
     id: number;
@@ -44,7 +44,7 @@ interface Project {
     prefix: string;
     id_running_number: number;
     client?: Client;
-    departments?: Department[];
+    branches?: Branch[];
 }
 
 /**
@@ -53,7 +53,7 @@ interface Project {
 interface Props {
     projects: Project[];
     clients: Client[];
-    departments: Department[];
+    branches: Branch[];
 }
 
 /**
@@ -62,12 +62,12 @@ interface Props {
  * Displays a table of projects and provides a Single Page Application (SPA) experience
  * for creating, updating, and deleting projects, including Many-to-Many department assignments.
  *
- * @param {Props} props - The component props containing lists of projects, clients, and departments.
+ * @param {Props} props - The component props containing lists of projects, clients, and branches.
  */
 /** Number of projects displayed per page. */
 const PER_PAGE = 10;
 
-export default function Index({ projects, clients, departments }: Props) {
+export default function Index({ projects, clients, branches }: Props) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -97,28 +97,28 @@ export default function Index({ projects, clients, departments }: Props) {
         return matchesSearch && matchesFilter;
     });
 
-    // Form state initialized with an array for department_ids
+    // Form state initialized with an array for branch_ids
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         client_id: '',
-        department_ids: [] as number[],
+        branch_ids: [] as number[],
         name: '',
         prefix: '',
     });
 
-    // Filter available departments based on the currently selected client
-    const availableDepartments = departments.filter(d => d.client_id.toString() === data.client_id);
+    // Filter available branches based on the currently selected client
+    const availableBranches = branches.filter(d => d.client_id.toString() === data.client_id);
 
     /**
-     * Toggles a department ID in the department_ids state array.
+     * Toggles a branch ID in the branch_ids state array.
      *
-     * @param {number} id - The ID of the department to toggle.
+     * @param {number} id - The ID of the branch to toggle.
      */
-    const handleDepartmentToggle = (id: number) => {
-        const currentIds = data.department_ids;
+    const handleBranchToggle = (id: number) => {
+        const currentIds = data.branch_ids;
         if (currentIds.includes(id)) {
-            setData('department_ids', currentIds.filter(deptId => deptId !== id));
+            setData('branch_ids', currentIds.filter(deptId => deptId !== id));
         } else {
-            setData('department_ids', [...currentIds, id]);
+            setData('branch_ids', [...currentIds, id]);
         }
     };
 
@@ -204,7 +204,7 @@ export default function Index({ projects, clients, departments }: Props) {
         setSelectedProject(project);
         setData({
             client_id: project.client_id.toString(),
-            department_ids: project.departments?.map(d => d.id) || [],
+            branch_ids: project.branches?.map(d => d.id) || [],
             name: project.name,
             prefix: project.prefix
         });
@@ -349,7 +349,7 @@ export default function Index({ projects, clients, departments }: Props) {
                                     onClick={(e) => handleSort('client_name', e)}
                                 >
                                     <div className="flex items-center gap-2">
-                                        Client & Departemen
+                                        Client & Cabang
                                         {renderSortIndicator('client_name')}
                                     </div>
                                 </th>
@@ -385,9 +385,9 @@ export default function Index({ projects, clients, departments }: Props) {
                                                 </Link>
                                             </div>
                                             <div className="flex flex-wrap gap-1 mt-1.5">
-                                                {/* Render all departments connected to this project */}
-                                                {project.departments && project.departments.length > 0 ? (
-                                                    project.departments.map(dept => (
+                                                {/* Render all branches connected to this project */}
+                                                {project.branches && project.branches.length > 0 ? (
+                                                    project.branches.map(dept => (
                                                         <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
                                                             {dept.name}
                                                         </span>
@@ -430,7 +430,7 @@ export default function Index({ projects, clients, departments }: Props) {
                                 value={data.client_id}
                                 onChange={(e) => {
                                     setData('client_id', e.target.value);
-                                    setData('department_ids', []); // Reset checkbox when client changes
+                                    setData('branch_ids', []); // Reset checkbox when client changes
                                 }}
                                 className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
                             >
@@ -440,19 +440,19 @@ export default function Index({ projects, clients, departments }: Props) {
                             <InputError message={errors.client_id} className="mt-2" />
                         </div>
 
-                        {/* Checkbox Group for Multiple Departments */}
+                        {/* Checkbox Group for Multiple Branches */}
                         <div>
-                            <InputLabel value="Departemen (Pilih minimal satu)" />
+                            <InputLabel value="Cabang (Pilih minimal satu)" />
                             <div className="mt-2 grid grid-cols-2 gap-3">
-                                {availableDepartments.length === 0 ? (
-                                    <p className="text-xs text-slate-500 col-span-2 italic">Belum ada departemen untuk client ini.</p>
+                                {availableBranches.length === 0 ? (
+                                    <p className="text-xs text-slate-500 col-span-2 italic">Belum ada cabang untuk client ini.</p>
                                 ) : (
-                                    availableDepartments.map(d => (
+                                    availableBranches.map(d => (
                                         <label key={d.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                             <input
                                                 type="checkbox"
-                                                checked={data.department_ids.includes(d.id)}
-                                                onChange={() => handleDepartmentToggle(d.id)}
+                                                checked={data.branch_ids.includes(d.id)}
+                                                onChange={() => handleBranchToggle(d.id)}
                                                 className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
                                             />
                                             <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{d.name}</span>
@@ -460,10 +460,10 @@ export default function Index({ projects, clients, departments }: Props) {
                                     ))
                                 )}
                             </div>
-                            {/* Validation error for department_ids array */}
-                            {errors.department_ids && <p className="text-sm text-red-600 mt-2">{errors.department_ids}</p>}
-                            {/* Detailed errors if any specific array index fails (e.g. department_ids.0) */}
-                            {Object.keys(errors).filter(key => key.startsWith('department_ids.')).map((key) => (
+                            {/* Validation error for branch_ids array */}
+                            {errors.branch_ids && <p className="text-sm text-red-600 mt-2">{errors.branch_ids}</p>}
+                            {/* Detailed errors if any specific array index fails (e.g. branch_ids.0) */}
+                            {Object.keys(errors).filter(key => key.startsWith('branch_ids.')).map((key) => (
                                 <p key={key} className="text-sm text-red-600 mt-1">{errors[key as keyof typeof errors]}</p>
                             ))}
                         </div>
