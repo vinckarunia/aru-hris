@@ -268,7 +268,7 @@ export default function Index({ workers, clients }: Props) {
                         href={route('workers.import.index')}
                         className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
                     >
-                        <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import Excel
+                        <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import CSV
                     </Link>
                     <Link
                         href={route('workers.create')}

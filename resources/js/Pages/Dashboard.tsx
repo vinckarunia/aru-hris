@@ -142,20 +142,20 @@ export default function Dashboard({ dashboardData }: Props) {
                     <Link href={route('clients.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Klien Aktif</p>
+                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Client Aktif</p>
                                 <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.active_clients}</h3>
                             </div>
                             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
                                 <iconify-icon icon="solar:city-bold" width="24"></iconify-icon>
                             </div>
                         </div>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Memiliki proyek sedang berjalan</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">Memiliki project sedang berjalan</p>
                     </Link>
 
                     <Link href={route('projects.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Proyek Berjalan</p>
+                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Project Berjalan</p>
                                 <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.ongoing_projects}</h3>
                             </div>
                             <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center">
@@ -192,7 +192,7 @@ export default function Dashboard({ dashboardData }: Props) {
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                     <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
-                                    Distribusi Karyawan (Klien)
+                                    Distribusi Karyawan (Client)
                                 </h3>
                                 <div className="h-64">
                                     {charts.worker_distribution.length > 0 ? (
@@ -268,8 +268,8 @@ export default function Dashboard({ dashboardData }: Props) {
                                     <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                                         <tr>
                                             <th className="px-6 py-3">Nama Karyawan</th>
-                                            <th className="px-6 py-3">Klien</th>
-                                            <th className="px-6 py-3">Proyek</th>
+                                            <th className="px-6 py-3">Client</th>
+                                            <th className="px-6 py-3">Project</th>
                                             <th className="px-6 py-3">Tgl Mulai</th>
                                         </tr>
                                     </thead>
@@ -332,7 +332,7 @@ export default function Dashboard({ dashboardData }: Props) {
                                         <iconify-icon icon="solar:buildings-bold" width="20"></iconify-icon>
                                     </div>
                                     <div>
-                                        <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Klien/Proyek</h4>
+                                        <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Client/Project</h4>
                                     </div>
                                 </Link>
                             </div>
