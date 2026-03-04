@@ -134,6 +134,9 @@ class ProcessBulkImport implements ShouldQueue
         $failed = 0;
         $totalRows = $cached['total_rows'];
 
+        // Track KTP numbers seen in this batch for duplicate detection (mirrors validateAllRows logic)
+        $seenKtpNumbers = [];
+
         while (($row = fgetcsv($handle)) !== false) {
             // Skip empty rows
             if (empty(array_filter($row))) {
@@ -142,6 +145,24 @@ class ProcessBulkImport implements ShouldQueue
 
             $processed++;
             $rowIdentifier = ImportDataCleaner::extractField($row, $this->mapping, 'name') ?? "Baris {$processed}";
+
+            // ---------------------------------------------------------------
+            // Pre-validation: run the same rules used in the preview step.
+            // Rows that fail validation are written to the failed CSV without
+            // ever touching the database, so they can be corrected and re-imported.
+            // ---------------------------------------------------------------
+            $preValidation = $importService->validateSingleRow($row, $this->mapping, $this->globalSettings, $seenKtpNumbers);
+            if (count($preValidation['errors']) > 0) {
+                $failed++;
+                $reason = implode('; ', $preValidation['errors']);
+                $failedRow   = $row;
+                $failedRow[] = $reason;
+                $failedRows[] = $failedRow;
+
+                Log::warning("ProcessBulkImport: Row {$processed} failed pre-validation - {$reason}");
+                $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
+                continue;
+            }
 
             try {
                 DB::beginTransaction();

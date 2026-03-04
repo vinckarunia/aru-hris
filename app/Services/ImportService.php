@@ -194,7 +194,6 @@ class ImportService
      */
     private const AUTO_MAP_HINTS = [
         'nik aru' => 'nik_aru',
-        'nik tlj' => 'nik_tlj',
         'employee name' => 'name',
         'nama' => 'name',
         'ktp' => 'ktp_number',
@@ -422,44 +421,23 @@ class ImportService
             }
 
             $rowNumber++;
-            $errors = [];
-            $conflict = null;
 
-            // Validate Worker data (returns errors + optional conflict)
-            $workerValidation = $this->validateWorkerData($row, $mapping, $seenKtpNumbers);
-            $errors = array_merge($errors, $workerValidation['errors']);
-            $conflict = $workerValidation['conflict'];
-
-            // Track KTP for duplicate detection within file
-            $ktp = ImportDataCleaner::extractField($row, $mapping, 'ktp_number');
-            if ($ktp) {
-                $cleanedKtp = ImportDataCleaner::cleanIdentityNumber($ktp);
-                if ($cleanedKtp) {
-                    $seenKtpNumbers[] = $cleanedKtp;
-                }
-            }
-
-            // Validate Assignment data
-            $assignmentErrors = $this->validateAssignmentData($row, $mapping, $globalSettings);
-            $errors = array_merge($errors, $assignmentErrors);
-
-            // Validate Compensation data
-            $compErrors = $this->validateCompensationData($row, $mapping, $globalSettings);
-            $errors = array_merge($errors, $compErrors);
+            // Validate the row and update the seen KTP tracker
+            $validation = $this->validateSingleRow($row, $mapping, $globalSettings, $seenKtpNumbers);
 
             // Build preview of cleaned data for display
             $preview = $this->buildRowPreview($row, $mapping, $globalSettings);
 
             $result = [
                 'row_number' => $rowNumber,
-                'errors' => $errors,
-                'conflict' => $conflict,
-                'preview' => $preview,
+                'errors'     => $validation['errors'],
+                'conflict'   => $validation['conflict'],
+                'preview'    => $preview,
             ];
 
-            if (count($errors) > 0) {
+            if (count($validation['errors']) > 0) {
                 $errorCount++;
-            } elseif ($conflict) {
+            } elseif ($validation['conflict']) {
                 $conflictCount++;
             } else {
                 $validCount++;
@@ -480,12 +458,54 @@ class ImportService
         return [
             'results' => $results,
             'summary' => [
-                'total' => $rowNumber,
-                'valid' => $validCount,
-                'errors' => $errorCount,
+                'total'     => $rowNumber,
+                'valid'     => $validCount,
+                'errors'    => $errorCount,
                 'conflicts' => $conflictCount,
             ],
         ];
+    }
+
+    /**
+     * Validate a single CSV row and update the seen-KTP tracker.
+     *
+     * This is the canonical single-row validation entry point used by both
+     * the preview step (validateAllRows) and the background import job
+     * (ProcessBulkImport) to ensure consistent rules are enforced at all stages.
+     *
+     * @param array          $row              The raw CSV row.
+     * @param array          $mapping          The column mapping (db_field => csv_index).
+     * @param array          $globalSettings   Global settings (project_id, branch_id, rates).
+     * @param array          &$seenKtpNumbers  KTP numbers already validated in this batch (updated in-place).
+     * @return array{errors: string[], conflict: array|null}
+     */
+    public function validateSingleRow(
+        array $row,
+        array $mapping,
+        array $globalSettings,
+        array &$seenKtpNumbers
+    ): array {
+        // Validate Worker data (returns errors + optional conflict)
+        $workerValidation = $this->validateWorkerData($row, $mapping, $seenKtpNumbers);
+        $errors  = $workerValidation['errors'];
+        $conflict = $workerValidation['conflict'];
+
+        // Record KTP so subsequent rows in the same batch can detect duplicates
+        $ktpRaw = ImportDataCleaner::extractField($row, $mapping, 'ktp_number');
+        if ($ktpRaw) {
+            $cleanedKtp = ImportDataCleaner::cleanIdentityNumber($ktpRaw);
+            if ($cleanedKtp) {
+                $seenKtpNumbers[] = $cleanedKtp;
+            }
+        }
+
+        // Validate Assignment data
+        $errors = array_merge($errors, $this->validateAssignmentData($row, $mapping, $globalSettings));
+
+        // Validate Compensation data
+        $errors = array_merge($errors, $this->validateCompensationData($row, $mapping, $globalSettings));
+
+        return ['errors' => $errors, 'conflict' => $conflict];
     }
 
     /**
@@ -1098,7 +1118,7 @@ class ImportService
     public function generateTemplate(): string
     {
         $headers = [
-            'No', 'NIK TLJ', 'NIK ARU', 'Nama Karyawan', 'Cabang',
+            'No', 'NIK ARU', 'Nama Karyawan', 'Cabang',
             'Tanggal Masuk', 'Jenis Kontrak', 'Status', 'Tanggal Keluar',
             'Jabatan', 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
             'Alamat KTP', 'Alamat Domisili', 'No Telp', 'Pendidikan',

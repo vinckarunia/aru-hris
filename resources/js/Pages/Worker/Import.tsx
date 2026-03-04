@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Link } from '@inertiajs/react';
 import axios from 'axios';
+import StatusBadge from '@/Components/StatusBadge';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -840,12 +841,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                                         <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">{r.preview.name || '-'}</td>
                                                         <td className="px-4 py-3 font-mono text-xs">{r.preview.ktp_number || '-'}</td>
                                                         <td className="px-4 py-3">
-                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${r.preview.status === 'active'
-                                                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30'
-                                                                : 'bg-slate-100 text-slate-600 dark:bg-slate-700'
-                                                                }`}>
-                                                                {r.preview.status}
-                                                            </span>
+                                                            <StatusBadge status={r.preview.status} />
                                                         </td>
                                                         <td className="px-4 py-3 text-xs">{r.preview.hire_date || '-'}</td>
                                                         <td className="px-4 py-3">

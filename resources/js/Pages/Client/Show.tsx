@@ -503,8 +503,8 @@ export default function Show({ client, workers }: Props) {
                     <div className="p-0">
                         <div className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                             <div>
-                                <h3 className="font-semibold text-slate-800 dark:text-white">Karyawan {client.short_name}</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">{activeWorkerCount} aktif dari {workers.length} total karyawan</p>
+                                <h3 className="font-semibold text-slate-800 dark:text-white">Karyawan Aktif {client.short_name}</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Total {activeWorkerCount} karyawan aktif</p>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
