@@ -5,16 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Client;
-use App\Models\Branch;
+use App\Models\Department;
 use App\Models\Assignment;
 
 /**
  * Class Project
  *
- * Represents a project assigned to a specific branch of a client.
+ * Represents a project assigned to a specific department of a client.
  *
  * @property int $id
  * @property int $client_id Foreign key referencing the clients table.
+ * @property int $department_id Foreign key referencing the departments table.
  * @property string $name The name of the project.
  * @property string $prefix The prefix used for generating worker IDs within this project.
  * @property int $id_running_number The auto-incrementing number for worker ID generation.
@@ -48,13 +49,13 @@ class Project extends Model
     }
 
     /**
-     * Get the branches (cabang) associated with the project.
+     * Get the departments that are associated with the project.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function branches()
+    public function departments()
     {
-        return $this->belongsToMany(Branch::class, 'branch_project');
+        return $this->belongsToMany(Department::class);
     }
 
     /**

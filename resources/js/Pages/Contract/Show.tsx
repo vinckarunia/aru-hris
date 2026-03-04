@@ -33,14 +33,14 @@ export default function Show({ contract }: any) {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                        {contract.contract_type === 'Harian'
-                            ? 'Harian'
-                            : contract.pkwt_type === 'PKWTT'
-                                ? 'PKWTT'
+                        {contract.contract_type === 'Harian' 
+                            ? 'Harian' 
+                            : contract.pkwt_type === 'PKWTT' 
+                                ? 'PKWTT' 
                                 : `PKWT-${contract.pkwt_number}`
                         }: {contract.assignment.worker.name}
                     </h2>
-                    <p className="text-sm text-slate-500">{contract.assignment.project.name} - {contract.assignment.branch.name}</p>
+                    <p className="text-sm text-slate-500">{contract.assignment.project.name} - {contract.assignment.department.name}</p>
                 </div>
                 <div className="flex gap-3">
                     <Link href={route('assignments.show', contract.assignment.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
@@ -64,7 +64,7 @@ export default function Show({ contract }: any) {
                         </div>
                         <h3 className="text-lg font-bold text-slate-800 dark:text-white">Data Kontrak</h3>
                     </div>
-
+                    
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div><p className="text-xs text-slate-500 mb-1">Jenis Kontrak</p><p className="font-semibold text-slate-800 dark:text-white">{contract.contract_type}</p></div>
@@ -102,10 +102,10 @@ export default function Show({ contract }: any) {
                         </div>
 
                         {(Number(contract.compensation?.meal_allowance) > 0 || Number(contract.compensation?.transport_allowance) > 0) && (
-                            <div className="border-t border-slate-100 dark:border-slate-700 pt-4 grid grid-cols-2 gap-4">
-                                <div><p className="text-xs text-slate-500 mb-1">Uang Makan/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.meal_allowance)}</p></div>
-                                <div><p className="text-xs text-slate-500 mb-1">Uang Transport/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.transport_allowance)}</p></div>
-                            </div>
+                        <div className="border-t border-slate-100 dark:border-slate-700 pt-4 grid grid-cols-2 gap-4">
+                            <div><p className="text-xs text-slate-500 mb-1">Uang Makan/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.meal_allowance)}</p></div>
+                            <div><p className="text-xs text-slate-500 mb-1">Uang Transport/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.transport_allowance)}</p></div>
+                        </div>
                         )}
 
                         {(Number(contract.compensation?.overtime_weekday_rate) > 0 || Number(contract.compensation?.overtime_holiday_rate) > 0) && (

@@ -12,9 +12,9 @@ interface SortConfig {
 }
 
 /**
- * Represents a branch within a project.
+ * Represents a department within a project.
  */
-interface Branch {
+interface Department {
     id: number;
     name: string;
 }
@@ -52,7 +52,7 @@ interface Assignment {
     termination_date: string | null;
     status: string | null;
     worker: Worker | null;
-    branch: Branch | null;
+    department: Department | null;
     contracts: Contract[];
 }
 
@@ -75,7 +75,7 @@ interface Project {
     prefix: string;
     id_running_number: number;
     client: Client | null;
-    branches: Branch[];
+    departments: Department[];
     assignments: Assignment[];
 }
 
@@ -260,9 +260,9 @@ export default function Show({ project }: Props) {
                                 <span className="font-mono font-bold text-slate-600 dark:text-slate-400">{project.prefix}</span>
                             </span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            {/* Branch badges */}
+                            {/* Department badges */}
                             <div className="flex flex-wrap gap-1">
-                                {project.branches.map(dept => (
+                                {project.departments.map(dept => (
                                     <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md font-medium text-slate-500">
                                         {dept.name}
                                     </span>
@@ -330,10 +330,10 @@ export default function Show({ project }: Props) {
                                         {renderSortIndicator('worker.nik_aru')}
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('branch.name', e)}>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('department.name', e)}>
                                     <div className="flex items-center gap-1">
-                                        Cabang
-                                        {renderSortIndicator('branch.name')}
+                                        Departemen
+                                        {renderSortIndicator('department.name')}
                                     </div>
                                 </th>
                                 <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('position', e)}>
@@ -402,9 +402,9 @@ export default function Show({ project }: Props) {
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            {assignment.branch ? (
+                                            {assignment.department ? (
                                                 <span className="text-[11px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
-                                                    {assignment.branch.name}
+                                                    {assignment.department.name}
                                                 </span>
                                             ) : (
                                                 <span className="text-slate-400 italic text-xs">-</span>

@@ -9,7 +9,7 @@ interface Assignment {
     hire_date: string; termination_date: string | null; status: string;
     worker: { id: number; name: string; nik_aru: string; };
     project: { id: number; name: string; prefix: string; };
-    branch: { id: number; name: string; };
+    department: { id: number; name: string; };
     contracts?: any[];
 }
 
@@ -30,7 +30,7 @@ export default function Show({ assignment }: Props) {
                     <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
                         <span className="flex items-center gap-1"><iconify-icon icon="solar:user-bold"></iconify-icon> {assignment.worker.name}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span className="flex items-center gap-1"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Cabang: {assignment.branch.name}</span>
+                        <span className="flex items-center gap-1"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Dept: {assignment.department.name}</span>
                     </div>
                 </div>
                 <div className="z-10 flex gap-3">

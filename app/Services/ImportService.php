@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Assignment;
 use App\Models\Contract;
 use App\Models\ContractCompensation;
-use App\Models\Branch;
+use App\Models\Department;
 use App\Models\FamilyMember;
 use App\Models\Project;
 use App\Models\Worker;
@@ -82,7 +82,7 @@ class ImportService
             'group' => 'Data Penempatan',
             'options' => [
                 ['key' => 'project_name', 'label' => 'Nama Project'],
-                ['key' => 'branch_name', 'label' => 'Nama Cabang'],
+                ['key' => 'department_name', 'label' => 'Nama Departemen'],
                 ['key' => 'nik_tlj', 'label' => 'NIK Client (Employee ID)'],
                 ['key' => 'position', 'label' => 'Jabatan (Position)'],
                 ['key' => 'hire_date', 'label' => 'Tanggal Masuk (Hire Date)'],
@@ -220,8 +220,8 @@ class ImportService
         'bpjs ketenagakerjaan' => 'bpjs_ketenagakerjaan',
         'nama ibu' => 'mother_name',
         'project' => 'project_name',
-        'cabang'     => 'branch_name',
-        'branch'     => 'branch_name',
+        'departemen' => 'department_name',
+        'department' => 'department_name',
         'date of hire' => 'hire_date',
         'type of contract' => 'raw_contract_type',
         'jabatan' => 'position',
@@ -636,7 +636,7 @@ class ImportService
      *
      * @param array $row The CSV row data.
      * @param array $mapping The column mapping.
-     * @param array $globalSettings Global settings containing project_id and branch_id.
+     * @param array $globalSettings Global settings containing project_id and department_id.
      * @return array<string> List of error messages.
      */
     private function validateAssignmentData(array $row, array $mapping, array $globalSettings): array
@@ -656,13 +656,13 @@ class ImportService
         }
 
         // Resolve department: CSV column first, fall back to global setting
-        $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
-        $branchResolved = $this->resolveBranchId($row, $mapping, $globalSettings, $projectResolved);
+        $deptName = ImportDataCleaner::extractField($row, $mapping, 'department_name');
+        $departmentResolved = $this->resolveDepartmentId($row, $mapping, $globalSettings, $projectResolved);
         
-        if (!$branchResolved) {
-            // If branch not found but client_id is set and branchName is in CSV, it will be auto-created
-            if (empty($globalSettings['client_id']) || empty($branchName)) {
-                $errors[] = 'Cabang tidak ditemukan. Pastikan nama cabang di CSV benar atau pilih di pengaturan global.';
+        if (!$departmentResolved) {
+            // If department not found but client_id is set and deptName is in CSV, it will be auto-created
+            if (empty($globalSettings['client_id']) || empty($deptName)) {
+                $errors[] = 'Departemen tidak ditemukan. Pastikan nama departemen di CSV benar atau pilih di pengaturan global.';
             }
         }
 
@@ -712,37 +712,33 @@ class ImportService
     }
 
     /**
-     * Resolve branch_id from CSV column (by name) or global settings.
+     * Resolve department_id from CSV column (by name) or global settings.
      * CSV column takes priority over global settings.
-     * When resolved by name, scopes to the project's client.
+     * When resolved by name, scopes to the given project.
      */
-    private function resolveBranchId(array $row, array $mapping, array $globalSettings, ?int $projectId): ?int
+    private function resolveDepartmentId(array $row, array $mapping, array $globalSettings, ?int $projectId): ?int
     {
         // Try CSV column first
-        $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
-        if ($branchName) {
-            $query = Branch::where('name', 'ilike', trim($branchName));
-            // Scope to the project's client_id (not project_id) if possible
+        $deptName = ImportDataCleaner::extractField($row, $mapping, 'department_name');
+        if ($deptName) {
+            $query = Department::where('name', 'ilike', trim($deptName));
             if ($projectId) {
-                $project = Project::find($projectId);
-                if ($project) {
-                    $query->where('client_id', $project->client_id);
-                }
+                $query->where('client_id', $projectId);
             }
-            $branch = $query->first();
-            if ($branch) {
-                return $branch->id;
+            $dept = $query->first();
+            if ($dept) {
+                return $dept->id;
             }
-            // Try without client scope as fallback
-            $branch = Branch::where('name', 'ilike', trim($branchName))->first();
-            if ($branch) {
-                return $branch->id;
+            // Try without project scope as fallback
+            $dept = Department::where('name', 'ilike', trim($deptName))->first();
+            if ($dept) {
+                return $dept->id;
             }
         }
 
         // Fall back to global setting
-        $globalId = $globalSettings['branch_id'] ?? null;
-        if ($globalId && Branch::find($globalId)) {
+        $globalId = $globalSettings['department_id'] ?? null;
+        if ($globalId && Department::find($globalId)) {
             return (int) $globalId;
         }
 
@@ -842,7 +838,7 @@ class ImportService
      *
      * @param array $row The CSV row data.
      * @param array $mapping The column mapping.
-     * @param array $globalSettings Global settings (project_id, branch_id).
+     * @param array $globalSettings Global settings (project_id, department_id).
      * @return array The data array suitable for Assignment::create() (minus worker_id).
      */
     public function buildAssignmentData(array $row, array $mapping, array $globalSettings): array
@@ -863,20 +859,13 @@ class ImportService
             $terminationDate = null;
         }
 
-        // Resolve project_id and branch_id: CSV column takes priority, global settings as fallback
-        $projectId = $this->resolveProjectId($row, $mapping, $globalSettings);
-        if (!$projectId) {
-            throw new \Exception('Project tidak ditemukan. Pastikan nama project di CSV benar atau pilih project di pengaturan global.');
-        }
-
-        $branchId = $this->resolveBranchId($row, $mapping, $globalSettings, $projectId);
-        if (!$branchId) {
-            throw new \Exception('Cabang tidak ditemukan. Pastikan nama cabang di CSV benar atau pilih cabang di pengaturan global.');
-        }
+        // Resolve project_id and department_id: CSV column takes priority, global settings as fallback
+        $projectId = $this->resolveProjectId($row, $mapping, $globalSettings) ?? 1;
+        $departmentId = $this->resolveDepartmentId($row, $mapping, $globalSettings, $projectId) ?? 1;
 
         return [
             'project_id' => $projectId,
-            'branch_id' => $branchId,
+            'department_id' => $departmentId,
             'employee_id' => $c::extractField($row, $mapping, 'nik_tlj'),
             'position' => $c::extractField($row, $mapping, 'position'),
             'hire_date' => $c::parseDate($c::extractField($row, $mapping, 'hire_date')) ?? now()->format('Y-m-d'),
@@ -1098,7 +1087,7 @@ class ImportService
     public function generateTemplate(): string
     {
         $headers = [
-            'No', 'NIK TLJ', 'NIK ARU', 'Nama Karyawan', 'Cabang',
+            'No', 'NIK TLJ', 'NIK ARU', 'Nama Karyawan', 'Departemen',
             'Tanggal Masuk', 'Jenis Kontrak', 'Status', 'Tanggal Keluar',
             'Jabatan', 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
             'Alamat KTP', 'Alamat Domisili', 'No Telp', 'Pendidikan',

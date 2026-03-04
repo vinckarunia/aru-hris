@@ -98,7 +98,7 @@ class DashboardController extends Controller
                 ->get();
 
             // FR-DASH-04: Data Grid (Recent Assignments)
-            $recentAssignments = Assignment::with(['worker', 'project.client', 'branch'])
+            $recentAssignments = Assignment::with(['worker', 'project.client', 'department'])
                 ->orderBy('hire_date', 'desc')
                 ->take(10)
                 ->get();

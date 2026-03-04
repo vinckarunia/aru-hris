@@ -64,14 +64,14 @@ class WorkerController extends Controller
     }
 
     /**
-     * Display the specified worker along with their assignments and related project/branch details.
+     * Display the specified worker along with their assignments and related project/department details.
      * 
      * @param Worker $worker
      * @return Response
      */
     public function show(Worker $worker): Response
     {
-        $worker->load(['assignments.project', 'assignments.branch', 'familyMembers']);
+        $worker->load(['assignments.project', 'assignments.department', 'familyMembers']);
         return Inertia::render('Worker/Show', ['worker' => $worker]);
     }
 

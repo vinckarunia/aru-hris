@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Validator;
 /**
  * Class AssignmentController
  *
- * Handles CRUD operations for worker assignments to projects/branches.
+ * Handles CRUD operations for worker assignments to projects/departments.
  */
 class AssignmentController extends Controller
 {
@@ -29,11 +29,11 @@ class AssignmentController extends Controller
         $request->validate(['worker_id' => 'required|exists:workers,id']);
 
         $worker = Worker::findOrFail($request->worker_id);
-        // Eager load branches for the dependent dropdown
-        $projects = Project::with('branches')->orderBy('name')->get();
+        // Eager load departments for the dependent dropdown
+        $projects = Project::with('departments')->orderBy('name')->get();
 
         return Inertia::render('Assignment/Create', [
-            'worker'   => $worker,
+            'worker' => $worker,
             'projects' => $projects,
         ]);
     }
@@ -49,7 +49,7 @@ class AssignmentController extends Controller
         $validator = Validator::make($request->all(), [
             'worker_id'        => 'required|exists:workers,id',
             'project_id'       => 'required|exists:projects,id',
-            'branch_id'        => 'required|exists:branches,id',
+            'department_id'    => 'required|exists:departments,id',
             'employee_id'      => [
                 'nullable', 'string', 'max:255',
                 Rule::unique('assignments')->where('project_id', $request->project_id),
@@ -99,7 +99,7 @@ class AssignmentController extends Controller
      */
     public function show(Assignment $assignment): Response
     {
-        $assignment->load(['worker', 'project', 'branch', 'contracts']);
+        $assignment->load(['worker', 'project', 'department', 'contracts']);
 
         return Inertia::render('Assignment/Show', [
             'assignment' => $assignment,
@@ -112,11 +112,11 @@ class AssignmentController extends Controller
     public function edit(Assignment $assignment): Response
     {
         $assignment->load('worker');
-        $projects = Project::with('branches')->orderBy('name')->get();
+        $projects = Project::with('departments')->orderBy('name')->get();
 
         return Inertia::render('Assignment/Edit', [
             'assignment' => $assignment,
-            'projects'   => $projects,
+            'projects' => $projects,
         ]);
     }
 
@@ -132,7 +132,7 @@ class AssignmentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'project_id'       => 'required|exists:projects,id',
-            'branch_id'        => 'required|exists:branches,id',
+            'department_id'    => 'required|exists:departments,id',
             'employee_id'      => [
                 'nullable', 'string', 'max:255',
                 Rule::unique('assignments')->where('project_id', $request->project_id)->ignore($assignment->id),

@@ -6,21 +6,21 @@ import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
-interface Branch { id: number; name: string; }
-interface Project { id: number; name: string; prefix: string; branches: Branch[]; }
+interface Department { id: number; name: string; }
+interface Project { id: number; name: string; prefix: string; departments: Department[]; }
 interface Worker { id: number; name: string; nik_aru: string | null; }
 
 interface Props { worker: Worker; projects: Project[]; }
 
 /**
  * Assignment Create Component
- * Form to assign a worker to a specific project and branch.
+ * Form to assign a worker to a specific project and department.
  */
 export default function Create({ worker, projects }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         worker_id: worker.id,
         project_id: '',
-        branch_id: '',
+        department_id: '',
         employee_id: '',
         position: '',
         hire_date: '',
@@ -30,7 +30,7 @@ export default function Create({ worker, projects }: Props) {
 
     // Dependent dropdown logic
     const selectedProject = projects.find(p => p.id.toString() === data.project_id);
-    const availableBranches = selectedProject ? selectedProject.branches : [];
+    const availableDepartments = selectedProject ? selectedProject.departments : [];
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,22 +75,22 @@ export default function Create({ worker, projects }: Props) {
                         {/* Project Selection */}
                         <div>
                             <InputLabel htmlFor="project_id" value="Pilih Project" />
-                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_id', ''); }} required>
+                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('department_id', ''); }} required>
                                 <option value="">-- Pilih Project --</option>
                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name} ({p.prefix})</option>)}
                             </select>
                             <InputError message={errors.project_id} className="mt-1" />
                         </div>
 
-                        {/* Branch Selection */}
+                        {/* Department Selection */}
                         <div>
-                            <InputLabel htmlFor="branch_id" value="Pilih Cabang Spesifik" />
-                            <select id="branch_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary disabled:opacity-50" value={data.branch_id} onChange={e => setData('branch_id', e.target.value)} disabled={!data.project_id} required>
-                                <option value="">-- Pilih Cabang --</option>
-                                {availableBranches.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            <InputLabel htmlFor="department_id" value="Pilih Departemen Spesifik" />
+                            <select id="department_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary disabled:opacity-50" value={data.department_id} onChange={e => setData('department_id', e.target.value)} disabled={!data.project_id} required>
+                                <option value="">-- Pilih Departemen --</option>
+                                {availableDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
-                            {availableBranches.length === 0 && data.project_id && <p className="text-xs text-red-500 mt-1">Project ini belum memiliki cabang.</p>}
-                            <InputError message={errors.branch_id} className="mt-1" />
+                            {availableDepartments.length === 0 && data.project_id && <p className="text-xs text-red-500 mt-1">Project ini belum memiliki departemen.</p>}
+                            <InputError message={errors.department_id} className="mt-1" />
                         </div>
 
                         {/* Job Details */}

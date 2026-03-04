@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Models\Assignment;
 use App\Models\Contract;
 use App\Models\ContractCompensation;
-use App\Models\Branch;
+use App\Models\Department;
 use App\Models\FamilyMember;
 use App\Models\Project;
 use App\Models\Worker;
@@ -63,7 +63,7 @@ class ProcessBulkImport implements ShouldQueue
     protected array $mapping;
 
     /**
-     * @var array The global settings (project_id, branch_id, rates, etc.).
+     * @var array The global settings (project_id, department_id, rates, etc.).
      */
     protected array $globalSettings;
 
@@ -82,7 +82,7 @@ class ProcessBulkImport implements ShouldQueue
      *
      * @param string $sessionId The unique import session ID.
      * @param array $mapping The column mapping from the frontend.
-     * @param array $globalSettings Global settings (project_id, branch_id, rates).
+     * @param array $globalSettings Global settings (project_id, department_id, rates).
      * @param int $userId The ID of the authenticated user.
      * @param array $rowActions Per-row conflict actions: [row_number => 'update'|'skip'].
      */
@@ -200,28 +200,28 @@ class ProcessBulkImport implements ShouldQueue
                     $projectToBind = $existingProject;
                 }
 
-                $deptName = ImportDataCleaner::extractField($row, $this->mapping, 'branch_name');
+                $deptName = ImportDataCleaner::extractField($row, $this->mapping, 'department_name');
                 if ($deptName && !empty($this->globalSettings['client_id'])) {
-                    $query = Branch::where('name', 'ilike', trim($deptName));
+                    $query = Department::where('name', 'ilike', trim($deptName));
                     if ($projectToBind) {
                         $query->where('client_id', $projectToBind->client_id);
                     }
                     $existingDept = $query->first();
 
                     if (!$existingDept) {
-                        $existingDept = Branch::create([
+                        $existingDept = Department::create([
                             'client_id' => $this->globalSettings['client_id'],
-                            'name'      => trim($deptName)
+                            'name' => trim($deptName)
                         ]);
                     }
-                    $this->globalSettings['branch_id'] = $existingDept->id;
+                    $this->globalSettings['department_id'] = $existingDept->id;
 
                     if ($projectToBind) {
-                        $projectToBind->branches()->syncWithoutDetaching([$existingDept->id]);
+                        $projectToBind->departments()->syncWithoutDetaching([$existingDept->id]);
                     } elseif (!empty($this->globalSettings['project_id'])) {
                         $p = Project::find($this->globalSettings['project_id']);
                         if ($p) {
-                            $p->branches()->syncWithoutDetaching([$existingDept->id]);
+                            $p->departments()->syncWithoutDetaching([$existingDept->id]);
                         }
                     }
                 }
