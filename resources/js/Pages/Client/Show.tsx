@@ -622,7 +622,7 @@ export default function Show({ client, workers }: Props) {
                     <div className="space-y-4">
                         <div>
                             <InputLabel htmlFor="dept_name" value="Nama Cabang" />
-                            <TextInput id="dept_name" type="text" className="mt-1 block w-full" value={deptForm.data.name} onChange={(e) => deptForm.setData('name', e.target.value)} placeholder="Contoh: HR & Admin" />
+                            <TextInput id="dept_name" type="text" className="mt-1 block w-full" value={deptForm.data.name} onChange={(e) => deptForm.setData('name', e.target.value)} placeholder="Contoh: Jakarta Barat" />
                             <InputError message={deptForm.errors.name} className="mt-2" />
                         </div>
                     </div>

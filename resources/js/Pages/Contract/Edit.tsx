@@ -28,7 +28,7 @@ interface Props { contract: Contract; }
  */
 export default function Edit({ contract }: Props) {
     const comp = contract.compensation || {};
-    
+
     const { data, setData, put, processing, errors } = useForm({
         assignment_id: contract.assignment.id,
         contract_type: contract.contract_type || 'Kontrak',
@@ -38,7 +38,7 @@ export default function Edit({ contract }: Props) {
         end_date: contract.end_date || '',
         duration_months: contract.duration_months?.toString() || '',
         evaluation_notes: contract.evaluation_notes || '',
-        
+
         base_salary: comp.base_salary?.toString() || '',
         salary_rate: comp.salary_rate || 'monthly',
         meal_allowance: comp.meal_allowance?.toString() || '',
@@ -54,11 +54,11 @@ export default function Edit({ contract }: Props) {
         if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
-            
+
             if (end >= start) {
                 const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
                 const diffMonths = Math.round(diffDays / 30.437);
-                
+
                 setData('duration_months', diffMonths.toString());
             } else {
                 setData('duration_months', '0');
@@ -106,10 +106,10 @@ export default function Edit({ contract }: Props) {
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <div>
                             <InputLabel htmlFor="contract_type" value="Jenis Kontrak" />
-                            <select 
-                                id="contract_type" 
-                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700" 
-                                value={data.contract_type} 
+                            <select
+                                id="contract_type"
+                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700"
+                                value={data.contract_type}
                                 onChange={e => {
                                     const type = e.target.value;
                                     setData('contract_type', type);
@@ -128,13 +128,13 @@ export default function Edit({ contract }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_type" value="Status Ketenagakerjaan" />
-                            <select 
-                                id="pkwt_type" 
-                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" 
-                                value={data.pkwt_type} 
+                            <select
+                                id="pkwt_type"
+                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                                value={data.pkwt_type}
                                 onChange={e => {
                                     setData('pkwt_type', e.target.value);
-                                    if(e.target.value === 'PKWTT') setData('end_date', '');
+                                    if (e.target.value === 'PKWTT') setData('end_date', '');
                                 }}
                                 disabled={data.contract_type === 'Harian'}
                             >
@@ -162,13 +162,13 @@ export default function Edit({ contract }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
-                            <TextInput 
-                                id="duration_months" 
-                                type="text" 
-                                className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700" 
-                                value={data.duration_months ? `${data.duration_months} Bulan` : ''} 
-                                disabled 
-                                placeholder="Permanen" 
+                            <TextInput
+                                id="duration_months"
+                                type="text"
+                                className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700"
+                                value={data.duration_months ? `${data.duration_months} Bulan` : ''}
+                                disabled
+                                placeholder="-"
                             />
                             <InputError message={errors.duration_months} className="mt-1" />
                         </div>
@@ -187,7 +187,7 @@ export default function Edit({ contract }: Props) {
                         <h3 className="font-bold text-emerald-800 dark:text-emerald-400">Rincian Gaji dan Tunjangan</h3>
                     </div>
                     <div className="p-6 grid grid-cols-1">
-                        
+
                         {/* Salary */}
                         <div className="space-y-4 mb-10">
                             <h4 className="font-bold text-slate-700 border-b pb-2">Gaji Pokok</h4>
@@ -219,7 +219,7 @@ export default function Edit({ contract }: Props) {
                                 <div>
                                     <InputLabel htmlFor="meal_allowance" value="Uang Makan" />
                                     <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                    <span className="text-slate-500 sm:text-sm">Rp</span>
+                                        <span className="text-slate-500 sm:text-sm">Rp</span>
                                         <TextInput id="meal_allowance" type="text" className="block w-full font-mono" value={data.meal_allowance} onChange={e => handleNumberInput('meal_allowance', e.target.value)} placeholder="0" />
                                     </div>
                                     <InputError message={errors.meal_allowance} className="mt-1" />
@@ -227,7 +227,7 @@ export default function Edit({ contract }: Props) {
                                 <div>
                                     <InputLabel htmlFor="transport_allowance" value="Uang Transport" />
                                     <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                    <span className="text-slate-500 sm:text-sm">Rp</span>
+                                        <span className="text-slate-500 sm:text-sm">Rp</span>
                                         <TextInput id="transport_allowance" type="text" className="block w-full font-mono" value={data.transport_allowance} onChange={e => handleNumberInput('transport_allowance', e.target.value)} placeholder="0" />
                                     </div>
                                     <InputError message={errors.transport_allowance} className="mt-1" />
@@ -241,12 +241,12 @@ export default function Edit({ contract }: Props) {
                                 </select>
                                 <InputError message={errors.allowance_rate} className="mt-1" />
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4 pt-2">
                                 <div>
                                     <InputLabel htmlFor="overtime_weekday_rate" value="Rate Lembur Weekday" />
                                     <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                    <span className="text-slate-500 sm:text-sm">Rp</span>
+                                        <span className="text-slate-500 sm:text-sm">Rp</span>
                                         <TextInput id="overtime_weekday_rate" type="text" className="block w-full font-mono" value={data.overtime_weekday_rate} onChange={e => handleNumberInput('overtime_weekday_rate', e.target.value)} placeholder="0" />
                                     </div>
                                     <InputError message={errors.overtime_weekday_rate} className="mt-1" />
@@ -254,7 +254,7 @@ export default function Edit({ contract }: Props) {
                                 <div>
                                     <InputLabel htmlFor="overtime_holiday_rate" value="Rate Lembur Weekend/Libur" />
                                     <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                    <span className="text-slate-500 sm:text-sm">Rp</span>
+                                        <span className="text-slate-500 sm:text-sm">Rp</span>
                                         <TextInput id="overtime_holiday_rate" type="text" className="block w-full font-mono" value={data.overtime_holiday_rate} onChange={e => handleNumberInput('overtime_holiday_rate', e.target.value)} placeholder="0" />
                                     </div>
                                     <InputError message={errors.overtime_holiday_rate} className="mt-1" />
@@ -268,7 +268,7 @@ export default function Edit({ contract }: Props) {
                                 </select>
                                 <InputError message={errors.overtime_rate} className="mt-1" />
                             </div>
-                            
+
                         </div>
                     </div>
                 </div>

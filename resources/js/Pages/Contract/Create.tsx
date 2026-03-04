@@ -174,7 +174,7 @@ export default function Create({ assignment }: Props) {
                                 className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700"
                                 value={data.duration_months ? `${data.duration_months} Bulan` : ''}
                                 disabled
-                                placeholder="Permanen"
+                                placeholder="-"
                             />
                             <InputError message={errors.duration_months} className="mt-1" />
                         </div>
