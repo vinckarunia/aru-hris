@@ -325,7 +325,7 @@ export default function Show({ worker }: Props) {
                                                 </div>
                                                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">
                                                     <iconify-icon icon="solar:buildings-bold" className="mr-1"></iconify-icon>
-                                                    {assign.project?.name} - {assign.department?.name}
+                                                    {assign.project?.name} - {assign.branch?.name}
                                                 </p>
                                                 <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
                                                     <iconify-icon icon="solar:calendar-bold-duotone"></iconify-icon>

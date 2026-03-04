@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Project;
+use App\Models\Branch;
 use App\Models\User;
 
 /**
@@ -53,12 +54,12 @@ class Client extends Model
     }
 
     /**
-     * Get the departments associated with the client.
+     * Get the branches (cabang) associated with the client.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function departments()
+    public function branches()
     {
-        return $this->hasMany(Department::class);
+        return $this->hasMany(Branch::class);
     }
 }

@@ -45,7 +45,7 @@ interface RecentAssignment {
     hire_date: string;
     worker: { id: number; name: string };
     project: { name: string; client: { short_name: string } };
-    department: { name: string };
+    branch: { name: string };
 }
 
 /**

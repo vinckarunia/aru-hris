@@ -49,14 +49,14 @@ class ImportController extends Controller
      * Render the import wizard page.
      *
      * Passes the available database columns for mapping and projects
-     * with their departments for the global settings dropdowns.
+     * with their branches for the global settings dropdowns.
      *
      * @return Response
      */
     public function index(): Response
     {
         $clients = Client::orderBy('full_name')->get();
-        $projects = Project::with('departments')->orderBy('name')->get();
+        $projects = Project::with('branches')->orderBy('name')->get();
 
         return Inertia::render('Worker/Import', [
             'clients' => $clients,
@@ -66,14 +66,14 @@ class ImportController extends Controller
     }
 
     /**
-     * Return projects with their associated departments for cascading dropdowns.
+     * Return projects with their associated branches for cascading dropdowns.
      *
      * @return JsonResponse
      */
     public function globalOptions(): JsonResponse
     {
         $clients = Client::orderBy('full_name')->get();
-        $projects = Project::with('departments')->orderBy('name')->get();
+        $projects = Project::with('branches')->orderBy('name')->get();
 
         return response()->json([
             'clients' => $clients,
@@ -138,7 +138,7 @@ class ImportController extends Controller
             'global_settings' => ['required', 'array'],
             'global_settings.client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'global_settings.project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'global_settings.department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'global_settings.branch_id'    => ['nullable', 'integer', 'exists:branches,id'],
         ], [
             'session_id.required' => 'Session ID tidak ditemukan.',
             'mapping.required' => 'Mapping kolom wajib diisi.',

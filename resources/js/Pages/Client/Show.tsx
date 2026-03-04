@@ -19,16 +19,16 @@ interface SortConfig {
 }
 
 /**
- * Represents a department within a client company.
+ * Represents a branch within a client company.
  */
-interface Department {
+interface Branch {
     id: number;
     client_id: number;
     name: string;
 }
 
 /**
- * Represents a project that can be associated with multiple departments.
+ * Represents a project that can be associated with multiple branches.
  */
 interface Project {
     id: number;
@@ -36,20 +36,20 @@ interface Project {
     name: string;
     prefix: string;
     id_running_number: number;
-    departments?: Department[];
+    branches?: Branch[];
 }
 /**
- * Represents an assignment connecting a worker to a project/department.
+ * Represents an assignment connecting a worker to a project/branch.
  */
 interface Assignment {
     id: number;
     worker_id: number;
     project_id: number;
-    department_id: number;
+    branch_id: number;
     position: string | null;
     status: string | null;
     project: { id: number; name: string } | null;
-    department: { id: number; name: string } | null;
+    branch: { id: number; name: string } | null;
 }
 
 /**
@@ -63,13 +63,13 @@ interface AffiliatedWorker {
 }
 
 /**
- * Represents a client company entity holding departments, projects, and workers.
+ * Represents a client company entity holding branches, projects, and workers.
  */
 interface Client {
     id: number;
     full_name: string;
     short_name: string;
-    departments: Department[];
+    branches: Branch[];
     projects: Project[];
 }
 
@@ -85,7 +85,7 @@ interface Props {
  * Client Show Page Component
  *
  * Displays detailed information about a specific client, including tabs to
- * view and manage its Departments, Projects (with Many-to-Many departments),
+ * view and manage its Branches, Projects (with Many-to-Many branches),
  * and Karyawan (workers affiliated via assignments).
  *
  * @param {Props} props - The component props containing the client and workers data.
@@ -94,10 +94,10 @@ interface Props {
 const PER_PAGE = 10;
 
 export default function Show({ client, workers }: Props) {
-    const [activeTab, setActiveTab] = useState<'departments' | 'projects' | 'workers'>('departments');
+    const [activeTab, setActiveTab] = useState<'branches' | 'projects' | 'workers'>('branches');
 
     /** Resets all tab pages to 1 and switches the active tab. */
-    const switchTab = (tab: 'departments' | 'projects' | 'workers') => {
+    const switchTab = (tab: 'branches' | 'projects' | 'workers') => {
         setDeptPage(1);
         setProjPage(1);
         setWorkerPage(1);
@@ -219,11 +219,11 @@ export default function Show({ client, workers }: Props) {
     };
 
     // Sliced arrays for display
-    const sortedDepts = sortData(client.departments, deptSortConfigs);
+    const sortedBranches = sortData(client.branches, deptSortConfigs);
     const sortedProjs = sortData(client.projects, projSortConfigs);
     const sortedWorkers = sortData(workers, workerSortConfigs);
 
-    const paginatedDepts = sortedDepts.slice((deptPage - 1) * PER_PAGE, deptPage * PER_PAGE);
+    const paginatedDepts = sortedBranches.slice((deptPage - 1) * PER_PAGE, deptPage * PER_PAGE);
     const paginatedProjs = sortedProjs.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
     const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
 
@@ -237,7 +237,7 @@ export default function Show({ client, workers }: Props) {
     const [isDeptModalOpen, setIsDeptModalOpen] = useState<boolean>(false);
     const [isDeptDeleteModalOpen, setIsDeptDeleteModalOpen] = useState<boolean>(false);
     const [deptModalMode, setDeptModalMode] = useState<'add' | 'edit'>('add');
-    const [selectedDept, setSelectedDept] = useState<Department | null>(null);
+    const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
     const deptForm = useForm({
         client_id: client.id.toString(),
         name: ''
@@ -245,16 +245,16 @@ export default function Show({ client, workers }: Props) {
     /** Opens the modal to add a new department. */
     const openAddDept = () => {
         setDeptModalMode('add');
-        setSelectedDept(null);
+        setSelectedBranch(null);
         deptForm.reset('name');
         deptForm.clearErrors();
         setIsDeptModalOpen(true);
     };
     /** Opens the modal to edit an existing department. */
-    const openEditDept = (dept: Department) => {
+    const openEditBranch = (branch: Branch) => {
         setDeptModalMode('edit');
-        setSelectedDept(dept);
-        deptForm.setData({ client_id: client.id.toString(), name: dept.name });
+        setSelectedBranch(branch);
+        deptForm.setData({ client_id: client.id.toString(), name: branch.name });
         deptForm.clearErrors();
         setIsDeptModalOpen(true);
     };
@@ -267,8 +267,8 @@ export default function Show({ client, workers }: Props) {
     /** Submits the department form (Create/Update). */
     const submitDept = (e: React.FormEvent) => {
         e.preventDefault();
-        if (deptModalMode === 'add') deptForm.post(route('departments.store'), { onSuccess: () => closeDeptModal() });
-        else deptForm.put(route('departments.update', selectedDept?.id), { onSuccess: () => closeDeptModal() });
+        if (deptModalMode === 'add') deptForm.post(route('branches.store'), { onSuccess: () => closeDeptModal() });
+        else deptForm.put(route('branches.update', selectedBranch?.id), { onSuccess: () => closeDeptModal() });
     };
     // ==========================================
     // STATE & FORM FOR PROJECT
@@ -279,28 +279,28 @@ export default function Show({ client, workers }: Props) {
     const [selectedProj, setSelectedProj] = useState<Project | null>(null);
     const projForm = useForm({
         client_id: client.id.toString(),
-        department_ids: [] as number[],
+        branch_ids: [] as number[],
         name: '',
         prefix: ''
     });
     /**
-     * Toggles a department ID in the project form's department_ids state array.
+     * Toggles a branch ID in the project form's branch_ids state array.
      *
-     * @param {number} id - The ID of the department to toggle.
+     * @param {number} id - The ID of the branch to toggle.
      */
-    const handleProjDepartmentToggle = (id: number) => {
-        const currentIds = projForm.data.department_ids;
+    const handleProjBranchToggle = (id: number) => {
+        const currentIds = projForm.data.branch_ids;
         if (currentIds.includes(id)) {
-            projForm.setData('department_ids', currentIds.filter(deptId => deptId !== id));
+            projForm.setData('branch_ids', currentIds.filter(branchId => branchId !== id));
         } else {
-            projForm.setData('department_ids', [...currentIds, id]);
+            projForm.setData('branch_ids', [...currentIds, id]);
         }
     };
     /** Opens the modal to add a new project. */
     const openAddProj = () => {
         setProjModalMode('add');
         setSelectedProj(null);
-        projForm.reset('department_ids', 'name', 'prefix');
+        projForm.reset('branch_ids', 'name', 'prefix');
         projForm.clearErrors();
         setIsProjModalOpen(true);
     };
@@ -310,7 +310,7 @@ export default function Show({ client, workers }: Props) {
         setSelectedProj(proj);
         projForm.setData({
             client_id: client.id.toString(),
-            department_ids: proj.departments?.map(d => d.id) || [],
+            branch_ids: proj.branches?.map(d => d.id) || [],
             name: proj.name,
             prefix: proj.prefix
         });
@@ -320,7 +320,7 @@ export default function Show({ client, workers }: Props) {
     /** Closes the project modal. */
     const closeProjModal = () => {
         setIsProjModalOpen(false);
-        projForm.reset('department_ids', 'name', 'prefix');
+        projForm.reset('branch_ids', 'name', 'prefix');
         projForm.clearErrors();
     };
     /** Submits the project form (Create/Update). */
@@ -358,10 +358,10 @@ export default function Show({ client, workers }: Props) {
             {/* Content Tabs */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card overflow-hidden">
                 <div className="flex overflow-x-auto border-b border-slate-100 dark:border-slate-700">
-                    <button onClick={() => switchTab('departments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'departments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                        <iconify-icon icon="solar:users-group-two-rounded-bold" width="18"></iconify-icon> Departemen
-                        {client.departments.length > 0 && (
-                            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{client.departments.length}</span>
+                    <button onClick={() => switchTab('branches')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'branches' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                        <iconify-icon icon="solar:users-group-two-rounded-bold" width="18"></iconify-icon> Cabang
+                        {client.branches.length > 0 && (
+                            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{client.branches.length}</span>
                         )}
                     </button>
                     <button onClick={() => switchTab('projects')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'projects' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -378,11 +378,11 @@ export default function Show({ client, workers }: Props) {
                         )}
                     </button>
                 </div>
-                {/* Tab: Departments */}
-                {activeTab === 'departments' && (
+                {/* Tab: Branches */}
+                {activeTab === 'branches' && (
                     <div className="p-0">
                         <div className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                            <div><h3 className="font-semibold text-slate-800 dark:text-white">Departemen {client.short_name}</h3></div>
+                            <div><h3 className="font-semibold text-slate-800 dark:text-white">Cabang {client.short_name}</h3></div>
                             <button onClick={openAddDept} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm">
                                 <iconify-icon icon="solar:add-circle-bold" width="18"></iconify-icon> Tambah
                             </button>
@@ -394,7 +394,7 @@ export default function Show({ client, workers }: Props) {
                                         <th className="px-6 py-4">No</th>
                                         <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, deptSortConfigs, setDeptSortConfigs)}>
                                             <div className="flex items-center gap-1">
-                                                Nama Departemen
+                                                Nama Cabang
                                                 {renderSortIndicator('name', deptSortConfigs)}
                                             </div>
                                         </th>
@@ -402,15 +402,15 @@ export default function Show({ client, workers }: Props) {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
-                                    {client.departments.length === 0 ? (
-                                        <tr><td colSpan={3} className="px-6 py-6"><EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada departemen." /></td></tr>
+                                    {client.branches.length === 0 ? (
+                                        <tr><td colSpan={3} className="px-6 py-6"><EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada cabang." /></td></tr>
                                     ) : paginatedDepts.map((dept, idx) => (
                                         <tr key={dept.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                             <td className="px-6 py-4">{deptOffset + idx + 1}</td>
                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{dept.name}</td>
                                             <td className="px-6 py-4 text-right space-x-2">
-                                                <button onClick={() => openEditDept(dept)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
-                                                <button onClick={() => { setSelectedDept(dept); setIsDeptDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
+                                                <button onClick={() => openEditBranch(dept)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
+                                                <button onClick={() => { setSelectedBranch(dept); setIsDeptDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -418,7 +418,7 @@ export default function Show({ client, workers }: Props) {
                             </table>
                         </div>
                         <Pagination
-                            totalItems={client.departments.length}
+                            totalItems={client.branches.length}
                             itemsPerPage={PER_PAGE}
                             currentPage={deptPage}
                             onPageChange={setDeptPage}
@@ -469,8 +469,8 @@ export default function Show({ client, workers }: Props) {
                                             </td>
                                             <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                                 <div className="flex flex-wrap gap-1">
-                                                    {proj.departments && proj.departments.length > 0 ? (
-                                                        proj.departments.map(dept => (
+                                                    {proj.branches && proj.branches.length > 0 ? (
+                                                        proj.branches.map(dept => (
                                                             <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
                                                                 {dept.name}
                                                             </span>
@@ -614,14 +614,14 @@ export default function Show({ client, workers }: Props) {
                 )}
             </div>
             {/* ========================================== */}
-            {/* DEPARTMENT MODALS */}
+            {/* BRANCH MODALS */}
             {/* ========================================== */}
             <Modal show={isDeptModalOpen} onClose={closeDeptModal} maxWidth="md">
                 <form onSubmit={submitDept} className="p-6">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{deptModalMode === 'add' ? `Tambah Departemen` : 'Edit Departemen'}</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{deptModalMode === 'add' ? `Tambah Cabang` : 'Edit Cabang'}</h2>
                     <div className="space-y-4">
                         <div>
-                            <InputLabel htmlFor="dept_name" value="Nama Departemen" />
+                            <InputLabel htmlFor="dept_name" value="Nama Cabang" />
                             <TextInput id="dept_name" type="text" className="mt-1 block w-full" value={deptForm.data.name} onChange={(e) => deptForm.setData('name', e.target.value)} placeholder="Contoh: HR & Admin" />
                             <InputError message={deptForm.errors.name} className="mt-2" />
                         </div>
@@ -637,10 +637,10 @@ export default function Show({ client, workers }: Props) {
             <Modal show={isDeptDeleteModalOpen} onClose={() => setIsDeptDeleteModalOpen(false)} maxWidth="sm">
                 <div className="p-6 text-center">
                     <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><iconify-icon icon="solar:danger-triangle-bold" width="32"></iconify-icon></div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Departemen?</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Cabang?</h2>
                     <div className="flex justify-center gap-3 mt-6">
                         <SecondaryButton onClick={() => setIsDeptDeleteModalOpen(false)} type="button">Batal</SecondaryButton>
-                        <DangerButton onClick={() => { if (selectedDept) deptForm.delete(route('departments.destroy', selectedDept.id), { onSuccess: () => setIsDeptDeleteModalOpen(false) }) }} disabled={deptForm.processing}>Ya, Hapus</DangerButton>
+                        <DangerButton onClick={() => { if (selectedBranch) deptForm.delete(route('branches.destroy', selectedBranch.id), { onSuccess: () => setIsDeptDeleteModalOpen(false) }) }} disabled={deptForm.processing}>Ya, Hapus</DangerButton>
                     </div>
                 </div>
             </Modal>
@@ -651,19 +651,19 @@ export default function Show({ client, workers }: Props) {
                 <form onSubmit={submitProj} className="p-6">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{projModalMode === 'add' ? `Tambah Project` : 'Edit Project'}</h2>
                     <div className="space-y-4">
-                        {/* Checkbox Group for Multiple Departments */}
+                        {/* Checkbox Group for Multiple Branches */}
                         <div>
-                            <InputLabel value="Departemen (Pilih minimal satu)" />
+                            <InputLabel value="Cabang (Pilih minimal satu)" />
                             <div className="mt-2 grid grid-cols-2 gap-3">
-                                {client.departments.length === 0 ? (
-                                    <p className="text-xs text-slate-500 col-span-2 italic">Harap buat departemen terlebih dahulu.</p>
+                                {client.branches.length === 0 ? (
+                                    <p className="text-xs text-slate-500 col-span-2 italic">Harap buat cabang terlebih dahulu.</p>
                                 ) : (
-                                    client.departments.map(d => (
+                                    client.branches.map(d => (
                                         <label key={d.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                             <input
                                                 type="checkbox"
-                                                checked={projForm.data.department_ids.includes(d.id)}
-                                                onChange={() => handleProjDepartmentToggle(d.id)}
+                                                checked={projForm.data.branch_ids.includes(d.id)}
+                                                onChange={() => handleProjBranchToggle(d.id)}
                                                 className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
                                             />
                                             <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{d.name}</span>
@@ -671,8 +671,8 @@ export default function Show({ client, workers }: Props) {
                                     ))
                                 )}
                             </div>
-                            {projForm.errors.department_ids && <p className="text-sm text-red-600 mt-2">{projForm.errors.department_ids}</p>}
-                            {Object.keys(projForm.errors).filter(key => key.startsWith('department_ids.')).map((key) => (
+                            {projForm.errors.branch_ids && <p className="text-sm text-red-600 mt-2">{projForm.errors.branch_ids}</p>}
+                            {Object.keys(projForm.errors).filter(key => key.startsWith('branch_ids.')).map((key) => (
                                 <p key={key} className="text-sm text-red-600 mt-1">{projForm.errors[key as keyof typeof projForm.errors]}</p>
                             ))}
                         </div>
