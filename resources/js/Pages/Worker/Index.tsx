@@ -443,7 +443,12 @@ export default function Index({ workers, clients }: Props) {
                                         <tr key={worker.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                             <td className="px-6 py-4">{rowOffset + index + 1}</td>
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-slate-800 dark:text-slate-200">{worker.name}</div>
+                                                <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                    <Link href={route('workers.show', worker.id)} className="hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                        {worker.name}
+                                                        <iconify-icon icon="solar:arrow-right-up-linear" width="14" class="text-slate-400 group-hover:text-primary transition-colors"></iconify-icon>
+                                                    </Link>
+                                                </div>
                                                 <div className="text-xs text-slate-400 capitalize">{worker.gender === 'male' ? 'Laki-laki' : worker.gender === 'female' ? 'Perempuan' : '-'}</div>
                                                 <div className="text-xs text-slate-400 capitalize">{calculateAge(worker)}<span> Tahun</span></div>
                                             </td>
@@ -458,7 +463,9 @@ export default function Index({ workers, clients }: Props) {
                                                 {latestAssignment ? (
                                                     <div className="flex flex-col gap-1">
                                                         <div className="font-semibold text-slate-700 dark:text-slate-300">
-                                                            {latestAssignment.project?.name || '-'}
+                                                            <Link href={route('projects.show', latestAssignment.project?.id)} className="hover:text-primary transition-colors">
+                                                                {latestAssignment.project?.name || '-'}
+                                                            </Link>
                                                         </div>
                                                         <div className="flex flex-wrap gap-1 items-center">
                                                             <StatusBadge status={latestAssignment.status} />
@@ -483,13 +490,6 @@ export default function Index({ workers, clients }: Props) {
                                             </td>
                                             <td className="px-6 py-4">{worker.phone || '-'}</td>
                                             <td className="px-6 py-4 text-right space-x-2">
-                                                <Link
-                                                    href={route('workers.show', worker.id)}
-                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
-                                                    title="Lihat Profil"
-                                                >
-                                                    <iconify-icon icon="solar:user-id-bold" width="20"></iconify-icon>
-                                                </Link>
                                                 <Link
                                                     href={route('workers.edit', worker.id)}
                                                     className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
