@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -45,6 +45,19 @@ interface Project {
     id_running_number: number;
     client?: Client;
     branches?: Branch[];
+    pics?: Pic[];
+}
+
+/**
+ * @param {Props} props - The component props containing lists of projects, clients, and branches.
+ */
+/** Number of projects displayed per page. */
+const PER_PAGE = 10;
+
+// Defining Pic interface 
+interface Pic {
+    id: number;
+    name: string;
 }
 
 /**
@@ -56,19 +69,10 @@ interface Props {
     branches: Branch[];
 }
 
-/**
- * Project Index Page Component
- *
- * Displays a table of projects and provides a Single Page Application (SPA) experience
- * for creating, updating, and deleting projects, including Many-to-Many department assignments.
- *
- * @param {Props} props - The component props containing lists of projects, clients, and branches.
- */
-/** Number of projects displayed per page. */
-const PER_PAGE = 10;
-
-export default function Index({ projects, clients, branches }: Props) {
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+export default function Index({ projects, clients, branches, pics }: Props & { pics: Pic[] }) {
+    const { auth } = usePage<any>().props;
+    const isPic = auth.user.role === 'PIC';
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -82,7 +86,7 @@ export default function Index({ projects, clients, branches }: Props) {
 
     const activeFilterCount = filterClientId !== 'all' ? 1 : 0;
 
-    const filteredProjects = projects.filter(project => {
+    const filteredProjects = projects.filter((project: Project) => {
         // Search Logic
         const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             project.prefix.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -97,21 +101,20 @@ export default function Index({ projects, clients, branches }: Props) {
         return matchesSearch && matchesFilter;
     });
 
-    // Form state initialized with an array for branch_ids
+    // Form state initialized with an array for branch_ids and pic_ids
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         client_id: '',
         branch_ids: [] as number[],
+        pic_ids: [] as number[],
         name: '',
         prefix: '',
     });
 
     // Filter available branches based on the currently selected client
-    const availableBranches = branches.filter(d => d.client_id.toString() === data.client_id);
+    const availableBranches = branches.filter((d: Branch) => d.client_id.toString() === data.client_id);
 
     /**
      * Toggles a branch ID in the branch_ids state array.
-     *
-     * @param {number} id - The ID of the branch to toggle.
      */
     const handleBranchToggle = (id: number) => {
         const currentIds = data.branch_ids;
@@ -119,6 +122,18 @@ export default function Index({ projects, clients, branches }: Props) {
             setData('branch_ids', currentIds.filter(deptId => deptId !== id));
         } else {
             setData('branch_ids', [...currentIds, id]);
+        }
+    };
+
+    /**
+     * Toggles a PIC ID in the pic_ids state array.
+     */
+    const handlePicToggle = (id: number) => {
+        const currentIds = data.pic_ids;
+        if (currentIds.includes(id)) {
+            setData('pic_ids', currentIds.filter(picId => picId !== id));
+        } else {
+            setData('pic_ids', [...currentIds, id]);
         }
     };
 
@@ -188,12 +203,12 @@ export default function Index({ projects, clients, branches }: Props) {
     const rowOffset = (currentPage - 1) * PER_PAGE;
 
     /** Opens modal for adding a new project. */
-    const openAddModal = () => {
+    const openCreateModal = () => {
         setModalMode('add');
         setSelectedProject(null);
         reset();
         clearErrors();
-        setIsModalOpen(true);
+        setIsCreateModalOpen(true);
     };
 
     /** * Opens modal for editing an existing project.
@@ -205,11 +220,12 @@ export default function Index({ projects, clients, branches }: Props) {
         setData({
             client_id: project.client_id.toString(),
             branch_ids: project.branches?.map(d => d.id) || [],
+            pic_ids: project.pics?.map((p: Pic) => p.id) || [],
             name: project.name,
             prefix: project.prefix
         });
         clearErrors();
-        setIsModalOpen(true);
+        setIsCreateModalOpen(true);
     };
 
     /** Opens confirmation modal for deletion. */
@@ -220,7 +236,7 @@ export default function Index({ projects, clients, branches }: Props) {
 
     /** Closes the form modal and resets state. */
     const closeModal = () => {
-        setIsModalOpen(false);
+        setIsCreateModalOpen(false);
         reset();
         clearErrors();
     };
@@ -246,22 +262,30 @@ export default function Index({ projects, clients, branches }: Props) {
         return (
             <div className="flex items-center gap-1 text-primary">
                 <iconify-icon icon={isAsc ? 'solar:sort-from-bottom-to-top-bold' : 'solar:sort-from-top-to-bottom-bold'}></iconify-icon>
-                {sortConfigs.length > 1 && <span className="text-[10px] font-bold">{configIndex + 1}</span>}
+                {sortConfigs.length > 1 && <span className="text-xs font-bold">{configIndex + 1}</span>}
             </div>
         );
     };
 
     return (
-        <AdminLayout title="Kelola Project" header="Data Project">
+        <AdminLayout title="Kelola Project" header="Project">
             {/* Header Actions */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Daftar Project</h2>
-                    <p className="text-sm text-slate-500">Kelola daftar project dari berbagai client.</p>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manajemen Project</h2>
+                    <p className="text-sm text-slate-500">Kelola semua project dan area penempatan</p>
                 </div>
-                <button onClick={openAddModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">
-                    <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Project
-                </button>
+                <div className="w-full sm:w-auto">
+                    {!isPic && (
+                        <button
+                            onClick={openCreateModal}
+                            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
+                        >
+                            <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
+                            Tambah Project
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Search Bar & Filters */}
@@ -293,7 +317,7 @@ export default function Index({ projects, clients, branches }: Props) {
                             <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
                             Filter
                             {activeFilterCount > 0 && (
-                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-[10px] font-bold h-4 w-4 rounded-full">
+                                <span className="ml-1 inline-flex items-center justify-onPageChange bg-primary text-white text-xs font-bold h-4 w-4 rounded-full">
                                     {activeFilterCount}
                                 </span>
                             )}
@@ -318,7 +342,7 @@ export default function Index({ projects, clients, branches }: Props) {
                                 className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-xl shadow-sm text-sm"
                             >
                                 <option value="all">Semua Client</option>
-                                {clients.map(c => (
+                                {clients.map((c: Client) => (
                                     <option key={c.id} value={c.id.toString()}>{c.full_name}</option>
                                 ))}
                             </select>
@@ -362,7 +386,7 @@ export default function Index({ projects, clients, branches }: Props) {
                                         {renderSortIndicator('prefix')}
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 text-right">Aksi</th>
+                                <th className="px-6 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
@@ -387,8 +411,8 @@ export default function Index({ projects, clients, branches }: Props) {
                                             <div className="flex flex-wrap gap-1 mt-1.5">
                                                 {/* Render all branches connected to this project */}
                                                 {project.branches && project.branches.length > 0 ? (
-                                                    project.branches.map(dept => (
-                                                        <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
+                                                    project.branches.map((dept: Branch) => (
+                                                        <span key={dept.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
                                                             {dept.name}
                                                         </span>
                                                     ))
@@ -397,10 +421,16 @@ export default function Index({ projects, clients, branches }: Props) {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{project.prefix}</span></td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{project.prefix}</span>
+                                        </td>
                                         <td className="px-6 py-4 text-right space-x-2">
-                                            <button onClick={() => openEditModal(project)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="20"></iconify-icon></button>
-                                            <button onClick={() => openDeleteModal(project)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon></button>
+                                            {!isPic && (
+                                                <>
+                                                    <button onClick={() => openEditModal(project)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="20"></iconify-icon></button>
+                                                    <button onClick={() => openDeleteModal(project)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon></button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -417,7 +447,7 @@ export default function Index({ projects, clients, branches }: Props) {
             </div>
 
             {/* Modal for Add / Edit Project */}
-            <Modal show={isModalOpen} onClose={closeModal} maxWidth="md">
+            <Modal show={isCreateModalOpen} onClose={closeModal} maxWidth="md">
                 <form onSubmit={submit} className="p-6">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">
                         {modalMode === 'add' ? 'Tambah Project' : 'Edit Project'}
@@ -435,7 +465,7 @@ export default function Index({ projects, clients, branches }: Props) {
                                 className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
                             >
                                 <option value="" disabled>-- Pilih Client --</option>
-                                {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                                {clients.map((c: Client) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                             </select>
                             <InputError message={errors.client_id} className="mt-2" />
                         </div>
@@ -447,7 +477,7 @@ export default function Index({ projects, clients, branches }: Props) {
                                 {availableBranches.length === 0 ? (
                                     <p className="text-xs text-slate-500 col-span-2 italic">Belum ada cabang untuk client ini.</p>
                                 ) : (
-                                    availableBranches.map(d => (
+                                    availableBranches.map((d: Branch) => (
                                         <label key={d.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                             <input
                                                 type="checkbox"
@@ -462,10 +492,31 @@ export default function Index({ projects, clients, branches }: Props) {
                             </div>
                             {/* Validation error for branch_ids array */}
                             {errors.branch_ids && <p className="text-sm text-red-600 mt-2">{errors.branch_ids}</p>}
-                            {/* Detailed errors if any specific array index fails (e.g. branch_ids.0) */}
                             {Object.keys(errors).filter(key => key.startsWith('branch_ids.')).map((key) => (
                                 <p key={key} className="text-sm text-red-600 mt-1">{errors[key as keyof typeof errors]}</p>
                             ))}
+                        </div>
+
+                        {/* Checkbox Group for Multiple PICs */}
+                        <div>
+                            <InputLabel value="PIC Project (Opsional)" />
+                            <div className="mt-2 grid grid-cols-2 gap-3 max-h-40 overflow-y-auto pr-1">
+                                {pics && pics.length === 0 ? (
+                                    <p className="text-xs text-slate-500 col-span-2 italic">Belum ada profil PIC terdaftar.</p>
+                                ) : (
+                                    pics && pics.map((pic: Pic) => (
+                                        <label key={pic.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                checked={data.pic_ids && data.pic_ids.includes(pic.id)}
+                                                onChange={() => handlePicToggle(pic.id)}
+                                                className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                                            />
+                                            <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{pic.name}</span>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
                         </div>
 
                         <div>
@@ -502,6 +553,6 @@ export default function Index({ projects, clients, branches }: Props) {
                     </div>
                 </div>
             </Modal>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

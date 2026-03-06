@@ -8,6 +8,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Enums\UserRole;
 
 /**
  * Class WorkerController
@@ -21,22 +23,44 @@ class WorkerController extends Controller
      *
      * @return Response
      */
-    public function index(): Response
+    public function index(Request $request): Response|RedirectResponse
     {
+        $user = $request->user();
+
+        // Worker hanya boleh melihat profilnya sendiri, tidak boleh akses index
+        if ($user->isWorker()) {
+            if ($user->worker_id) {
+                return redirect()->route('workers.show', $user->worker_id);
+            }
+            abort(403, 'Akses ditolak.');
+        }
+
         // Process distinct clients for the filter dropdown
         $clients = \App\Models\Client::select('id', 'full_name')
             ->orderBy('full_name')
             ->with('projects:id,client_id,name')
             ->get();
 
-        // Eager load assignments & projects, sort assignments by newest first
-        $workers = Worker::with(['assignments' => function ($query) {
-            $query->orderBy('hire_date', 'desc')
+        $query = Worker::with(['assignments' => function ($query) {
+            $query->whereIn('status', ['active', 'probation', 'extended'])
+                  ->orderBy('hire_date', 'desc')
                   ->with([
-                      'project',
+                      'project:id,name',
+                      'branch:id,name',
                       'contracts' => fn ($q) => $q->orderBy('start_date', 'desc'),
                   ]);
-        }])->latest()->get();
+        }]);
+
+        // Jika PIC, filter karyawan yang ada di project yang dihandle PIC
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
+            $query->whereHas('assignments', function ($q) use ($projectIds) {
+                $q->whereIn('status', ['active', 'probation', 'extended'])
+                  ->whereIn('project_id', $projectIds);
+            });
+        }
+
+        $workers = $query->latest()->get();
 
         return Inertia::render('Worker/Index', [
             'workers' => $workers,
@@ -46,16 +70,22 @@ class WorkerController extends Controller
 
     /**
      * Show the form for creating a new worker.
-     * 
+     *
      * @return Response
      */
-    public function create(): Response
+    public function create(Request $request): Response|RedirectResponse
     {
+        if ($request->user()->isWorker()) abort(403);
+
         return Inertia::render('Worker/Create');
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request): RedirectResponse
     {
+        if ($request->user()->isWorker()) abort(403);
         $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
 
         Worker::create($validated);
@@ -65,36 +95,55 @@ class WorkerController extends Controller
 
     /**
      * Display the specified worker along with their assignments and related project/branch details.
-     * 
-     * @param Worker $worker
+     *
+     * @param Worker
      * @return Response
      */
-    public function show(Worker $worker): Response
+    public function show(Request $request, Worker $worker): Response
     {
-        $worker->load(['assignments.project', 'assignments.branch', 'familyMembers']);
+        $user = $request->user();
+
+        // Worker hanya boleh melihat data dirinya sendiri
+        if ($user->isWorker() && $user->worker_id !== $worker->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // PIC hanya boleh melihat data karyawan di projectnya
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            $hasActiveAssignmentInPicProject = $worker->assignments()->whereIn('status', ['active', 'probation', 'extended'])
+                ->whereIn('project_id', $projectIds)->exists();
+            if (!$hasActiveAssignmentInPicProject) {
+                // abort(403, 'Akses ditolak. Karyawan ini tidak berada di project Anda.');
+            }
+        }
+
+        $worker->load(['assignments.project', 'assignments.branch', 'assignments.contracts', 'familyMembers']);
         return Inertia::render('Worker/Show', ['worker' => $worker]);
     }
 
     /**
      * Show the form for editing the specified worker.
-     * 
-     * @param Worker $worker
+     *
+     * @param Worker
      * @return Response
      */
-    public function edit(Worker $worker): Response
+    public function edit(Request $request, Worker $worker): Response
     {
+        if ($request->user()->isWorker()) abort(403);
         return Inertia::render('Worker/Edit', ['worker' => $worker]);
     }
 
     /**
      * Update the specified worker in storage.
-     * 
+     *
      * @param Request $request
      * @param Worker $worker
      * @return RedirectResponse
      */
     public function update(Request $request, Worker $worker): RedirectResponse
     {
+        if ($request->user()->isWorker()) abort(403);
         $validated = $request->validate($this->getValidationRules($worker->id), $this->getValidationMessages());
 
         $worker->update($validated);
@@ -104,12 +153,17 @@ class WorkerController extends Controller
 
     /**
      * Remove the specified worker from storage.
-     * 
-     * @param Worker $worker
+     *
+     * @param Worker
      * @return RedirectResponse
      */
-    public function destroy(Worker $worker): RedirectResponse
+    public function destroy(Request $request, Worker $worker): RedirectResponse
     {
+        if ($request->user()->isWorker() || $request->user()->isPic()) {
+            // PIC dan Worker tidak bisa hapus worker (opsional PIC dibatasi)
+            abort(403, 'Anda tidak memiliki akses untuk menghapus data karyawan.');
+        }
+
         $worker->delete();
         return redirect()->route('workers.index')->with('message', 'Karyawan berhasil dihapus.');
     }

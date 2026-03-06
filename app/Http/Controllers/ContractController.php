@@ -23,13 +23,11 @@ use Illuminate\Validation\Rule;
 class ContractController extends Controller
 {
     /**
-     * Show the form for creating a new contract for a specific assignment.
-     * 
-     * @param Request $request
-     * @return Response
+     * Show the form for creating a new resource.
      */
     public function create(Request $request): Response
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
         $request->validate(['assignment_id' => 'required|exists:assignments,id']);
         $assignment = Assignment::with(['worker', 'project', 'branch'])->findOrFail($request->assignment_id);
 
@@ -37,13 +35,12 @@ class ContractController extends Controller
     }
 
     /**
-     * Store a newly created contract and its compensation in storage.
-     *
-     * @param Request $request
-     * @return RedirectResponse
+     * Store a newly created resource in storage.
      */
     public function store(Request $request): RedirectResponse
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+
         $validated = $request->validate($this->getRules($request), $this->getMessages());
 
         // Use DB transaction to ensure both Contract and ContractCompensation are created successfully or rolled back together
@@ -76,31 +73,49 @@ class ContractController extends Controller
     }
 
     /**
-     * Display the specified contract details including its compensation and related assignment info.
+     * Display the specified resource.
      *
+     * @param Request $request
      * @param Contract $contract
      * @return Response
      */
-    public function show(Contract $contract): Response
+    public function show(Request $request, Contract $contract): Response
     {
+        $user = $request->user();
         $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
-        return Inertia::render('Contract/Show', ['contract' => $contract]);
+
+        if ($user->isWorker() && $user->worker_id !== $contract->assignment->worker_id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($contract->assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak.');
+            }
+        }
+
+        return Inertia::render('Contract/Show', [
+            'contract' => $contract
+        ]);
     }
 
     /**
-     * Show the form for editing the specified contract and its compensation.
+     * Show the form for editing the specified resource.
      *
+     * @param Request $request
      * @param Contract $contract
      * @return Response
      */
-    public function edit(Contract $contract): Response
+    public function edit(Request $request, Contract $contract): Response
     {
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project']);
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
         return Inertia::render('Contract/Edit', ['contract' => $contract]);
     }
 
     /**
-     * Update the specified contract and its compensation in storage.
+     * Update the specified resource in storage.
      *
      * @param Request $request
      * @param Contract $contract
@@ -108,6 +123,8 @@ class ContractController extends Controller
      */
     public function update(Request $request, Contract $contract): RedirectResponse
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+        
         $validated = $request->validate($this->getRules($request, $contract->id), $this->getMessages());
 
         DB::transaction(function () use ($validated, $contract) {
@@ -139,13 +156,15 @@ class ContractController extends Controller
     }
 
     /**
-     * Remove the specified contract and its compensation from storage.
+     * Remove the specified resource from storage.
      * 
+     * @param Request $request
      * @param Contract $contract
      * @return RedirectResponse
      */
-    public function destroy(Contract $contract): RedirectResponse
+    public function destroy(Request $request, Contract $contract): RedirectResponse
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
         $assignmentId = $contract->assignment_id;
         $contract->delete();
         

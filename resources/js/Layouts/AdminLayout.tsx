@@ -25,7 +25,7 @@ interface Props {
  */
 export default function AdminLayout({ title, header, children }: PropsWithChildren<Props>) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    
+
     // Manage sidebar state, persisting in localStorage if available
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -97,24 +97,80 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         </Link>
                     </div>
 
+                    {/* Admin Setup Section */}
+                    {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
+                        <div>
+                            <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
+                                <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin Setup</span>
+                                <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                            </div>
+                            <div className="space-y-1">
+                                <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
+                                    <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                    <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>
+                                </Link>
+                                <Link href={route('pics.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Profil PIC">
+                                    <iconify-icon icon="solar:user-id-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                    <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Profil PIC</span>
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Personal Data Section for Worker */}
+                    {user.role === 'WORKER' && (
+                        <div>
+                            <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
+                                <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Data Saya</span>
+                                <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                            </div>
+                            <div className="space-y-1">
+                                {user.worker_id && (
+                                    <Link href={route('workers.show', user.worker_id)} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Profil Karyawan">
+                                        <iconify-icon icon="solar:user-circle-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Profil Saya</span>
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Master Data Modules Section */}
+                    {(user.role !== 'WORKER') && (
+                        <div>
+                            <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
+                                <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Master Data</span>
+                                <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                            </div>
+                            <div className="space-y-1">
+                                {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
+                                    <Link href={route('clients.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Client">
+                                        <iconify-icon icon="solar:buildings-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Client</span>
+                                    </Link>
+                                )}
+                                <Link href={route('projects.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Project">
+                                    <iconify-icon icon="solar:folder-with-files-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                    <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Project</span>
+                                </Link>
+                                <Link href={route('workers.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Karyawan">
+                                    <iconify-icon icon="solar:users-group-two-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                    <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Karyawan</span>
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Operational Section */}
                     <div>
                         <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
-                            <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Master Data</span>
+                            <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Operasional</span>
                             <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
                         </div>
                         <div className="space-y-1">
-                            <Link href={route('clients.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Client">
-                                <iconify-icon icon="solar:buildings-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Client</span>
-                            </Link>
-                            <Link href={route('projects.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Project">
-                                <iconify-icon icon="solar:folder-with-files-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Project</span>
-                            </Link>
-                            <Link href={route('workers.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Karyawan">
-                                <iconify-icon icon="solar:users-group-two-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Karyawan</span>
+                            <Link href={route('edit-requests.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Edit Requests">
+                                <iconify-icon icon="solar:file-check-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Riwayat Request Edit</span>
                             </Link>
                         </div>
                     </div>
@@ -130,7 +186,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                             <iconify-icon icon="solar:hamburger-menu-linear" width="24"></iconify-icon>
                         </button>
-                        
+
                         {/* Desktop Sidebar Toggle Hamburger */}
                         <button onClick={toggleSidebar} className="hidden lg:flex p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
                             <iconify-icon icon="solar:hamburger-menu-linear" width="24" className="group-hover:scale-110 transition-transform"></iconify-icon>
@@ -141,15 +197,30 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         </div>
                     </div>
 
-                    {/* User Profile Info */}
-                    <div className="flex items-center gap-3 pl-1">
-                        <div className="hidden sm:block text-right">
-                            <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none">{user.name}</p>
-                            <p className="text-[10px] text-slate-500 mt-1 font-medium uppercase tracking-wide">Administrator</p>
+                    {/* User Profile Info & Logout */}
+                    <div className="flex items-center gap-4 pl-2 border-l border-slate-200 dark:border-slate-800 ml-2">
+                        <div className="flex items-center gap-3">
+                            <div className="hidden sm:block text-right">
+                                <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none">{user.name}</p>
+                                <p className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">
+                                    {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'ADMIN_ARU' ? 'ARU' : user.role === 'PIC' ? 'PIC Project' : 'Karyawan'}
+                                </p>
+                            </div>
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 hover:shadow-glow transition-all">
+                                {getInitials(user.name)}
+                            </div>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 cursor-pointer hover:shadow-glow transition-all">
-                            {getInitials(user.name)}
-                        </div>
+
+                        {/* Logout Button */}
+                        <Link
+                            href={route('logout')}
+                            method="post"
+                            as="button"
+                            className="w-10 h-10 rounded-full bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white transition-all flex items-center justify-center group"
+                            title="Logout"
+                        >
+                            <iconify-icon icon="solar:logout-2-bold" width="20" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                        </Link>
                     </div>
                 </header>
 

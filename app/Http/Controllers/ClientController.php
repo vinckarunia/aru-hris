@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
 /**
  * Class ClientController
@@ -16,10 +19,20 @@ use Illuminate\Http\RedirectResponse;
  * Handles CRUD operations for the Client module.
  * Renders views using Inertia.js.
  */
-class ClientController extends Controller
+class ClientController extends Controller implements HasMiddleware
 {
     /**
-     * Display a listing of the clients.
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('role:SUPER_ADMIN,ADMIN_ARU'),
+        ];
+    }
+
+    /**
+     * Display a listing of the resource.
      *
      * @return Response
      */

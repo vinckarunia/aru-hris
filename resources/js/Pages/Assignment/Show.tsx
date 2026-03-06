@@ -100,7 +100,7 @@ export default function Show({ assignment }: Props) {
                                                                 ? 'PKWTT'
                                                                 : `PKWT-${contract.pkwt_number}`
                                                         }
-                                                        <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full uppercase">
+                                                        <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full uppercase">
                                                             {contract.contract_type}
                                                         </span>
                                                     </h4>

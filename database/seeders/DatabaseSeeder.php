@@ -17,17 +17,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Call UserSeeder
+        $this->call([
+            UserSeeder::class,
         ]);
 
         Client::factory(3)
             ->hasProjects(2, function ($project) {
                 return [
-                    'name' => fake()->city,
+                    'name' => 'Project ' . \Illuminate\Support\Str::random(6),
                 ];
             })
             ->create();

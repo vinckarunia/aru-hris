@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { PageProps } from '@/types';
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
@@ -80,11 +81,15 @@ interface Props {
 const PER_PAGE = 10;
 
 export default function Index({ workers, clients }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const isPic = auth.user.role === 'PIC';
+
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
+    const [selectedWorkers, setSelectedWorkers] = useState<number[]>([]); // For multi-select
 
     // Filter State
     const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
@@ -232,6 +237,20 @@ export default function Index({ workers, clients }: Props) {
         }
     };
 
+    const handleSelectRow = (workerId: number) => {
+        setSelectedWorkers(prev =>
+            prev.includes(workerId) ? prev.filter(id => id !== workerId) : [...prev, workerId]
+        );
+    };
+
+    const handleSelectAll = () => {
+        if (selectedWorkers.length === paginatedWorkers.length) {
+            setSelectedWorkers([]);
+        } else {
+            setSelectedWorkers(paginatedWorkers.map(worker => worker.id));
+        }
+    };
+
 
     /** Calculates the age of a worker based on their birth date. */
     const calculateAge = (worker: Worker) => {
@@ -250,33 +269,36 @@ export default function Index({ workers, clients }: Props) {
         return (
             <div className="flex items-center gap-1 text-primary">
                 <iconify-icon icon={isAsc ? 'solar:sort-from-bottom-to-top-bold' : 'solar:sort-from-top-to-bottom-bold'}></iconify-icon>
-                {sortConfigs.length > 1 && <span className="text-[10px] font-bold">{configIndex + 1}</span>}
+                {sortConfigs.length > 1 && <span className="text-xs font-bold">{configIndex + 1}</span>}
             </div>
         );
     };
 
     return (
-        <AdminLayout title="Kelola Data Karyawan" header="Data Karyawan">
+        <AdminLayout title="Kelola Karyawan" header="Karyawan">
             {/* Header Actions */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Daftar Karyawan</h2>
-                    <p className="text-sm text-slate-500">Kelola database induk seluruh karyawan yang terafiliasi dengan ARU.</p>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manajemen Karyawan</h2>
+                    <p className="text-sm text-slate-500">Kelola karyawan yang terafiliasi dengan ARU</p>
                 </div>
-                <div className="flex gap-3">
-                    <Link
-                        href={route('workers.import.index')}
-                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
-                    >
-                        <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import CSV
-                    </Link>
-                    <Link
-                        href={route('workers.create')}
-                        className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
-                    >
-                        <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Karyawan
-                    </Link>
-                </div>
+                {!isPic && (
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <Link
+                            href={route('workers.import.index')}
+                            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
+                        >
+                            <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import CSV
+                        </Link>
+                        <Link
+                            href={route('workers.create')}
+                            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
+                        >
+                            <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
+                            Tambah Karyawan Baru
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Search Bar & Filters */}
@@ -308,7 +330,7 @@ export default function Index({ workers, clients }: Props) {
                             <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
                             Filter
                             {activeFilterCount > 0 && (
-                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-[10px] font-bold h-4 w-4 rounded-full">
+                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-xs font-bold h-4 w-4 rounded-full">
                                     {activeFilterCount}
                                 </span>
                             )}
@@ -420,13 +442,15 @@ export default function Index({ workers, clients }: Props) {
                                         {renderSortIndicator('phone')}
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 text-right">Aksi</th>
+                                <th className="px-6 py-4 text-right">
+                                    {!isPic && "Aksi"}
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                             {filteredWorkers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-10">
+                                    <td colSpan={7} className="px-6 py-10">
                                         {workers.length === 0 ? (
                                             <EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada data karyawan." subMessage="Silakan tambahkan atau import data." />
                                         ) : (
@@ -488,22 +512,28 @@ export default function Index({ workers, clients }: Props) {
                                                     <span className="text-xs text-slate-400 italic">- Belum ditempatkan -</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4">{worker.phone || '-'}</td>
+                                            <td className="py-4 px-6">
+                                                {worker.phone}
+                                            </td>
                                             <td className="px-6 py-4 text-right space-x-2">
-                                                <Link
-                                                    href={route('workers.edit', worker.id)}
-                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
-                                                    title="Edit Data"
-                                                >
-                                                    <iconify-icon icon="solar:pen-bold" width="20"></iconify-icon>
-                                                </Link>
-                                                <button
-                                                    onClick={() => openDeleteModal(worker)}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Hapus"
-                                                >
-                                                    <iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon>
-                                                </button>
+                                                {!isPic && (
+                                                    <>
+                                                        <Link
+                                                            href={route('workers.edit', worker.id)}
+                                                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block"
+                                                            title="Edit Data"
+                                                        >
+                                                            <iconify-icon icon="solar:pen-bold" width="20"></iconify-icon>
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => openDeleteModal(worker)}
+                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Hapus"
+                                                        >
+                                                            <iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon>
+                                                        </button>
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
                                     );

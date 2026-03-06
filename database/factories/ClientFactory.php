@@ -25,8 +25,8 @@ class ClientFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->company,
-            'prefix' => strtoupper($this->faker->lexify('??')),
+            'name' => $this->faker->company . ' ' . \Illuminate\Support\Str::random(6),
+            'prefix' => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(4)),
             'created_at' => now(),
         ];
     }

@@ -210,7 +210,7 @@ export default function Show({ client, workers }: Props) {
             <span className="inline-flex items-center ml-1 space-x-0.5">
                 <iconify-icon icon={icon} width="14"></iconify-icon>
                 {configs.length > 1 && (
-                    <span className="text-[10px] font-bold bg-primary/10 text-primary w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold bg-primary/10 text-primary w-3.5 h-3.5 rounded-full flex items-center justify-center">
                         {index + 1}
                     </span>
                 )}
@@ -361,20 +361,20 @@ export default function Show({ client, workers }: Props) {
                     <button onClick={() => switchTab('branches')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'branches' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:users-group-two-rounded-bold" width="18"></iconify-icon> Cabang
                         {client.branches.length > 0 && (
-                            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{client.branches.length}</span>
+                            <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-primary/10 text-primary">{client.branches.length}</span>
                         )}
                     </button>
                     <button onClick={() => switchTab('projects')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'projects' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:folder-with-files-bold" width="18"></iconify-icon> Project
                         {client.projects.length > 0 && (
-                            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{client.projects.length}</span>
+                            <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-primary/10 text-primary">{client.projects.length}</span>
                         )}
                     </button>
                     <button onClick={() => switchTab('workers')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'workers' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:user-id-bold" width="18"></iconify-icon>
                         Karyawan
                         {workers.length > 0 && (
-                            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">{workers.length}</span>
+                            <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-primary/10 text-primary">{workers.length}</span>
                         )}
                     </button>
                 </div>
@@ -398,7 +398,7 @@ export default function Show({ client, workers }: Props) {
                                                 {renderSortIndicator('name', deptSortConfigs)}
                                             </div>
                                         </th>
-                                        <th className="px-6 py-4 text-right">Aksi</th>
+                                        <th className="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
@@ -452,7 +452,7 @@ export default function Show({ client, workers }: Props) {
                                                 {renderSortIndicator('prefix', projSortConfigs)}
                                             </div>
                                         </th>
-                                        <th className="px-6 py-4 text-right">Aksi</th>
+                                        <th className="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
@@ -471,7 +471,7 @@ export default function Show({ client, workers }: Props) {
                                                 <div className="flex flex-wrap gap-1">
                                                     {proj.branches && proj.branches.length > 0 ? (
                                                         proj.branches.map(dept => (
-                                                            <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
+                                                            <span key={dept.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
                                                                 {dept.name}
                                                             </span>
                                                         ))
@@ -579,7 +579,7 @@ export default function Show({ client, workers }: Props) {
                                                                 <Link
                                                                     key={a.id}
                                                                     href={route('projects.show', a.project_id)}
-                                                                    className="text-[10px] px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded-md font-medium text-primary hover:bg-primary/20 transition-colors"
+                                                                    className="text-xs px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded-md font-medium text-primary hover:bg-primary/20 transition-colors"
                                                                 >
                                                                     {a.project?.name ?? '-'}
                                                                 </Link>

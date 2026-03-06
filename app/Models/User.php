@@ -6,8 +6,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Client;
 use App\Models\Worker;
+use App\Enums\UserRole;
+use App\Models\Pic;
 
 class User extends Authenticatable
 {
@@ -23,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -45,16 +47,42 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class,
         ];
     }
 
-    public function client()
+    public function pic()
     {
-        return $this->belongsTo(Client::class);
+        return $this->hasOne(Pic::class);
     }
 
     public function worker()
     {
         return $this->belongsTo(Worker::class);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === UserRole::SUPER_ADMIN;
+    }
+
+    public function isAdminAru(): bool
+    {
+        return $this->role === UserRole::ADMIN_ARU;
+    }
+
+    public function isAdminOrAbove(): bool
+    {
+        return in_array($this->role, [UserRole::SUPER_ADMIN, UserRole::ADMIN_ARU]);
+    }
+
+    public function isPic(): bool
+    {
+        return $this->role === UserRole::PIC;
+    }
+
+    public function isWorker(): bool
+    {
+        return $this->role === UserRole::WORKER;
     }
 }

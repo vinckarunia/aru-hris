@@ -215,7 +215,7 @@ export default function Show({ project }: Props) {
             <span className="inline-flex items-center ml-1 space-x-0.5">
                 <iconify-icon icon={icon} width="14"></iconify-icon>
                 {sortConfigs.length > 1 && (
-                    <span className="text-[10px] font-bold bg-primary/10 text-primary w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold bg-primary/10 text-primary w-3.5 h-3.5 rounded-full flex items-center justify-center">
                         {index + 1}
                     </span>
                 )}
@@ -263,7 +263,7 @@ export default function Show({ project }: Props) {
                             {/* Branch badges */}
                             <div className="flex flex-wrap gap-1">
                                 {project.branches.map(dept => (
-                                    <span key={dept.id} className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md font-medium text-slate-500">
+                                    <span key={dept.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md font-medium text-slate-500">
                                         {dept.name}
                                     </span>
                                 ))}

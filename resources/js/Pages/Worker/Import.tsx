@@ -897,7 +897,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                                                     </div>
                                                                     <table className="w-full text-xs">
                                                                         <thead>
-                                                                            <tr className="text-[10px] uppercase tracking-wider text-slate-500">
+                                                                            <tr className="text-xs uppercase tracking-wider text-slate-500">
                                                                                 <th className="text-left py-1.5 w-1/4">Field</th>
                                                                                 <th className="text-left py-1.5 w-[37.5%]">Data Saat Ini (Database)</th>
                                                                                 <th className="text-left py-1.5 w-[37.5%]">Data Baru (CSV)</th>

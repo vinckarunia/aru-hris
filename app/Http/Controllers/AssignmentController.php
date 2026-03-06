@@ -4,14 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\Worker;
-
 use App\Models\Project;
+use App\Models\Branch; // Added
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException; // Added
+// Removed: use Illuminate\Support\Facades\Validator;
 
 /**
  * Class AssignmentController
@@ -21,14 +22,15 @@ use Illuminate\Support\Facades\Validator;
 class AssignmentController extends Controller
 {
     /**
-     * Show the form for creating a new assignment.
-     * Requires a worker_id query parameter.
+     * Show the form for creating a new resource.
      */
     public function create(Request $request): Response
     {
-        $request->validate(['worker_id' => 'required|exists:workers,id']);
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $workerId = $request->query('worker_id');
+        $request->validate(['worker_id' => 'required|exists:workers,id']); // Keep validation for worker_id
 
-        $worker = Worker::findOrFail($request->worker_id);
+        $worker = Worker::findOrFail($workerId); // Use $workerId
         // Eager load branches for the dependent dropdown
         $projects = Project::with('branches')->orderBy('name')->get();
 
@@ -39,45 +41,43 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Store a newly created assignment and generate a fresh NIK ARU for the worker.
-     *
-     * A new NIK ARU is always generated based on the selected project's prefix,
-     * reflecting the worker's active placement context.
+     * Store a newly created resource in storage.
      */
     public function store(Request $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'worker_id'        => 'required|exists:workers,id',
-            'project_id'       => 'required|exists:projects,id',
-            'branch_id'        => 'required|exists:branches,id',
-            'employee_id'      => [
-                'nullable', 'string', 'max:255',
-                Rule::unique('assignments')->where('project_id', $request->project_id),
-            ],
-            'position'         => 'nullable|string|max:255',
-            'hire_date'        => 'required|date',
-            'status'           => 'nullable|in:active,contract expired,resign,fired,other',
-            'termination_date' => 'nullable|date|after_or_equal:hire_date',
-        ], [
-            'employee_id.unique' => 'ID Karyawan ini sudah digunakan di Project tersebut.',
-        ]);
+        if (!$request->user()->isAdminOrAbove()) abort(403);
 
-        $validator->after(function ($validator) use ($request) {
+        try {
+            $validated = $request->validate([
+                'worker_id'        => 'required|exists:workers,id',
+                'project_id'       => 'required|exists:projects,id',
+                'branch_id'        => 'required|exists:branches,id',
+                'employee_id'      => [
+                    'nullable', 'string', 'max:255',
+                    Rule::unique('assignments')->where('project_id', $request->project_id),
+                ],
+                'position'         => 'nullable|string|max:255',
+                'hire_date'        => 'required|date',
+                'status'           => 'nullable|in:active,contract expired,resign,fired,other',
+                'termination_date' => 'nullable|date|after_or_equal:hire_date',
+            ], [
+                'employee_id.unique' => 'ID Karyawan ini sudah digunakan di Project tersebut.',
+            ]);
+
             if (is_null($request->termination_date)) {
                 $hasActive = Assignment::where('worker_id', $request->worker_id)
                     ->whereNull('termination_date')
                     ->exists();
 
                 if ($hasActive) {
-                    $validator->errors()->add(
-                        'termination_date',
-                        'Karyawan ini masih memiliki penempatan aktif. Harap untuk mengakhiri penempatan sebelumnya terlebih dahulu.'
-                    );
+                    throw ValidationException::withMessages([
+                        'termination_date' => 'Karyawan ini masih memiliki penempatan aktif. Harap untuk mengakhiri penempatan sebelumnya terlebih dahulu.'
+                    ]);
                 }
             }
-        });
-
-        $validated = $validator->validate();
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        }
 
         $assignment = Assignment::create($validated);
 
@@ -95,10 +95,23 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Display the specified assignment and its associated contracts.
+     * Display the specified resource.
      */
-    public function show(Assignment $assignment): Response
+    public function show(Request $request, Assignment $assignment): Response
     {
+        $user = $request->user();
+
+        if ($user->isWorker() && $user->worker_id !== $assignment->worker_id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Assignment ini di luar project Anda.');
+            }
+        }
+
         $assignment->load(['worker', 'project', 'branch', 'contracts']);
 
         return Inertia::render('Assignment/Show', [
@@ -111,6 +124,10 @@ class AssignmentController extends Controller
      */
     public function edit(Assignment $assignment): Response
     {
+        // Authorization for edit should be here, similar to create/update/destroy
+        // Assuming only Admin can edit based on the instruction
+        if (!request()->user()->isAdminOrAbove()) abort(403);
+
         $assignment->load('worker');
         $projects = Project::with('branches')->orderBy('name')->get();
 
@@ -121,29 +138,26 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Update the specified assignment and sync worker's NIK ARU accordingly.
-     *
-     * Rules:
-     * - Same project: NIK remains unchanged.
-     * - Different project (still active): NIK is re-generated from the new project's prefix.
-     * - Assignment terminated (termination_date set): NIK is cleared to null.
+     * Update the specified resource in storage.
      */
     public function update(Request $request, Assignment $assignment): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'project_id'       => 'required|exists:projects,id',
-            'branch_id'        => 'required|exists:branches,id',
-            'employee_id'      => [
-                'nullable', 'string', 'max:255',
-                Rule::unique('assignments')->where('project_id', $request->project_id)->ignore($assignment->id),
-            ],
-            'position'         => 'nullable|string|max:255',
-            'hire_date'        => 'required|date',
-            'status'           => 'nullable|in:active,contract expired,resign,fired,other',
-            'termination_date' => 'nullable|date|after_or_equal:hire_date',
-        ]);
+        if (!$request->user()->isAdminOrAbove()) abort(403);
 
-        $validator->after(function ($validator) use ($request, $assignment) {
+        try {
+            $validated = $request->validate([
+                'project_id'       => 'required|exists:projects,id',
+                'branch_id'        => 'required|exists:branches,id',
+                'employee_id'      => [
+                    'nullable', 'string', 'max:255',
+                    Rule::unique('assignments')->where('project_id', $request->project_id)->ignore($assignment->id),
+                ],
+                'position'         => 'nullable|string|max:255',
+                'hire_date'        => 'required|date',
+                'status'           => 'nullable|in:active,contract expired,resign,fired,other',
+                'termination_date' => 'nullable|date|after_or_equal:hire_date',
+            ]);
+
             if (is_null($request->termination_date)) {
                 $hasActive = Assignment::where('worker_id', $assignment->worker_id)
                     ->where('id', '!=', $assignment->id)
@@ -151,15 +165,14 @@ class AssignmentController extends Controller
                     ->exists();
 
                 if ($hasActive) {
-                    $validator->errors()->add(
-                        'termination_date',
-                        'Karyawan ini memiliki penempatan aktif lain. Harap untuk mengakhiri penempatan lainnya terlebih dahulu.'
-                    );
+                    throw ValidationException::withMessages([
+                        'termination_date' => 'Karyawan ini memiliki penempatan aktif lain. Harap untuk mengakhiri penempatan lainnya terlebih dahulu.'
+                    ]);
                 }
             }
-        });
-
-        $validated = $validator->validate();
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        }
 
         $wasActive      = is_null($assignment->termination_date);
         $isNowActive    = is_null($validated['termination_date'] ?? null);
@@ -185,13 +198,12 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Remove the specified assignment.
-     *
-     * Clears the worker's NIK ARU since there is no longer an active placement.
+     * Remove the specified resource from storage.
      */
-    public function destroy(Assignment $assignment): RedirectResponse
+    public function destroy(Request $request, Assignment $assignment): RedirectResponse
     {
-        $worker = Worker::find($assignment->worker_id);
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $worker = Worker::find($assignment->worker_id); // Get worker before assignment is deleted
         $assignment->delete();
 
         // After deletion, clear the worker's NIK — they have no active assignment.

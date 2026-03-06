@@ -10,20 +10,19 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\FamilyMemberController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\PicController;
+use App\Http\Controllers\EditRequestController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::redirect('/', '/login');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+// Akses terbatas hanya ARU dan super admin yang boleh melihat dashboard
+Route::middleware(['auth', 'verified', 'role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Profile Routes
@@ -58,6 +57,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Assignment and Contract Routes
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);
     Route::resource('contracts', App\Http\Controllers\ContractController::class)->except(['index']);
+
+    // Super Admin Only Routes
+    Route::middleware(['role:SUPER_ADMIN'])->group(function () {
+        Route::resource('users', UserManagementController::class)->except(['create', 'show', 'edit']);
+    });
+
+    // Admin & Super Admin Routes
+    Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
+        Route::resource('pics', PicController::class)->except(['create', 'show', 'edit']);
+    });
+
+    // Edit Request Routes
+    Route::get('/edit-requests', [EditRequestController::class, 'index'])->name('edit-requests.index');
+    Route::post('/edit-requests', [EditRequestController::class, 'store'])->name('edit-requests.store');
+    Route::put('/edit-requests/{editRequest}/review', [EditRequestController::class, 'review'])->name('edit-requests.review');
 });
 
 require __DIR__.'/auth.php';

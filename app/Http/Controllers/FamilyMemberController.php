@@ -23,6 +23,8 @@ class FamilyMemberController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+
         $validated = $request->validate([
             'worker_id' => 'required|exists:workers,id',
             'relationship_type' => 'required|in:spouse,child,parent,other relatives',
@@ -47,6 +49,8 @@ class FamilyMemberController extends Controller
      */
     public function update(Request $request, FamilyMember $familyMember)
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
+
         $validated = $request->validate([
             'relationship_type' => 'required|in:spouse,child,parent,other relatives',
             'name' => 'required|string|max:255',
@@ -67,8 +71,9 @@ class FamilyMemberController extends Controller
      * @param \App\Models\FamilyMember $familyMember
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destroy(FamilyMember $familyMember)
+    public function destroy(Request $request, FamilyMember $familyMember)
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403);
         $familyMember->delete();
 
         return redirect()->back()->with('success', 'Family member removed successfully.');

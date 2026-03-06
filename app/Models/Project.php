@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Client;
 use App\Models\Branch;
 use App\Models\Assignment;
+use App\Models\Pic;
 
 /**
  * Class Project
@@ -65,5 +66,15 @@ class Project extends Model
     public function assignments()
     {
         return $this->hasMany(Assignment::class);
+    }
+
+    /**
+     * Get the PICs associated with the project.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function pics()
+    {
+        return $this->belongsToMany(Pic::class, 'pic_project');
     }
 }

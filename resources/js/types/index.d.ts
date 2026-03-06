@@ -5,6 +5,9 @@ export interface User {
     name: string;
     email: string;
     email_verified_at?: string;
+    role: 'SUPER_ADMIN' | 'ADMIN_ARU' | 'PIC' | 'WORKER';
+    worker_id?: number | null;
+    pic?: any; // Profil PIC
 }
 
 export type PageProps<

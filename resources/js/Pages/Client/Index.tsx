@@ -280,16 +280,17 @@ export default function Index({ clients, projects, workers }: Props) {
         return (
             <div className="flex items-center gap-1 text-primary">
                 <iconify-icon icon={isAsc ? 'solar:sort-from-bottom-to-top-bold' : 'solar:sort-from-top-to-bottom-bold'}></iconify-icon>
-                {sortConfigs.length > 1 && <span className="text-[10px] font-bold">{configIndex + 1}</span>}
+                {sortConfigs.length > 1 && <span className="text-xs font-bold">{configIndex + 1}</span>}
             </div>
         );
     };
 
     return (
-        <AdminLayout title="Kelola Client" header="Data Client">
+        <AdminLayout title="Kelola Client" header="Client">
+            {/* Header Actions */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Daftar Client</h2>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manajemen Client</h2>
                     <p className="text-sm text-slate-500">Kelola perusahaan client yang bekerja sama dengan ARU.</p>
                 </div>
                 <button
@@ -330,7 +331,7 @@ export default function Index({ clients, projects, workers }: Props) {
                             <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
                             Filter
                             {activeFilterCount > 0 && (
-                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-[10px] font-bold h-4 w-4 rounded-full">
+                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-xs font-bold h-4 w-4 rounded-full">
                                     {activeFilterCount}
                                 </span>
                             )}
@@ -407,7 +408,7 @@ export default function Index({ clients, projects, workers }: Props) {
                                         {renderSortIndicator('worker_count')}
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 text-right">Aksi</th>
+                                <th className="px-6 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
