@@ -70,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Edit Request Routes
     Route::get('/edit-requests', [EditRequestController::class, 'index'])->name('edit-requests.index');
+    Route::get('/edit-requests/create', [EditRequestController::class, 'create'])->name('edit-requests.create');
     Route::post('/edit-requests', [EditRequestController::class, 'store'])->name('edit-requests.store');
     Route::put('/edit-requests/{editRequest}/review', [EditRequestController::class, 'review'])->name('edit-requests.review');
 });

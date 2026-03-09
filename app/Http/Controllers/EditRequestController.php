@@ -20,14 +20,31 @@ class EditRequestController extends Controller
         if ($user->isWorker()) {
             $query->where('worker_id', $user->worker_id);
         } elseif ($user->isPic()) {
-            // Dapatkan project_ids yang dihandle PIC ini
+            // Get project_ids handled by this PIC
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
             $query->whereIn('project_id', $projectIds);
         }
-        // Super/ARU bisa lihat semua
+        // Super Admin and Admin ARU can view all records
 
         return Inertia::render('EditRequest/Index', [
             'editRequests' => $query->get()
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new edit request.
+     */
+    public function create(Request $request): Response
+    {
+        $user = $request->user();
+        if (!$user->isWorker() || !$user->worker_id) {
+            abort(403, 'Only workers can access this page.');
+        }
+
+        $worker = $user->worker()->with(['assignments.project'])->firstOrFail();
+
+        return Inertia::render('EditRequest/Create', [
+            'worker' => $worker
         ]);
     }
 
@@ -35,12 +52,13 @@ class EditRequestController extends Controller
     {
         $user = $request->user();
         if (!$user->isWorker() || !$user->worker_id) {
-            return back()->with('error', 'Hanya karyawan yang dapat mengajukan permintaan edit.');
+            return back()->with('error', 'Only workers can submit edit requests.');
         }
 
         $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
+            'project_id' => 'nullable|exists:projects,id',
             'requested_fields' => 'required|array',
+            'requested_data' => 'required|array', // Actual form payload (e.g., [ 'name' => 'John', 'bank_name' => 'BCA' ])
             'notes' => 'nullable|string',
         ]);
 
@@ -49,26 +67,27 @@ class EditRequestController extends Controller
             'project_id' => $validated['project_id'],
             'requested_by' => $user->id,
             'requested_fields' => $validated['requested_fields'],
+            'requested_data' => $validated['requested_data'],
             'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
         ]);
 
-        return redirect()->back()->with('message', 'Permintaan edit berhasil diajukan dan menunggu persetujuan PIC.');
+        return redirect()->back()->with('message', 'Edit request successfully submitted and is waiting for PIC approval.');
     }
 
     public function review(Request $request, EditRequest $editRequest): RedirectResponse
     {
         $user = $request->user();
 
-        // Validasi akses: PIC (hanya di projectnya), ADMIN_ARU, SUPER_ADMIN
+        // Access validation: PIC (only for their assigned projects), ADMIN_ARU, SUPER_ADMIN
         if ($user->isWorker()) {
-            abort(403, 'Akses ditolak.');
+            abort(403, 'Access denied.');
         }
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
             if (!in_array($editRequest->project_id, $projectIds)) {
-                abort(403, 'Akses ditolak. Anda bukan PIC untuk project ini.');
+                abort(403, 'Access denied. You are not a PIC for this project.');
             }
         }
 
@@ -84,9 +103,14 @@ class EditRequestController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        // Note: Pengubahan data asli Worker belum diotomatiskan. 
-        // PIC / Admin perlu mengubah manual melalui Edit Worker.
-        
-        return redirect()->back()->with('message', 'Status permintaan edit berhasil diperbarui.');
+        // If Approved, automatically apply the requested changes payload to the actual Worker record
+        if ($validated['status'] === 'approved' && is_array($editRequest->requested_data)) {
+            $worker = $editRequest->worker;
+            if ($worker) {
+                $worker->update($editRequest->requested_data);
+            }
+        }
+
+        return redirect()->back()->with('message', 'Edit request status successfully updated.');
     }
 }

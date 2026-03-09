@@ -1,17 +1,34 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { Link } from '@inertiajs/react';
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, ReactNode } from 'react';
 
-export default function Guest({ children }: PropsWithChildren) {
+export default function Guest({ children, topRightAction }: PropsWithChildren<{ topRightAction?: ReactNode }>) {
     return (
-        <div className="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0 dark:bg-gray-900">
-            <div>
-                <Link href="/">
-                    <ApplicationLogo className="h-20 w-20 fill-current text-gray-500" />
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8F9FF] py-6 sm:py-12 dark:bg-[#0F172A] text-slate-800 dark:text-[#F1F5F9] font-sans antialiased selection:bg-primary selection:text-white relative overflow-hidden">
+            {topRightAction && (
+                <div className="absolute top-6 right-6 sm:top-8 sm:right-10 z-50">
+                    {topRightAction}
+                </div>
+            )}
+
+            {/* Background Decorations (Optional, similar to a modern vibe) */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px]"></div>
+                <div className="absolute bottom-[10%] right-[0%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[100px]"></div>
+            </div>
+
+            <div className="w-full flex justify-center mb-8">
+                <Link href="/" className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow shrink-0">
+                        <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
+                    </div>
+                    <span className="font-bold text-2xl tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
+                        ARU<span className="text-primary font-extrabold">HRIS</span>
+                    </span>
                 </Link>
             </div>
 
-            <div className="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg dark:bg-gray-800">
+            <div className="w-full sm:max-w-md px-6 py-8 glass shadow-xl sm:rounded-2xl border border-slate-200/60 dark:border-slate-800/60 z-10 transition-all">
                 {children}
             </div>
         </div>

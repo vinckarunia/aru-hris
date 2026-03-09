@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageProps, User } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout';
+import WorkerLayout from '@/Layouts/WorkerLayout';
 
 interface Worker {
     id: number;
@@ -19,6 +20,7 @@ interface EditRequest {
     project_id: number;
     requested_by: number;
     requested_fields: string[];
+    requested_data: Record<string, string | null>;
     notes: string | null;
     status: 'pending' | 'approved' | 'rejected';
     reviewed_by: number | null;
@@ -34,6 +36,7 @@ interface EditRequest {
 export default function EditRequestIndex({ editRequests }: PageProps<{ editRequests: EditRequest[] }>) {
     const { auth } = usePage<PageProps>().props;
     const isWorker = auth.user.role === 'WORKER';
+    const Layout = isWorker ? WorkerLayout : AdminLayout;
 
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [reviewingRequest, setReviewingRequest] = useState<EditRequest | null>(null);
@@ -68,13 +71,35 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
         });
     };
 
-    // Format human readable fields
-    const formatFields = (fields: string[]) => {
-        return fields.map(f => f.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')).join(', ');
+    // Format human readable field names
+    const formatFields = (fields: string[] | undefined) => {
+        if (!fields || fields.length === 0) return '-';
+        return fields.map(f => fieldLabels[f] || (f.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))).join(', ');
+    };
+
+    const fieldLabels: Record<string, string> = {
+        name: 'Nama Lengkap',
+        ktp_number: 'Nomor KTP (NIK)',
+        kk_number: 'Nomor Kartu Keluarga',
+        mother_name: 'Nama Ibu Kandung',
+        birth_place: 'Tempat Lahir',
+        birth_date: 'Tanggal Lahir',
+        gender: 'Jenis Kelamin',
+        religion: 'Agama',
+        education: 'Pendidikan',
+        phone: 'Nomor HP/WhatsApp',
+        address_ktp: 'Alamat KTP',
+        address_domicile: 'Alamat Domisili',
+        tax_status: 'Status Pajak (PTKP)',
+        npwp: 'NPWP',
+        bpjs_kesehatan: 'BPJS Kesehatan',
+        bpjs_ketenagakerjaan: 'BPJS Ketenagakerjaan',
+        bank_name: 'Nama Bank',
+        bank_account_number: 'Nomor Rekening',
     };
 
     return (
-        <AdminLayout title="Edit Request" header="Edit Request">
+        <Layout title="Edit Request" header="Edit Request">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Manajemen Pengajuan Perubahan Data Karyawan</h1>
             </div>
@@ -109,8 +134,8 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                                         {req.project?.name || '-'}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="max-w-xs truncate" title={formatFields(req.requested_fields)}>
-                                            <span className="font-medium text-slate-700 dark:text-slate-300">Kolom:</span> {formatFields(req.requested_fields)}
+                                        <div className="max-w-xs truncate" title={formatFields(req.requested_data ? Object.keys(req.requested_data) : req.requested_fields)}>
+                                            <span className="font-medium text-slate-700 dark:text-slate-300">Fields to edit:</span> {formatFields(req.requested_data ? Object.keys(req.requested_data) : req.requested_fields)}
                                         </div>
                                         {req.notes && (
                                             <div className="max-w-xs truncate text-xs text-slate-500 mt-1" title={req.notes}>
@@ -156,8 +181,8 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
 
             {/* Review Modal */}
             {isReviewModalOpen && reviewingRequest && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[95vh] overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
                             <h3 className="text-lg font-bold">
                                 {reviewingRequest.status === 'pending' && !isWorker ? 'Review Request Edit' : 'Detail Request Edit'}
@@ -185,12 +210,25 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                             </div>
 
                             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
-                                <h4 className="text-sm font-semibold mb-2">Data yang ingin diubah:</h4>
-                                <ul className="list-disc list-inside text-sm text-slate-700 dark:text-slate-300 mb-4">
-                                    {reviewingRequest.requested_fields.map((f, i) => (
-                                        <li key={i}>{f.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</li>
-                                    ))}
-                                </ul>
+                                <h4 className="text-sm font-semibold mb-3">Data yang ingin diubah:</h4>
+                                {reviewingRequest.requested_data ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mb-4">
+                                        {Object.entries(reviewingRequest.requested_data).map(([key, val]) => (
+                                            <div key={key} className="flex flex-col mb-3">
+                                                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{fieldLabels[key] || key.replace(/_/g, ' ')}</span>
+                                                <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
+                                                    {(val === 'male' ? 'Laki-laki' : val === 'female' ? 'Perempuan' : val) || '-'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <ul className="list-disc list-inside text-sm text-slate-700 dark:text-slate-300 mb-4">
+                                        {reviewingRequest.requested_fields.map((f, i) => (
+                                            <li key={i}>{fieldLabels[f] || (f.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))}</li>
+                                        ))}
+                                    </ul>
+                                )}
 
                                 <h4 className="text-sm font-semibold mb-1">Keterangan / Alasan dari Karyawan:</h4>
                                 <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line italic">
@@ -232,9 +270,9 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                                         />
                                     </div>
                                     {data.status === 'approved' && (
-                                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 flex items-start gap-2">
+                                        <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-start gap-2">
                                             <iconify-icon icon="solar:info-circle-linear" width="16" className="mt-0.5 shrink-0"></iconify-icon>
-                                            <p>Catatan: Menyetujui request ini <strong>TIDAK</strong> akan mengubah data secara otomatis di sistem. Anda atau ARU tetap perlu mengupdate profil terkait secara manual di menu Karyawan setelah menyetujui request ini dan menerima data barunya.</p>
+                                            <p>Catatan: Menyetujui request ini akan <strong>secara otomatis</strong> mengeksekusi dan memperbarui data Karyawan pada database profil menggunakan data forms yang baru di-inputkan di atas.</p>
                                         </div>
                                     )}
                                 </form>
@@ -249,6 +287,6 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                     </div>
                 </div>
             )}
-        </AdminLayout>
+        </Layout>
     );
 }

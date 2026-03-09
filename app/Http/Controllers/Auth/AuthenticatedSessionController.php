@@ -33,6 +33,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        // Redirect logic based on User Role
+        if ($user->isWorker()) {
+            return redirect()->intended(route('workers.index', absolute: false));
+        } elseif ($user->isPic()) {
+            return redirect()->intended(route('projects.index', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

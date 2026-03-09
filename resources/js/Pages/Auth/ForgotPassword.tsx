@@ -2,7 +2,7 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export default function ForgotPassword({ status }: { status?: string }) {
@@ -17,7 +17,19 @@ export default function ForgotPassword({ status }: { status?: string }) {
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout
+            topRightAction={
+                <Link
+                    href={route('login')}
+                    className="text-md uppercase tracking-wide font-bold text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary transition-colors"
+                >
+                    <span className="flex items-center gap-2">
+                        <iconify-icon icon="solar:alt-arrow-left-linear" width="20" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                        Kembali
+                    </span>
+                </Link>
+            }
+        >
             <Head title="Forgot Password" />
 
             <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
@@ -46,7 +58,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 <InputError message={errors.email} className="mt-2" />
 
                 <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
+                    <PrimaryButton className="px-6 py-2.5 rounded-xl text-base font-semibold bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transition-all" disabled={processing}>
                         Email Password Reset Link
                     </PrimaryButton>
                 </div>

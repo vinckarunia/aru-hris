@@ -50,11 +50,11 @@ export default function Edit({ worker }: Props) {
         bank_name: worker.bank_name || '', bank_account_number: worker.bank_account_number || '',
     });
 
-    const initialBankDropdown = worker.bank_name 
+    const initialBankDropdown = worker.bank_name
         ? (FLAT_BANK_LIST.includes(worker.bank_name) ? worker.bank_name : 'Lainnya')
         : '';
     const [bankDropdown, setBankDropdown] = useState<string>(initialBankDropdown);
-    
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         put(route('workers.update', worker.id));
@@ -92,7 +92,7 @@ export default function Edit({ worker }: Props) {
                             <TextInput id="nik_aru" type="text" className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700" value={data.nik_aru} disabled placeholder="Auto-generated saat Assignment" title="Dibuat otomatis oleh sistem saat penempatan project" />
                             <InputError message={errors.nik_aru} className="mt-1" />
                         </div>
-                        
+
                         <div>
                             <InputLabel htmlFor="ktp_number">Nomor KTP (NIK) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
                             <TextInput id="ktp_number" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.ktp_number} onChange={e => setData('ktp_number', e.target.value.replace(/\D/g, ''))} required placeholder="16 digit angka" />
@@ -121,14 +121,13 @@ export default function Edit({ worker }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="gender" value="Jenis Kelamin" />
-                            <select id="gender" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.gender} onChange={e => setData('gender', e.target.value)}>
-                                <option value="">-- Pilih --</option>
+                            <select id="gender" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.gender || 'male'} onChange={e => setData('gender', e.target.value as 'male' | 'female')}>
                                 <option value="male">Laki-laki</option>
                                 <option value="female">Perempuan</option>
                             </select>
                             <InputError message={errors.gender} className="mt-1" />
                         </div>
-                        
+
                         <div>
                             <InputLabel htmlFor="religion" value="Agama" />
                             <select id="religion" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.religion} onChange={e => setData('religion', e.target.value)}>
@@ -214,10 +213,10 @@ export default function Edit({ worker }: Props) {
                         <div className="flex flex-col gap-3">
                             <div>
                                 <InputLabel htmlFor="bank_dropdown" value="Nama Bank" />
-                                <select 
-                                    id="bank_dropdown" 
-                                    className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" 
-                                    value={bankDropdown} 
+                                <select
+                                    id="bank_dropdown"
+                                    className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    value={bankDropdown}
                                     onChange={e => {
                                         const val = e.target.value;
                                         setBankDropdown(val);
@@ -234,16 +233,16 @@ export default function Edit({ worker }: Props) {
                                     <option value="Lainnya">Lainnya...</option>
                                 </select>
                             </div>
-                            
+
                             {bankDropdown === 'Lainnya' && (
                                 <div className="animate-fade-in-up">
                                     <InputLabel htmlFor="bank_name" value="Ketik Nama Bank" />
-                                    <TextInput 
-                                        id="bank_name" 
-                                        type="text" 
-                                        className="mt-1 block w-full uppercase" 
-                                        value={data.bank_name} 
-                                        onChange={e => setData('bank_name', e.target.value.toUpperCase())} 
+                                    <TextInput
+                                        id="bank_name"
+                                        type="text"
+                                        className="mt-1 block w-full uppercase"
+                                        value={data.bank_name}
+                                        onChange={e => setData('bank_name', e.target.value.toUpperCase())}
                                         placeholder="Contoh: BANK NOBU"
                                         autoFocus
                                     />
@@ -251,7 +250,7 @@ export default function Edit({ worker }: Props) {
                             )}
                             <InputError message={errors.bank_name} className="mt-1" />
                         </div>
-                        
+
                         <div>
                             <InputLabel htmlFor="bank_account_number" value="Nomor Rekening" />
                             <TextInput id="bank_account_number" type="text" className="mt-1 block w-full font-mono" value={data.bank_account_number} onChange={e => setData('bank_account_number', e.target.value.replace(/\D/g, ''))} placeholder="Hanya angka" />

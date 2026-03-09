@@ -14,6 +14,7 @@ class EditRequest extends Model
         'project_id',
         'requested_by',
         'requested_fields',
+        'requested_data',
         'notes',
         'status',
         'reviewed_by',
@@ -23,6 +24,7 @@ class EditRequest extends Model
 
     protected $casts = [
         'requested_fields' => 'json',
+        'requested_data' => 'json',
         'reviewed_at' => 'datetime',
     ];
 

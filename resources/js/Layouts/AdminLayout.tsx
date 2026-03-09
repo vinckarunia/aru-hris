@@ -1,5 +1,6 @@
 import { useState, PropsWithChildren, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
+import Dropdown from '@/Components/Dropdown';
 import { PageProps } from '@/types';
 
 /**
@@ -198,29 +199,46 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                     </div>
 
                     {/* User Profile Info & Logout */}
-                    <div className="flex items-center gap-4 pl-2 border-l border-slate-200 dark:border-slate-800 ml-2">
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:block text-right">
-                                <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none">{user.name}</p>
-                                <p className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">
-                                    {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'ADMIN_ARU' ? 'ARU' : user.role === 'PIC' ? 'PIC Project' : 'Karyawan'}
-                                </p>
-                            </div>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 hover:shadow-glow transition-all">
-                                {getInitials(user.name)}
-                            </div>
-                        </div>
+                    <div className="flex items-center gap-4 pl-2 ml-2">
+                        <Dropdown>
+                            <Dropdown.Trigger>
+                                <span className="inline-flex rounded-md">
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 p-1.5 pr-3 rounded-full transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:outline-none"
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 hover:shadow-glow transition-all">
+                                            {getInitials(user.name)}
+                                        </div>
+                                        <div className="hidden sm:block text-left relative">
+                                            <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none pr-5">{user.name}</p>
+                                            <p className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">
+                                                {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'ADMIN_ARU' ? 'ARU' : user.role === 'PIC' ? 'PIC Project' : 'Karyawan'}
+                                            </p>
+                                        </div>
+                                    </button>
+                                </span>
+                            </Dropdown.Trigger>
 
-                        {/* Logout Button */}
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="w-10 h-10 rounded-full bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white transition-all flex items-center justify-center group"
-                            title="Logout"
-                        >
-                            <iconify-icon icon="solar:logout-2-bold" width="20" className="group-hover:scale-110 transition-transform"></iconify-icon>
-                        </Link>
+                            <Dropdown.Content align="right" width="48" contentClasses="py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                {user.role === 'WORKER' && user.worker_id && (
+                                    <Dropdown.Link href={route('workers.show', user.worker_id)} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">
+                                        <iconify-icon icon="solar:user-circle-linear" width="18"></iconify-icon>
+                                        Profil Saya
+                                    </Dropdown.Link>
+                                )}
+
+                                <Dropdown.Link
+                                    href={route('logout')}
+                                    method="post"
+                                    as="button"
+                                    className="flex items-center gap-2 text-red-500 hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/20 w-full"
+                                >
+                                    <iconify-icon icon="solar:logout-3-bold" width="18"></iconify-icon>
+                                    Log Out
+                                </Dropdown.Link>
+                            </Dropdown.Content>
+                        </Dropdown>
                     </div>
                 </header>
 

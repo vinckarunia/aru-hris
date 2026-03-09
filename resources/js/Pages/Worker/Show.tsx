@@ -1,5 +1,6 @@
 import React, { useState, FormEventHandler } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import WorkerLayout from '@/Layouts/WorkerLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import Modal from '@/Components/Modal';
@@ -59,6 +60,7 @@ const DetailItem = ({ label, value, isMono = false }: { label: string, value: st
 export default function Show({ worker }: Props) {
     const { auth } = usePage<PageProps>().props;
     const isWorker = auth.user.role === 'WORKER';
+    const Layout = isWorker ? WorkerLayout : AdminLayout;
 
     // Added 'family' to the activeTab state
     const [activeTab, setActiveTab] = useState<'profile' | 'assignments' | 'family'>('profile');
@@ -140,49 +142,6 @@ export default function Show({ worker }: Props) {
         }, 300);
     };
 
-    // --- Edit Request Handlers ---
-    const [isEditRequestModalOpen, setIsEditRequestModalOpen] = useState(false);
-
-    // Asumsikan worker punya assignments dan kita ambil project aktif untuk request
-    const activeAssignment = worker.assignments?.find(a => ['active', 'probation', 'extended'].includes(a.status));
-
-    const { data: requestData, setData: setRequestData, post: postRequest, processing: requestProcessing, reset: resetRequest } = useForm({
-        project_id: activeAssignment?.project_id || '',
-        requested_fields: [] as string[],
-        notes: '',
-    });
-
-    const fieldsToEdit = [
-        { value: 'name', label: 'Nama Lengkap' },
-        { value: 'ktp_number', label: 'Nomor KTP (NIK)' },
-        { value: 'kk_number', label: 'Nomor Kartu Keluarga' },
-        { value: 'birth_place', label: 'Tempat Lahir' },
-        { value: 'birth_date', label: 'Tanggal Lahir' },
-        { value: 'address_domicile', label: 'Alamat Domisili' },
-        { value: 'bank_account_number', label: 'Nomor Rekening Bank' },
-        { value: 'bpjs_kesehatan', label: 'Nomor BPJS Kesehatan' },
-        { value: 'family_data', label: 'Data Keluarga (Suami/Istri/Anak)' },
-    ];
-
-    const toggleFieldRequest = (field: string) => {
-        const fields = [...requestData.requested_fields];
-        if (fields.includes(field)) {
-            setRequestData('requested_fields', fields.filter(f => f !== field));
-        } else {
-            setRequestData('requested_fields', [...fields, field]);
-        }
-    };
-
-    const submitEditRequest: FormEventHandler = (e) => {
-        e.preventDefault();
-        postRequest(route('edit-requests.store'), {
-            onSuccess: () => {
-                setIsEditRequestModalOpen(false);
-                resetRequest();
-            }
-        });
-    };
-
     // --- Submit Handlers ---
     const submitFamily: FormEventHandler = (e) => {
         e.preventDefault();
@@ -206,7 +165,7 @@ export default function Show({ worker }: Props) {
     };
 
     return (
-        <AdminLayout title={`Profil Karyawan - ${worker.name}`} header="Detail Karyawan">
+        <Layout title={`Profil Karyawan - ${worker.name}`} header="Detail Karyawan">
             {/* Header Profile Card */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 md:p-8 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
@@ -228,11 +187,11 @@ export default function Show({ worker }: Props) {
                     </div>
                 </div>
                 <div className="z-10 flex gap-3">
-                    {/* KHUSUS WORKER TAMPILKAN TOMBOL REQUEST EDIT */}
+                    {/* DISPLAY EDIT REQUEST BUTTON ONLY FOR WORKERS */}
                     {isWorker && (
-                        <button onClick={() => setIsEditRequestModalOpen(true)} className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-500/30 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
+                        <Link href={route('edit-requests.create')} className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white shadow-sm shadow-primary/30 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                             <iconify-icon icon="solar:pen-new-square-bold" width="18"></iconify-icon> Ajukan Perubahan Data
-                        </button>
+                        </Link>
                     )}
 
                     {/* BUKAN WORKER TAMPILKAN TOMBOL EDIT BIASA */}
@@ -313,61 +272,54 @@ export default function Show({ worker }: Props) {
                     </div>
                 )}
 
-                {/* Tab: Family Members */}
-                {activeTab === 'family' && (
-                    <div className="p-6">
-                        {!isWorker && (
-                            <div className="flex justify-end mb-4">
-                                <button onClick={openCreateModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
-                                    <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Data Keluarga
-                                </button>
-                            </div>
-                        )}
-
-                        {worker.family_members && worker.family_members.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {worker.family_members.map((member) => (
-                                    <div key={member.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between">
-                                        <div>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="font-bold text-slate-800 dark:text-white text-lg">{member.name}</h4>
-                                                <span className="px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 rounded-lg text-xs font-bold">
-                                                    {relationshipLabel[member.relationship_type]}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1.5 mt-4">
-                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                    <iconify-icon icon="solar:calendar-bold" className="text-slate-400"></iconify-icon>
-                                                    {member.birth_place || '-'}, {formatDate(member.birth_date)}
-                                                </p>
-                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                    <iconify-icon icon="solar:card-2-bold" className="text-slate-400"></iconify-icon>
-                                                    NIK: <span className="font-mono">{member.nik || '-'}</span>
-                                                </p>
-                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                    <iconify-icon icon="solar:health-bold" className="text-slate-400"></iconify-icon>
-                                                    BPJS: <span className="font-mono">{member.bpjs_number || '-'}</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {!isWorker && (
-                                            <div className="flex gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                                <button onClick={() => openEditModal(member)} className="flex-1 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:text-primary hover:border-primary transition-colors">
-                                                    Edit
-                                                </button>
-                                                <button onClick={() => openDeleteModal(member)} className="flex-1 py-2 text-sm font-semibold text-red-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:border-red-800 transition-colors">
-                                                    Hapus
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <EmptyState icon="solar:users-group-rounded-bold" message="Belum ada data keluarga yang ditambahkan." subMessage="Klik tombol di atas untuk menambahkan." />
-                        )}
+                <div className="p-6">
+                    <div className="flex justify-end mb-4">
+                        <button onClick={openCreateModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
+                            <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Data Keluarga
+                        </button>
                     </div>
-                )}
+
+                    {worker.family_members && worker.family_members.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {worker.family_members.map((member) => (
+                                <div key={member.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="font-bold text-slate-800 dark:text-white text-lg">{member.name}</h4>
+                                            <span className="px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 rounded-lg text-xs font-bold">
+                                                {relationshipLabel[member.relationship_type]}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-1.5 mt-4">
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                <iconify-icon icon="solar:calendar-bold" className="text-slate-400"></iconify-icon>
+                                                {member.birth_place || '-'}, {formatDate(member.birth_date)}
+                                            </p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                <iconify-icon icon="solar:card-2-bold" className="text-slate-400"></iconify-icon>
+                                                NIK: <span className="font-mono">{member.nik || '-'}</span>
+                                            </p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                <iconify-icon icon="solar:health-bold" className="text-slate-400"></iconify-icon>
+                                                BPJS: <span className="font-mono">{member.bpjs_number || '-'}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                        <button onClick={() => openEditModal(member)} className="flex-1 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:text-primary hover:border-primary transition-colors">
+                                            Edit
+                                        </button>
+                                        <button onClick={() => openDeleteModal(member)} className="flex-1 py-2 text-sm font-semibold text-red-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:border-red-800 transition-colors">
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState icon="solar:users-group-rounded-bold" message="Belum ada data keluarga yang ditambahkan." subMessage="Klik tombol di atas untuk menambahkan." />
+                    )}
+                </div>
 
                 {/* Tab: Assignments */}
                 {activeTab === 'assignments' && (
@@ -498,65 +450,6 @@ export default function Show({ worker }: Props) {
                 </form>
             </Modal>
 
-            {/* Modal Edit Request untuk Worker */}
-            <Modal show={isEditRequestModalOpen} onClose={() => setIsEditRequestModalOpen(false)} maxWidth="2xl">
-                <form onSubmit={submitEditRequest} className="p-6 dark:bg-slate-800">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                        Ajukan Perubahan Data
-                    </h2>
-                    <p className="text-sm text-slate-500 mb-6">
-                        Pilih data profil yang ingin Anda ubah. Sistem akan mengirimkan notifikasi ke PIC project Anda untuk disetujui. Setelah mendapat persetujuan, silakan laporkan dokumen pembaruan Anda kepada Admin/PIC.
-                    </p>
-
-                    {!requestData.project_id && (
-                        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl text-sm flex gap-3 items-start">
-                            <iconify-icon icon="solar:danger-triangle-bold" width="20" className="shrink-0 mt-0.5 text-orange-500"></iconify-icon>
-                            <p>Anda belum ditempatkan di project mana pun atau project Anda sudah tidak aktif. Anda tidak dapat mengajukan perubahan data diri saat ini.</p>
-                        </div>
-                    )}
-
-                    <div className="mb-6">
-                        <InputLabel value="Kolom Data yang Ingin Diubah (Boleh lebih dari 1)" />
-                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {fieldsToEdit.map((field) => (
-                                <label key={field.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${requestData.requested_fields.includes(field.value) ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50'}`}>
-                                    <input
-                                        type="checkbox"
-                                        checked={requestData.requested_fields.includes(field.value)}
-                                        onChange={() => toggleFieldRequest(field.value)}
-                                        className="mt-1 rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
-                                        disabled={!requestData.project_id}
-                                    />
-                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{field.label}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="mb-6">
-                        <InputLabel htmlFor="notes" value="Keterangan / Alasan Perubahan (Opsional)" />
-                        <textarea
-                            id="notes"
-                            value={requestData.notes}
-                            onChange={(e) => setRequestData('notes', e.target.value)}
-                            rows={3}
-                            className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm"
-                            placeholder="Contoh: Saya baru saja menikah dan sudah pindah domisili..."
-                            disabled={!requestData.project_id}
-                        />
-                    </div>
-
-                    <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100 dark:border-slate-700">
-                        <SecondaryButton onClick={() => setIsEditRequestModalOpen(false)}>Batal</SecondaryButton>
-                        <PrimaryButton
-                            disabled={requestProcessing || !requestData.project_id || requestData.requested_fields.length === 0}
-                            className="bg-primary hover:bg-primary-dark text-white"
-                        >
-                            {requestProcessing ? 'Mengirim...' : 'Kirim Pengajuan'}
-                        </PrimaryButton>
-                    </div>
-                </form>
-            </Modal>
-        </AdminLayout>
+        </Layout>
     );
 }
