@@ -75,7 +75,7 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
                 <div className="flex items-center gap-8">
                     {/* Logo Area */}
                     {user.worker_id && (
-                        <Link href={route('workers.show', user.worker_id)} className="flex items-center gap-3 group">
+                        <Link href="/" className="flex items-center gap-3 group">
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
                                 <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
                             </div>

@@ -11,6 +11,8 @@ import InputError from '@/Components/InputError';
 import { PageProps } from '@/types';
 
 export default function Index({ settings }: { settings: Record<string, string | null> }) {
+    const user = usePage<PageProps>().props.auth.user;
+
     const { data, setData, post, processing, recentlySuccessful, errors } = useForm({
         settings: {
             app_name: settings.app_name !== undefined ? settings.app_name : 'ARU HRIS',
@@ -189,43 +191,45 @@ export default function Index({ settings }: { settings: Record<string, string | 
                     </div>
 
                     {/* Danger Zone Section */}
-                    <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-red-200 dark:border-red-900/30 p-8">
-                        <header className="mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">
-                            <h2 className="text-lg font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
-                                <iconify-icon icon="solar:danger-triangle-bold-duotone" width="24"></iconify-icon>
-                                Danger Zone
-                            </h2>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                                Tindakan di bawah ini bersifat destruktif dan tidak dapat diurungkan. Pastikan Anda tahu apa yang Anda lakukan.
-                            </p>
-                        </header>
+                    {user.role === "SUPER_ADMIN" && (
+                        <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-red-200 dark:border-red-900/30 p-8">
+                            <header className="mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">
+                                <h2 className="text-lg font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
+                                    <iconify-icon icon="solar:danger-triangle-bold-duotone" width="24"></iconify-icon>
+                                    Danger Zone
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                    Tindakan di bawah ini bersifat destruktif dan tidak dapat diurungkan. Pastikan Anda tahu apa yang Anda lakukan.
+                                </p>
+                            </header>
 
-                        <div className="space-y-6">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
-                                <div className="max-w-xl">
-                                    <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Reset Data Operasional</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        Menghapus semua data Client, Branch, Project, Pekerja, Kontrak, dsb. Data User/PIC dan pengaturan sistem tetap dipertahankan.
-                                    </p>
+                            <div className="space-y-6">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
+                                    <div className="max-w-xl">
+                                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Reset Data Operasional</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                                            Menghapus semua data Client, Branch, Project, Pekerja, Kontrak, dsb. Data User/PIC dan pengaturan sistem tetap dipertahankan.
+                                        </p>
+                                    </div>
+                                    <DangerButton onClick={openResetDataModal} className="shrink-0">
+                                        Reset Data Operasional
+                                    </DangerButton>
                                 </div>
-                                <DangerButton onClick={openResetDataModal} className="shrink-0">
-                                    Reset Data Operasional
-                                </DangerButton>
-                            </div>
 
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 border-t border-slate-100 dark:border-slate-700/50">
-                                <div className="max-w-xl">
-                                    <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Factory Reset System</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        Menghapus <strong>seluruh database dan file yang diunggah</strong> dan hanya menyisakan satu akun Super Admin. Anda perlu mengetikkan "RESET" untuk mengeksekusi ini.
-                                    </p>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 border-t border-slate-100 dark:border-slate-700/50">
+                                    <div className="max-w-xl">
+                                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Factory Reset System</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                                            Menghapus <strong>seluruh database dan file yang diunggah</strong> dan hanya menyisakan satu akun Super Admin. Anda perlu mengetikkan "RESET" untuk mengeksekusi ini.
+                                        </p>
+                                    </div>
+                                    <DangerButton onClick={openFactoryResetModal} className="shrink-0 bg-red-700 hover:bg-red-800 focus:bg-red-800 focus:ring-red-800">
+                                        Factory Reset System
+                                    </DangerButton>
                                 </div>
-                                <DangerButton onClick={openFactoryResetModal} className="shrink-0 bg-red-700 hover:bg-red-800 focus:bg-red-800 focus:ring-red-800">
-                                    Factory Reset System
-                                </DangerButton>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 

@@ -111,12 +111,14 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                 `}>
                     {/* Logo Area */}
                     <div className={`h-20 flex items-center transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:justify-center px-8' : 'px-8'} border-b border-slate-100 dark:border-slate-800 shrink-0`}>
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow shrink-0">
-                                <iconify-icon icon="solar:buildings-2-linear" width="18"></iconify-icon>
+                        <Link href="/" className="flex items-center gap-3 group">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
+                                <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
                             </div>
-                            <span className={`font-bold text-lg tracking-tight text-slate-900 dark:text-white whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'hidden' : 'lg:w-[130px] opacity-100 w-auto'}`}>ARU<span className="text-primary font-extrabold">HRIS</span></span>
-                        </div>
+                            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
+                                ARU<span className="text-primary font-extrabold">HRIS</span>
+                            </span>
+                        </Link>
                     </div>
 
                     {/* Navigation Links */}
@@ -167,10 +169,12 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                     ></iconify-icon>
                                 </div>
                                 <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['adminSetup'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
-                                    <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
-                                        <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>
-                                    </Link>
+                                    {(user.role === "SUPER_ADMIN") && (                                   
+                                        <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
+                                            <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                            <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>
+                                        </Link>
+                                    )}
                                     <Link href={route('pics.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Profil PIC">
                                         <iconify-icon icon="solar:user-id-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
                                         <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Profil PIC</span>
@@ -320,7 +324,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         <div className="flex items-center gap-8">
                             {/* Logo Area */}
                             {user.worker_id && (
-                                <Link href={route('workers.show', user.worker_id)} className="flex items-center gap-3 group">
+                                <Link href="/" className="flex items-center gap-3 group">
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
                                         <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
                                     </div>
