@@ -115,14 +115,16 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
                                 <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
                             </div>
-                            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
-                                ARU<span className="text-primary font-extrabold">HRIS</span>
-                            </span>
+                            {!isSidebarCollapsed && (
+                                <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
+                                    ARU<span className="text-primary font-extrabold">HRIS</span>
+                                </span>
+                            )}
                         </Link>
                     </div>
 
                     {/* Navigation Links */}
-                    <nav className="flex-1 overflow-y-auto py-6 space-y-4 px-4 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <nav className="flex-1 overflow-y-auto py-6 space-y-8 px-4 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {/* General Section */}
                         {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
                             <div>
@@ -150,45 +152,8 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                             </div>
                         )}
 
-                        {/* Admin Setup Section */}
-                        {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
-                            <div className="mb-6">
-                                <div
-                                    onClick={() => toggleMenu('adminSetup')}
-                                    className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
-                                    title="Admin Setup"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <iconify-icon icon="solar:shield-keyhole-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['adminSetup'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
-                                        <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin Setup</span>
-                                    </div>
-                                    <iconify-icon
-                                        icon="solar:alt-arrow-down-linear"
-                                        width="14"
-                                        className={`transition-transform duration-300 ${collapsedMenus['adminSetup'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
-                                    ></iconify-icon>
-                                </div>
-                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['adminSetup'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
-                                    {(user.role === "SUPER_ADMIN") && (                                   
-                                        <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
-                                            <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                            <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>
-                                        </Link>
-                                    )}
-                                    <Link href={route('pics.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Profil PIC">
-                                        <iconify-icon icon="solar:user-id-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Profil PIC</span>
-                                    </Link>
-                                    <Link href={route('settings.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Pengaturan Sistem">
-                                        <iconify-icon icon="solar:settings-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Pengaturan Sistem</span>
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
-
                         {/* Master Data Modules Section */}
-                        <div className="mb-6">
+                        <div>
                             <div
                                 onClick={() => toggleMenu('masterData')}
                                 className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
@@ -223,7 +188,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         </div>
 
                         {/* Operational Section */}
-                        <div className="mb-6">
+                        <div>
                             <div
                                 onClick={() => toggleMenu('operational')}
                                 className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
@@ -246,6 +211,43 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 </Link>
                             </div>
                         </div>
+
+                        {/* Admin Section */}
+                        {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
+                            <div>
+                                <div
+                                    onClick={() => toggleMenu('adminSetup')}
+                                    className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                    title="Admin"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <iconify-icon icon="solar:shield-keyhole-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['adminSetup'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                        <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin</span>
+                                    </div>
+                                    <iconify-icon
+                                        icon="solar:alt-arrow-down-linear"
+                                        width="14"
+                                        className={`transition-transform duration-300 ${collapsedMenus['adminSetup'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                    ></iconify-icon>
+                                </div>
+                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['adminSetup'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
+                                    {(user.role === "SUPER_ADMIN") && (                                   
+                                        <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
+                                            <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                            <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>
+                                        </Link>
+                                    )}
+                                    <Link href={route('pics.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Manajemen PIC">
+                                        <iconify-icon icon="solar:user-id-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen PIC</span>
+                                    </Link>
+                                    <Link href={route('settings.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Pengaturan Sistem">
+                                        <iconify-icon icon="solar:settings-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Pengaturan Sistem</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                     </nav>
                 </aside>
             )}
