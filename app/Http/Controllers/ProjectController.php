@@ -147,7 +147,7 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)->ignore($project->id)
             ],
-            'prefix' => 'required|string|max:5' . $project->id,
+            'prefix' => 'required|string|max:5',
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',
             'prefix.unique'      => 'Prefix ini sudah digunakan oleh project lain.',
