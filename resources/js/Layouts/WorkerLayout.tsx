@@ -1,6 +1,7 @@
-import { useState, PropsWithChildren } from 'react';
+import { useState, PropsWithChildren, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
+import Dropdown from '@/Components/Dropdown';
 
 /**
  * Props for the WorkerLayout component.
@@ -45,6 +46,25 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
         return name.substring(0, 2).toUpperCase();
     };
 
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+            if (typeof window !== 'undefined') {
+                return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            }
+            return false;
+        });
+    
+        useEffect(() => {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }, [isDarkMode]);
+    
+        const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
     return (
         <div className="bg-[#F8F9FF] text-slate-800 font-sans antialiased selection:bg-primary selection:text-white min-h-screen relative overflow-x-hidden dark:bg-[#0F172A] dark:text-[#F1F5F9] flex flex-col">
             <Head title={title} />
@@ -54,14 +74,16 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
                 {/* Logo & Desktop Nav */}
                 <div className="flex items-center gap-8">
                     {/* Logo Area */}
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
-                            <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
-                        </div>
-                        <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
-                            ARU<span className="text-primary font-extrabold">HRIS</span>
-                        </span>
-                    </Link>
+                    {user.worker_id && (
+                        <Link href={route('workers.show', user.worker_id)} className="flex items-center gap-3 group">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
+                                <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
+                            </div>
+                            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
+                                ARU<span className="text-primary font-extrabold">HRIS</span>
+                            </span>
+                        </Link>
+                    )}
 
                     {/* Desktop Navigation Links */}
                     <nav className="hidden md:flex items-center gap-1 border-l border-slate-200 dark:border-slate-700/50 pl-8 h-10">
@@ -79,7 +101,7 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
                             className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${route().current('edit-requests.index') ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'}`}
                         >
                             <iconify-icon icon="solar:file-check-linear" width="20"></iconify-icon>
-                            Riwayat Request Edit
+                            Edit Request
                         </Link>
                     </nav>
                 </div>
@@ -96,30 +118,44 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
                     </button>
 
                     {/* User Profile Info & Logout */}
-                    <div className="flex items-center gap-4 pl-4 border-l border-slate-200 dark:border-slate-800 hidden sm:flex">
-                        <div className="flex items-center gap-3 text-right">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none">{user.name}</p>
-                                <p className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">
-                                    Karyawan
-                                </p>
-                            </div>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 hover:shadow-glow transition-all">
-                                {getInitials(user.name)}
-                            </div>
-                        </div>
+                    <button onClick={toggleTheme} className="flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
+                        <iconify-icon icon={isDarkMode ? "solar:sun-bold-duotone" : "solar:moon-bold-duotone"} width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                    </button>
+                    <Dropdown>
+                        <Dropdown.Trigger>
+                            <span className="inline-flex rounded-md">
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 p-1.5 pr-3 rounded-full transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:outline-none"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 hover:shadow-glow transition-all">
+                                        {getInitials(user.name)}
+                                    </div>
+                                    <div className="hidden sm:block text-left relative">
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none pr-5">{user.name}</p>
+                                        <p className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">Karyawan</p>
+                                    </div>
+                                </button>
+                            </span>
+                        </Dropdown.Trigger>
 
-                        {/* Logout Button */}
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="w-10 h-10 rounded-full bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white transition-all flex items-center justify-center group"
-                            title="Sign Out"
-                        >
-                            <iconify-icon icon="solar:logout-2-bold" width="20" className="group-hover:scale-110 transition-transform"></iconify-icon>
-                        </Link>
-                    </div>
+                        <Dropdown.Content align="right" width="48" contentClasses="py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">
+                                <iconify-icon icon="solar:settings-linear" width="18"></iconify-icon>
+                                Pengaturan Profil
+                            </Dropdown.Link>
+
+                            <Dropdown.Link
+                                href={route('logout')}
+                                method="post"
+                                as="button"
+                                className="flex items-center gap-2 text-red-500 hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/20 w-full"
+                            >
+                                <iconify-icon icon="solar:logout-3-bold" width="18"></iconify-icon>
+                                Log Out
+                            </Dropdown.Link>
+                        </Dropdown.Content>
+                    </Dropdown>
                 </div>
             </header>
 
@@ -143,7 +179,7 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
                             <iconify-icon icon="solar:file-check-bold" width="24"></iconify-icon>
-                            Riwayat Request Edit
+                            Edit Request
                         </Link>
 
                         <div className="h-px bg-slate-200 dark:bg-slate-800 my-2"></div>

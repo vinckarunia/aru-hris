@@ -66,6 +66,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin & Super Admin Routes
     Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
         Route::resource('pics', PicController::class)->except(['create', 'show', 'edit']);
+        
+        // System Settings
+        Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/reset-data', [\App\Http\Controllers\SettingController::class, 'resetData'])->name('settings.reset-data');
+        Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
     });
 
     // Edit Request Routes

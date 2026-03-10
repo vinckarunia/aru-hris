@@ -30,8 +30,9 @@ class ContractFactory extends Factory
 
         return [
             'assignment_id' => Assignment::factory(),
-            'contract_type' => 'PKWT',
-            'contract_number' => $this->faker->unique()->numberBetween(1, 100),
+            'contract_type' => 'Kontrak',
+            'pkwt_type' => 'PKWT',
+            'pkwt_number' => $this->faker->unique()->numberBetween(1, 100),
             'start_date' => $startDate,
             'end_date' => $endDate,
         ];

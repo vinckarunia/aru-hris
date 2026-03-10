@@ -259,7 +259,7 @@ export default function Create({ worker }: Props) {
                     </div>
 
                     <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <Link href={route('workers.index')} className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium transition-colors">
+                        <Link href={route('workers.index')} className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 dark:text-white dark:hover:text-slate-700 rounded-lg text-sm font-medium transition-colors">
                             Batal
                         </Link>
                         <PrimaryButton

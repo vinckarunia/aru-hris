@@ -6,6 +6,9 @@ import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import InputLabel from '@/Components/InputLabel';
+import TextInput from '@/Components/TextInput';
+import InputError from '@/Components/InputError';
 
 export default function UserManagementIndex({ users }: PageProps<{ users: User[] }>) {
     const { auth } = usePage<PageProps>().props;
@@ -160,34 +163,62 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                     </h2>
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Nama Lengkap</label>
-                            <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} required className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800" />
-                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                            <InputLabel htmlFor="name" value="Nama Lengkap"/>
+                            <TextInput
+                                id="name"
+                                type="text"
+                                className="mt-1 block w-full"
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                required
+                            />
+                            <InputError message={errors.name} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Email</label>
-                            <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} required className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800" />
-                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                            <InputLabel htmlFor="email" value="Email"/>
+                            <TextInput
+                                id="email"
+                                type="email"
+                                className="mt-1 block w-full"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                required
+                            />
+                            <InputError message={errors.email} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Role</label>
-                            <select value={data.role} onChange={e => setData('role', e.target.value)} className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800">
+                            <InputLabel htmlFor="role" value="Role"/>
+                            <select value={data.role} onChange={e => setData('role', e.target.value)} className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                                 {isSuperAdmin && <option value="SUPER_ADMIN">SUPER ADMIN</option>}
                                 <option value="ADMIN_ARU">ARU</option>
                                 <option value="PIC">PIC</option>
                                 <option value="WORKER">KARYAWAN</option>
                             </select>
-                            {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
+                            <InputError message={errors.role} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Password</label>
-                            <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} required={modalMode === 'add'} className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800" />
-                            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                            <InputLabel htmlFor="password" value="Password"/>
+                            <TextInput
+                                id="password"
+                                type="password"
+                                className="mt-1 block w-full"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                required={modalMode === 'add'}
+                            />
+                            <InputError message={errors.password} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Konfirmasi Password</label>
-                            <input type="password" value={data.password_confirmation} onChange={e => setData('password_confirmation', e.target.value)} required={modalMode === 'add'} className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800" />
-                            {errors.password_confirmation && <p className="text-red-500 text-xs mt-1">{errors.password_confirmation}</p>}
+                            <InputLabel htmlFor="password_confirmation" value="Konfirmasi Password"/>
+                            <TextInput
+                                id="password_confirmation"
+                                type="password"
+                                className="mt-1 block w-full"
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                required={modalMode === 'add'}
+                            />
+                            <InputError message={errors.password_confirmation} />
                         </div>
                         <div className="mt-6 flex justify-end gap-3">
                             <SecondaryButton onClick={closeModal} type="button" className="font-semibold transition-all flex items-center gap-2 text-sm">Batal</SecondaryButton>

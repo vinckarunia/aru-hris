@@ -72,7 +72,7 @@ class EditRequestController extends Controller
             'status' => 'pending',
         ]);
 
-        return redirect()->back()->with('message', 'Edit request successfully submitted and is waiting for PIC approval.');
+        return redirect()->route('edit-requests.index')->with('message', 'Edit Request successfully submitted and is waiting for PIC approval.');
     }
 
     public function review(Request $request, EditRequest $editRequest): RedirectResponse
@@ -111,6 +111,6 @@ class EditRequestController extends Controller
             }
         }
 
-        return redirect()->back()->with('message', 'Edit request status successfully updated.');
+        return redirect()->back()->with('message', 'Edit Request status successfully updated.');
     }
 }

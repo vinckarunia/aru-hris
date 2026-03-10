@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { PageProps, User } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkerLayout from '@/Layouts/WorkerLayout';
+import Modal from '@/Components/Modal';
 
 interface Worker {
     id: number;
@@ -71,6 +72,12 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
         });
     };
 
+    const closeModal = () => {
+        setIsReviewModalOpen(false);
+        setReviewingRequest(null);
+        reset();
+    };
+
     // Format human readable field names
     const formatFields = (fields: string[] | undefined) => {
         if (!fields || fields.length === 0) return '-';
@@ -127,8 +134,19 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                                     <td className="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
                                         {new Date(req.created_at).toLocaleDateString('id-ID')}
                                     </td>
-                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                                        {req.worker?.name || 'Tidak diketahui'}
+                                    <td className="px-6 py-4">
+                                        {(auth.user.role !== 'WORKER') ? (
+                                            <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                <Link href={route('workers.show', req.worker.id)} className="hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                    {req.worker?.name || 'Tidak diketahui'}
+                                                    <iconify-icon icon="solar:arrow-right-up-linear" width="14" class="text-slate-400 group-hover:text-primary transition-colors"></iconify-icon>
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                {req.worker?.name || 'Tidak diketahui'}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                                         {req.project?.name || '-'}
@@ -180,37 +198,37 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
             </div>
 
             {/* Review Modal */}
-            {isReviewModalOpen && reviewingRequest && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[95vh] overflow-hidden">
+            <Modal show={isReviewModalOpen} onClose={closeModal} maxWidth="2xl">
+                {reviewingRequest && (
+                    <div className="bg-white dark:bg-slate-900 flex flex-col max-h-[90vh] overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
-                            <h3 className="text-lg font-bold">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                                 {reviewingRequest.status === 'pending' && !isWorker ? 'Review Request Edit' : 'Detail Request Edit'}
                             </h3>
-                            <button type="button" onClick={() => setIsReviewModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+                            <button type="button" onClick={closeModal} className="text-slate-400 hover:text-slate-600">&times;</button>
                         </div>
                         <div className="p-6 overflow-y-auto space-y-4">
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-slate-500 mb-1">Karyawan</p>
-                                    <p className="font-medium">{reviewingRequest.worker?.name}</p>
+                                    <p className="font-medium dark:text-white">{reviewingRequest.worker?.name}</p>
                                 </div>
                                 <div>
                                     <p className="text-slate-500 mb-1">Project Terkait</p>
-                                    <p className="font-medium">{reviewingRequest.project?.name}</p>
+                                    <p className="font-medium dark:text-white">{reviewingRequest.project?.name}</p>
                                 </div>
                                 <div>
                                     <p className="text-slate-500 mb-1">Tanggal Diajukan</p>
-                                    <p className="font-medium">{new Date(reviewingRequest.created_at).toLocaleString('id-ID')}</p>
+                                    <p className="font-medium dark:text-white">{new Date(reviewingRequest.created_at).toLocaleString('id-ID')}</p>
                                 </div>
                                 <div>
                                     <p className="text-slate-500 mb-1">Status</p>
-                                    <p className="font-medium capitalize">{reviewingRequest.status}</p>
+                                    <p className="font-medium capitalize dark:text-white">{reviewingRequest.status}</p>
                                 </div>
                             </div>
 
                             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
-                                <h4 className="text-sm font-semibold mb-3">Data yang ingin diubah:</h4>
+                                <h4 className="text-sm font-semibold mb-3 dark:text-slate-500 uppercase">Data yang ingin diubah:</h4>
                                 {reviewingRequest.requested_data ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mb-4">
                                         {Object.entries(reviewingRequest.requested_data).map(([key, val]) => (
@@ -230,8 +248,8 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                                     </ul>
                                 )}
 
-                                <h4 className="text-sm font-semibold mb-1">Keterangan / Alasan dari Karyawan:</h4>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line italic">
+                                <h4 className="text-sm font-semibold mb-1 dark:text-slate-500">Keterangan / Alasan dari Karyawan:</h4>
+                                <p className="text-sm text-slate-600 dark:text-white whitespace-pre-line italic">
                                     {reviewingRequest.notes || 'Tidak ada keterangan tambahan.'}
                                 </p>
                             </div>
@@ -239,33 +257,33 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                             {reviewingRequest.status !== 'pending' && (
                                 <div className="border-t border-slate-200 dark:border-slate-800 pt-4 text-sm mt-4">
                                     <p className="text-slate-500 mb-1">Direview oleh: <span className="font-medium text-slate-800 dark:text-slate-200">{reviewingRequest.reviewer?.name || '-'}</span> pada {reviewingRequest.reviewed_at ? new Date(reviewingRequest.reviewed_at).toLocaleString('id-ID') : '-'}</p>
-                                    <h4 className="font-semibold text-slate-700 mt-2">Catatan Reviewer:</h4>
-                                    <p className="text-slate-600 bg-slate-100 p-2 rounded mt-1 italic">{reviewingRequest.review_notes || '-'}</p>
+                                    <h4 className="font-semibold text-slate-700 mt-2 dark:text-slate-500">Catatan Reviewer:</h4>
+                                    <p className="text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-white p-2 rounded mt-1 italic">{reviewingRequest.review_notes || '-'}</p>
                                 </div>
                             )}
 
                             {reviewingRequest.status === 'pending' && !isWorker && (
                                 <form id="reviewRequestForm" onSubmit={handleReviewSubmit} className="pt-4 border-t border-slate-200 dark:border-slate-800">
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium mb-2">Keputusan Keputusan PIC</label>
+                                        <label className="block text-sm font-medium mb-2 dark:text-slate-500">Keputusan PIC</label>
                                         <div className="flex gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="radio" value="approved" checked={data.status === 'approved'} onChange={() => setData('status', 'approved')} className="text-emerald-600 focus:ring-emerald-500" />
-                                                <span className="text-sm font-medium text-emerald-700">Setujui</span>
+                                                <span className="text-sm font-semibold text-emerald-700">Setujui</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="radio" value="rejected" checked={data.status === 'rejected'} onChange={() => setData('status', 'rejected')} className="text-rose-600 focus:ring-rose-500" />
-                                                <span className="text-sm font-medium text-rose-700">Tolak</span>
+                                                <span className="text-sm font-semibold text-rose-700">Tolak</span>
                                             </label>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium mb-1">Catatan Review (Cth: Minta dokumen pendukung)</label>
+                                        <label className="block text-sm font-medium mb-1 dark:text-slate-500">Catatan Review</label>
                                         <textarea
                                             value={data.review_notes}
                                             onChange={e => setData('review_notes', e.target.value)}
                                             rows={3}
-                                            className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 text-sm"
+                                            className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm"
                                             placeholder="Tambahkan pesan untuk karyawan..."
                                         />
                                     </div>
@@ -279,14 +297,14 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                             )}
                         </div>
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 shrink-0">
-                            <button type="button" onClick={() => setIsReviewModalOpen(false)} className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">Tutup</button>
+                            <button type="button" onClick={closeModal} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium">Tutup</button>
                             {reviewingRequest.status === 'pending' && !isWorker && (
-                                <button type="submit" form="reviewRequestForm" disabled={processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium disabled:opacity-50">Kirim Keputusan</button>
+                                <button type="submit" form="reviewRequestForm" disabled={processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium disabled:opacity-50">Kirim</button>
                             )}
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
         </Layout>
     );
 }

@@ -126,7 +126,7 @@ export default function UpdatePasswordForm({
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing} className="bg-primary hover:bg-primary-dark">Simpan</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -136,7 +136,7 @@ export default function UpdatePasswordForm({
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Saved.
+                            Tersimpan.
                         </p>
                     </Transition>
                 </div>

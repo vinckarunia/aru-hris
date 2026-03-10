@@ -6,6 +6,9 @@ import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import InputLabel from '@/Components/InputLabel';
+import TextInput from '@/Components/TextInput';
+import InputError from '@/Components/InputError';
 
 interface Project {
     id: number;
@@ -176,31 +179,42 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
                     <div className="space-y-4">
                         {modalMode === 'add' ? (
                             <div>
-                                <label className="block text-sm font-medium mb-1">Akun User PIC</label>
-                                <select value={data.user_id} onChange={e => setData('user_id', e.target.value)} required className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800">
+                                <InputLabel htmlFor="user_id" value="Akun User PIC"/>
+                                <select value={data.user_id} onChange={e => setData('user_id', e.target.value)} required className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                                     <option value="">-- Pilih User --</option>
                                     {availableUsers.map(u => (
                                         <option key={u.id} value={u.id}>{u.name}</option>
                                     ))}
                                 </select>
                                 {availableUsers.length === 0 && <p className="text-orange-500 text-xs mt-1">Belum ada akun user dengan role PIC yang tersedia. Buat akun PIC di Manajemen User terlebih dahulu.</p>}
-                                {errors.user_id && <p className="text-red-500 text-xs mt-1">{errors.user_id}</p>}
+                                <InputError message={errors.user_id} />
                             </div>
                         ) : (
                             <div>
-                                <label className="block text-sm font-medium mb-1">Akun User PIC</label>
-                                <input type="text" value={selectedPic?.user?.name || selectedPic?.name || ''} disabled className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed text-slate-500" />
+                                <InputLabel htmlFor="user_id" value="Akun User PIC"/>
+                                <TextInput
+                                    id="user_id"
+                                    type="text"
+                                    className="mt-1 block w-full"
+                                    value={selectedPic?.user?.name || selectedPic?.name || ''}
+                                    disabled
+                                />
                             </div>
                         )}
                         <div>
-                            <label className="block text-sm font-medium mb-1">Nomor Telepon</label>
-                            <input type="text" value={data.phone} onChange={e => setData('phone', e.target.value)} className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800" />
-                            {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                            <InputLabel htmlFor="phone" value="Nomor Telepon"/>
+                            <TextInput
+                                id="phone"
+                                type="text"
+                                className="mt-1 block w-full"
+                                value={data.phone}
+                                onChange={e => setData('phone', e.target.value)}
+                            />
+                            <InputError message={errors.phone} />
                         </div>
-
-                        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 mt-4">
-                            <label className="block text-sm font-medium mb-2">Assign Project (Opsional)</label>
-                            <div className="max-h-40 overflow-y-auto border border-slate-200 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+                        <div>
+                            <InputLabel htmlFor="project_ids" value="Assign Project"/>
+                            <div className="max-h-40 overflow-y-auto border border-slate-200 mt-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                                 {projects.map(proj => (
                                     <label key={proj.id} className="flex items-center gap-2 mb-2 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer">
                                         <input

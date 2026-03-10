@@ -164,6 +164,21 @@ export default function Show({ worker }: Props) {
         });
     };
 
+    /**
+     * Extracts initials from a given full name.
+     * Takes the first letter of the first and second names, or the first two letters of a single name.
+     *
+     * @param {string} name - The full name of the user.
+     * @returns {string} The user's initials in uppercase.
+     */
+    const getInitials = (name: string): string => {
+        const names = name.split(' ');
+        if (names.length >= 2) {
+            return (names[0][0] + names[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
+
     return (
         <Layout title={`Profil Karyawan - ${worker.name}`} header="Detail Karyawan">
             {/* Header Profile Card */}
@@ -172,7 +187,7 @@ export default function Show({ worker }: Props) {
 
                 <div className="flex items-center gap-5 z-10">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-primary/30">
-                        {worker.name.substring(0, 2).toUpperCase()}
+                        {getInitials(worker.name)}
                     </div>
                     <div>
                         <div className="flex items-center gap-3">
@@ -272,10 +287,12 @@ export default function Show({ worker }: Props) {
                     </div>
                 )}
 
-                <div className="p-6">
-                    <div className="flex justify-end mb-4">
-                        <button onClick={openCreateModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
-                            <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Data Keluarga
+                {/* Tab: Family */}
+                {activeTab === 'family' && (
+                    <div className="p-6">
+                        <div className="flex justify-end mb-4">
+                            <button onClick={openCreateModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
+                                <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Data Keluarga
                         </button>
                     </div>
 
@@ -320,6 +337,7 @@ export default function Show({ worker }: Props) {
                         <EmptyState icon="solar:users-group-rounded-bold" message="Belum ada data keluarga yang ditambahkan." subMessage="Klik tombol di atas untuk menambahkan." />
                     )}
                 </div>
+                )}
 
                 {/* Tab: Assignments */}
                 {activeTab === 'assignments' && (

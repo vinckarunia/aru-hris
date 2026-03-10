@@ -1,10 +1,35 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { Link } from '@inertiajs/react';
-import { PropsWithChildren, ReactNode } from 'react';
+import { PropsWithChildren, ReactNode, useState, useEffect } from 'react';
 
 export default function Guest({ children, topRightAction }: PropsWithChildren<{ topRightAction?: ReactNode }>) {
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+            if (typeof window !== 'undefined') {
+                return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            }
+            return false;
+        });
+    
+        useEffect(() => {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }, [isDarkMode]);
+
+    const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8F9FF] py-6 sm:py-12 dark:bg-[#0F172A] text-slate-800 dark:text-[#F1F5F9] font-sans antialiased selection:bg-primary selection:text-white relative overflow-hidden">
+            <div className="absolute top-6 left-6 sm:top-8 sm:left-10 z-50">
+                <button onClick={toggleTheme} className="flex rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
+                    <iconify-icon icon={isDarkMode ? "solar:sun-bold-duotone" : "solar:moon-bold-duotone"} width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                </button>
+            </div>
+
             {topRightAction && (
                 <div className="absolute top-6 right-6 sm:top-8 sm:right-10 z-50">
                     {topRightAction}

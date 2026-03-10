@@ -295,7 +295,7 @@ export default function Index({ workers, clients }: Props) {
                             className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
                         >
                             <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
-                            Tambah Karyawan Baru
+                            Tambah Karyawan
                         </Link>
                     </div>
                 )}

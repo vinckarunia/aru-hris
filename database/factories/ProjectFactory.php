@@ -28,7 +28,7 @@ class ProjectFactory extends Factory
         return [
             'client_id' => Client::factory(),
             'name' => $this->faker->city,
-            'id_prefix' => strtoupper($this->faker->unique()->lexify('???')),
+            'prefix' => strtoupper($this->faker->unique()->lexify('???')),
             'id_running_number' => 0,
             'created_at' => now(),
         ];

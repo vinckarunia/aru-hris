@@ -397,7 +397,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                     <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                         <td className="px-6 py-4">{rowOffset + index + 1}</td>
                                         <td className="px-6 py-4">
-                                            <Link href={route('projects.show', project.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                            <Link href={route('projects.show', project.id)} className="font-bold hover:text-primary transition-colors flex items-center gap-1.5 group">
                                                 {project.name}
                                                 <iconify-icon icon="solar:arrow-right-up-linear" width="14" class="text-slate-400 group-hover:text-primary transition-colors"></iconify-icon>
                                             </Link>
