@@ -6,9 +6,9 @@ import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
-interface Branch { id: number; name: string; }
-interface Project { id: number; name: string; prefix: string; branches: Branch[]; }
-interface Assignment { id: number; worker_id: number; project_id: number; branch_id: number; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: number, name: string; nik_aru: string | null; } }
+interface Branch { id: string; name: string; }
+interface Project { id: string; name: string; prefix: string; branches: Branch[]; }
+interface Assignment { id: string; worker_id: string; project_id: string; branch_id: string; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: string, name: string; nik_aru: string | null; } }
 
 interface Props { assignment: Assignment; projects: Project[]; }
 

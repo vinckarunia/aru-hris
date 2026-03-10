@@ -22,8 +22,8 @@ interface SortConfig {
  * Represents a branch within a client company.
  */
 interface Branch {
-    id: number;
-    client_id: number;
+    id: string;
+    client_id: string;
     name: string;
 }
 
@@ -31,8 +31,8 @@ interface Branch {
  * Represents a project that can be associated with multiple branches.
  */
 interface Project {
-    id: number;
-    client_id: number;
+    id: string;
+    client_id: string;
     name: string;
     prefix: string;
     id_running_number: number;
@@ -42,21 +42,21 @@ interface Project {
  * Represents an assignment connecting a worker to a project/branch.
  */
 interface Assignment {
-    id: number;
-    worker_id: number;
-    project_id: number;
-    branch_id: number;
+    id: string;
+    worker_id: string;
+    project_id: string;
+    branch_id: string;
     position: string | null;
     status: string | null;
-    project: { id: number; name: string } | null;
-    branch: { id: number; name: string } | null;
+    project: { id: string; name: string } | null;
+    branch: { id: string; name: string } | null;
 }
 
 /**
  * Represents a worker affiliated with this client via an assignment.
  */
 interface AffiliatedWorker {
-    id: number;
+    id: string;
     nik_aru: string | null;
     name: string;
     assignments: Assignment[];
@@ -66,7 +66,7 @@ interface AffiliatedWorker {
  * Represents a client company entity holding branches, projects, and workers.
  */
 interface Client {
-    id: number;
+    id: string;
     full_name: string;
     short_name: string;
     branches: Branch[];
@@ -279,7 +279,7 @@ export default function Show({ client, workers }: Props) {
     const [selectedProj, setSelectedProj] = useState<Project | null>(null);
     const projForm = useForm({
         client_id: client.id.toString(),
-        branch_ids: [] as number[],
+        branch_ids: [] as string[],
         name: '',
         prefix: ''
     });
@@ -288,7 +288,7 @@ export default function Show({ client, workers }: Props) {
      *
      * @param {number} id - The ID of the branch to toggle.
      */
-    const handleProjBranchToggle = (id: number) => {
+    const handleProjBranchToggle = (id: string) => {
         const currentIds = projForm.data.branch_ids;
         if (currentIds.includes(id)) {
             projForm.setData('branch_ids', currentIds.filter(branchId => branchId !== id));

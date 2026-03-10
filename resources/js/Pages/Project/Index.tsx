@@ -20,7 +20,7 @@ interface SortConfig {
  * Represents a client company entity.
  */
 interface Client {
-    id: number;
+    id: string;
     full_name: string;
     short_name: string;
 }
@@ -29,8 +29,8 @@ interface Client {
  * Represents a branch within a client company.
  */
 interface Branch {
-    id: number;
-    client_id: number;
+    id: string;
+    client_id: string;
     name: string;
 }
 
@@ -38,8 +38,8 @@ interface Branch {
  * Represents a project that can be associated with multiple branches.
  */
 interface Project {
-    id: number;
-    client_id: number;
+    id: string;
+    client_id: string;
     name: string;
     prefix: string;
     id_running_number: number;
@@ -56,7 +56,7 @@ const PER_PAGE = 10;
 
 // Defining Pic interface 
 interface Pic {
-    id: number;
+    id: string;
     name: string;
 }
 
@@ -104,8 +104,8 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     // Form state initialized with an array for branch_ids and pic_ids
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         client_id: '',
-        branch_ids: [] as number[],
-        pic_ids: [] as number[],
+        branch_ids: [] as string[],
+        pic_ids: [] as string[],
         name: '',
         prefix: '',
     });
@@ -116,7 +116,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     /**
      * Toggles a branch ID in the branch_ids state array.
      */
-    const handleBranchToggle = (id: number) => {
+    const handleBranchToggle = (id: string) => {
         const currentIds = data.branch_ids;
         if (currentIds.includes(id)) {
             setData('branch_ids', currentIds.filter(deptId => deptId !== id));
@@ -128,7 +128,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     /**
      * Toggles a PIC ID in the pic_ids state array.
      */
-    const handlePicToggle = (id: number) => {
+    const handlePicToggle = (id: string) => {
         const currentIds = data.pic_ids;
         if (currentIds.includes(id)) {
             setData('pic_ids', currentIds.filter(picId => picId !== id));
@@ -386,7 +386,9 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                         {renderSortIndicator('prefix')}
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 text-center">Aksi</th>
+                                <th className="px-6 py-4 text-center">
+                                    {!isPic && "Aksi"}
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
@@ -424,7 +426,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{project.prefix}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-right space-x-2">
+                                        <td className="px-6 py-4 text-center space-x-2">
                                             {!isPic && (
                                                 <>
                                                     <button onClick={() => openEditModal(project)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="20"></iconify-icon></button>

@@ -30,7 +30,7 @@ class WorkerController extends Controller
         // Worker hanya boleh melihat profilnya sendiri, tidak boleh akses index
         if ($user->isWorker()) {
             if ($user->worker_id) {
-                return redirect()->route('workers.show', $user->worker_id);
+                return redirect()->route('workers.show', \App\Models\Worker::encodeHashid($user->worker_id));
             }
             abort(403, 'Akses ditolak.');
         }
@@ -148,7 +148,7 @@ class WorkerController extends Controller
 
         $worker->update($validated);
 
-        return redirect()->route('workers.show', $worker->id)->with('message', 'Data karyawan berhasil diperbarui.');
+        return redirect()->route('workers.show', $worker)->with('message', 'Data karyawan berhasil diperbarui.');
     }
 
     /**

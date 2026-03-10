@@ -9,16 +9,16 @@ import {
  * Interface representing the expiring contract structure.
  */
 interface ExpiringContract {
-    id: number;
+    id: string;
     end_date: string;
     assignment: {
-        id: number;
+        id: string;
         worker: {
-            id: number;
+            id: string;
             name: string;
         };
         project: {
-            id: number;
+            id: string;
             name: string;
             client: { short_name: string };
         };
@@ -29,7 +29,7 @@ interface ExpiringContract {
  * Interface representing an idle worker structure.
  */
 interface IdleWorker {
-    id: number;
+    id: string;
     nik_aru: string;
     name: string;
     assignments: Array<{
@@ -41,9 +41,9 @@ interface IdleWorker {
  * Interface for the recent assignment structure.
  */
 interface RecentAssignment {
-    id: number;
+    id: string;
     hire_date: string;
-    worker: { id: number; name: string };
+    worker: { id: string; name: string };
     project: { name: string; client: { short_name: string } };
     branch: { name: string };
 }

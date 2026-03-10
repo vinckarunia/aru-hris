@@ -39,7 +39,7 @@ use App\Models\User;
  */
 class Worker extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasHashid;
 
     /**
      * The attributes that are mass assignable.

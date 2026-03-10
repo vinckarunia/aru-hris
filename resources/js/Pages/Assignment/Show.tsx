@@ -5,11 +5,11 @@ import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 
 interface Assignment {
-    id: number; worker_id: number; employee_id: string | null; position: string | null;
+    id: string; worker_id: string; employee_id: string | null; position: string | null;
     hire_date: string; termination_date: string | null; status: string;
-    worker: { id: number; name: string; nik_aru: string; };
-    project: { id: number; name: string; prefix: string; };
-    branch: { id: number; name: string; };
+    worker: { id: string; name: string; nik_aru: string; };
+    project: { id: string; name: string; prefix: string; };
+    branch: { id: string; name: string; };
     contracts?: any[];
 }
 

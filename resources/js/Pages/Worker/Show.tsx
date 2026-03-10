@@ -17,8 +17,8 @@ import EmptyState from '@/Components/EmptyState';
  * Interface for Family Member
  */
 interface FamilyMember {
-    id: number;
-    worker_id: number;
+    id: string;
+    worker_id: string;
     relationship_type: 'spouse' | 'child' | 'parent' | 'other relatives';
     name: string;
     birth_place: string | null;
@@ -31,7 +31,7 @@ interface FamilyMember {
  * Interface for Worker properties in the Show view.
  */
 interface Worker {
-    id: number; nik_aru: string | null; name: string; ktp_number: string; kk_number: string | null;
+    id: string; nik_aru: string | null; name: string; ktp_number: string; kk_number: string | null;
     birth_place: string | null; birth_date: string | null; gender: 'male' | 'female' | null; phone: string | null;
     education: string | null; religion: string | null; tax_status: string | null; address_ktp: string | null;
     address_domicile: string | null; mother_name: string | null; npwp: string | null; bpjs_kesehatan: string | null;
@@ -293,50 +293,50 @@ export default function Show({ worker }: Props) {
                         <div className="flex justify-end mb-4">
                             <button onClick={openCreateModal} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
                                 <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Data Keluarga
-                        </button>
-                    </div>
-
-                    {worker.family_members && worker.family_members.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {worker.family_members.map((member) => (
-                                <div key={member.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h4 className="font-bold text-slate-800 dark:text-white text-lg">{member.name}</h4>
-                                            <span className="px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 rounded-lg text-xs font-bold">
-                                                {relationshipLabel[member.relationship_type]}
-                                            </span>
-                                        </div>
-                                        <div className="space-y-1.5 mt-4">
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                <iconify-icon icon="solar:calendar-bold" className="text-slate-400"></iconify-icon>
-                                                {member.birth_place || '-'}, {formatDate(member.birth_date)}
-                                            </p>
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                <iconify-icon icon="solar:card-2-bold" className="text-slate-400"></iconify-icon>
-                                                NIK: <span className="font-mono">{member.nik || '-'}</span>
-                                            </p>
-                                            <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                                <iconify-icon icon="solar:health-bold" className="text-slate-400"></iconify-icon>
-                                                BPJS: <span className="font-mono">{member.bpjs_number || '-'}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                        <button onClick={() => openEditModal(member)} className="flex-1 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:text-primary hover:border-primary transition-colors">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => openDeleteModal(member)} className="flex-1 py-2 text-sm font-semibold text-red-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:border-red-800 transition-colors">
-                                            Hapus
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                            </button>
                         </div>
-                    ) : (
-                        <EmptyState icon="solar:users-group-rounded-bold" message="Belum ada data keluarga yang ditambahkan." subMessage="Klik tombol di atas untuk menambahkan." />
-                    )}
-                </div>
+
+                        {worker.family_members && worker.family_members.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {worker.family_members.map((member) => (
+                                    <div key={member.id} className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h4 className="font-bold text-slate-800 dark:text-white text-lg">{member.name}</h4>
+                                                <span className="px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 rounded-lg text-xs font-bold">
+                                                    {relationshipLabel[member.relationship_type]}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-1.5 mt-4">
+                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                    <iconify-icon icon="solar:calendar-bold" className="text-slate-400"></iconify-icon>
+                                                    {member.birth_place || '-'}, {formatDate(member.birth_date)}
+                                                </p>
+                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                    <iconify-icon icon="solar:card-2-bold" className="text-slate-400"></iconify-icon>
+                                                    NIK: <span className="font-mono">{member.nik || '-'}</span>
+                                                </p>
+                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                                                    <iconify-icon icon="solar:health-bold" className="text-slate-400"></iconify-icon>
+                                                    BPJS: <span className="font-mono">{member.bpjs_number || '-'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                            <button onClick={() => openEditModal(member)} className="flex-1 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:text-primary hover:border-primary transition-colors">
+                                                Edit
+                                            </button>
+                                            <button onClick={() => openDeleteModal(member)} className="flex-1 py-2 text-sm font-semibold text-red-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:border-red-800 transition-colors">
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <EmptyState icon="solar:users-group-rounded-bold" message="Belum ada data keluarga yang ditambahkan." subMessage="Klik tombol di atas untuk menambahkan." />
+                        )}
+                    </div>
                 )}
 
                 {/* Tab: Assignments */}

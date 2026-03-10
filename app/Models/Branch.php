@@ -21,7 +21,7 @@ use App\Models\Project;
  */
 class Branch extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasHashid;
 
     /**
      * The attributes that are mass assignable.

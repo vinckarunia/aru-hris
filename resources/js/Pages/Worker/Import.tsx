@@ -10,23 +10,23 @@ import StatusBadge from '@/Components/StatusBadge';
 
 /** Represents a client containing multiple projects. */
 interface Client {
-    id: number;
+    id: string;
     full_name: string;
 }
 
 /** Represents a branch within a project. */
 interface Branch {
-    id: number;
+    id: string;
     name: string;
-    client_id: number;
+    client_id: string;
 }
 
 /** Represents a project with its associated branches. */
 interface Project {
-    id: number;
+    id: string;
     name: string;
     prefix: string;
-    client_id: number;
+    client_id: string;
     branches: Branch[];
 }
 
@@ -44,9 +44,9 @@ interface DbColumnGroup {
 
 /** Global settings for the import (client, project, branch, rates, etc). */
 interface GlobalSettings {
-    client_id: number | null;
-    project_id: number | null;
-    branch_id: number | null;
+    client_id: string | null;
+    project_id: string | null;
+    branch_id: string | null;
     salary_rate: string;
     allowance_rate: string;
     overtime_rate: string;
@@ -62,7 +62,7 @@ interface ConflictDiff {
 }
 
 interface ConflictData {
-    existing_id: number;
+    existing_id: string;
     existing_name: string;
     existing_ktp: string;
     diffs: ConflictDiff[];
@@ -592,7 +592,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                 <select
                                     value={globalSettings.client_id ?? ''}
                                     onChange={(e) => {
-                                        const cid = e.target.value ? Number(e.target.value) : null;
+                                        const cid = e.target.value || null;
                                         setGlobalSettings(prev => ({ ...prev, client_id: cid, project_id: null, branch_id: null }));
                                     }}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
@@ -610,7 +610,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                 <select
                                     value={globalSettings.project_id ?? ''}
                                     onChange={(e) => {
-                                        const pid = e.target.value ? Number(e.target.value) : null;
+                                        const pid = e.target.value || null;
                                         setGlobalSettings(prev => ({ ...prev, project_id: pid, branch_id: null }));
                                     }}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
@@ -627,7 +627,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                 </label>
                                 <select
                                     value={globalSettings.branch_id ?? ''}
-                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, branch_id: e.target.value ? Number(e.target.value) : null }))}
+                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, branch_id: e.target.value || null }))}
                                     disabled={!globalSettings.project_id}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
                                 >

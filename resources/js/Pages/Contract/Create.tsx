@@ -11,8 +11,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
  * This component is used for creating a new contract for a specific assignment. It includes form fields for contract details and compensation information. The form data is managed using Inertia's useForm hook, and it handles validation errors returned from the server. The component also calculates the duration of the contract in months based on the start and end dates, if applicable.
  */
 interface Assignment {
-    id: number;
-    worker: { id: number; name: string; nik_aru: string; };
+    id: string;
+    worker: { id: string; name: string; nik_aru: string; };
     project: { name: string; prefix: string; };
     branch: { name: string; };
     position: string;

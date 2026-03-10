@@ -11,13 +11,13 @@ import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 
 interface Project {
-    id: number;
+    id: string;
     name: string;
 }
 
 interface Pic {
-    id: number;
-    user_id: number;
+    id: string;
+    user_id: string;
     name: string;
     phone: string | null;
     user: User;
@@ -28,9 +28,14 @@ interface PicIndexProps extends PageProps {
     pics: Pic[];
     availableUsers: User[];
     projects: Project[];
+    filters: {
+        sort: string;
+        direction: string;
+        project_id?: string;
+    };
 }
 
-export default function PicIndex({ pics, availableUsers, projects }: PicIndexProps) {
+export default function PicIndex({ pics, availableUsers, projects, filters }: PicIndexProps) {
     const { auth } = usePage<PageProps>().props;
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -41,7 +46,7 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         user_id: '',
         phone: '',
-        project_ids: [] as number[],
+        project_ids: [] as string[],
     });
 
     /** Opens modal for adding a new PIC. */
@@ -91,7 +96,7 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
         if (selectedPic) destroy(route('pics.destroy', selectedPic.id), { onSuccess: () => setIsDeleteModalOpen(false) });
     };
 
-    const handleProjectToggle = (projectId: number) => {
+    const handleProjectToggle = (projectId: string) => {
         const ids = [...data.project_ids];
         if (ids.includes(projectId)) {
             setData('project_ids', ids.filter(id => id !== projectId));
@@ -100,17 +105,41 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
         }
     };
 
+    const handleSort = (field: string) => {
+        let newDirection = 'asc';
+        if (filters.sort === field && filters.direction === 'asc') {
+            newDirection = 'desc';
+        }
+        router.get(route('pics.index'), { ...filters, sort: field, direction: newDirection }, { preserveState: true, preserveScroll: true });
+    };
+
+    const handleFilterChange = (field: string, value: string) => {
+        router.get(route('pics.index'), { ...filters, [field]: value }, { preserveState: true, preserveScroll: true });
+    };
+
     return (
         <AdminLayout title="Kelola PIC" header="PIC">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Manajemen PIC</h1>
-                <button
-                    onClick={openCreateModal}
-                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
-                >
-                    <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
-                    Tambah PIC
-                </button>
+                <div className="flex items-center gap-4">
+                    <select
+                        value={filters.project_id || ''}
+                        onChange={e => handleFilterChange('project_id', e.target.value)}
+                        className="py-2 pl-3 pr-8 rounded-xl border-slate-300 text-sm shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    >
+                        <option value="">Semua Project</option>
+                        {projects.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                    <button
+                        onClick={openCreateModal}
+                        className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
+                    >
+                        <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
+                        Tambah PIC
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -118,8 +147,12 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
                     <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">Nama</th>
-                                <th className="px-6 py-4">No. Telepon</th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('name')}>
+                                    <div className="flex items-center gap-1">Nama {filters?.sort === 'name' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('phone')}>
+                                    <div className="flex items-center gap-1">No. Telepon {filters?.sort === 'phone' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
                                 <th className="px-6 py-4">Project yang Dikelola</th>
                                 <th className="px-6 py-4 text-center">Aksi</th>
                             </tr>
@@ -179,7 +212,7 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
                     <div className="space-y-4">
                         {modalMode === 'add' ? (
                             <div>
-                                <InputLabel htmlFor="user_id" value="Akun User PIC"/>
+                                <InputLabel htmlFor="user_id" value="Akun User PIC" />
                                 <select value={data.user_id} onChange={e => setData('user_id', e.target.value)} required className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                                     <option value="">-- Pilih User --</option>
                                     {availableUsers.map(u => (
@@ -191,7 +224,7 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
                             </div>
                         ) : (
                             <div>
-                                <InputLabel htmlFor="user_id" value="Akun User PIC"/>
+                                <InputLabel htmlFor="user_id" value="Akun User PIC" />
                                 <TextInput
                                     id="user_id"
                                     type="text"
@@ -202,7 +235,7 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
                             </div>
                         )}
                         <div>
-                            <InputLabel htmlFor="phone" value="Nomor Telepon"/>
+                            <InputLabel htmlFor="phone" value="Nomor Telepon" />
                             <TextInput
                                 id="phone"
                                 type="text"
@@ -213,7 +246,7 @@ export default function PicIndex({ pics, availableUsers, projects }: PicIndexPro
                             <InputError message={errors.phone} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="project_ids" value="Assign Project"/>
+                            <InputLabel htmlFor="project_ids" value="Assign Project" />
                             <div className="max-h-40 overflow-y-auto border border-slate-200 mt-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                                 {projects.map(proj => (
                                     <label key={proj.id} className="flex items-center gap-2 mb-2 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer">

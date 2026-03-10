@@ -25,7 +25,7 @@ use App\Models\ContractCompensation;
  */
 class Contract extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasHashid;
 
     protected $fillable = [
         'assignment_id',

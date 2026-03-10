@@ -10,7 +10,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 
-export default function UserManagementIndex({ users }: PageProps<{ users: User[] }>) {
+export default function UserManagementIndex({ users, filters }: PageProps<{ users: User[], filters: { role: string, sort: string, direction: string } }>) {
     const { auth } = usePage<PageProps>().props;
     const isSuperAdmin = auth.user.role === 'SUPER_ADMIN';
 
@@ -78,6 +78,18 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
         if (selectedUser) destroy(route('users.destroy', selectedUser.id), { onSuccess: () => setIsDeleteModalOpen(false) });
     };
 
+    const handleSort = (field: string) => {
+        let newDirection = 'asc';
+        if (filters.sort === field && filters.direction === 'asc') {
+            newDirection = 'desc';
+        }
+        router.get(route('users.index'), { ...filters, sort: field, direction: newDirection }, { preserveState: true, preserveScroll: true });
+    };
+
+    const handleRoleTab = (role: string) => {
+        router.get(route('users.index'), { ...filters, role }, { preserveState: true, preserveScroll: true });
+    };
+
     const translateRole = (role: string | null | undefined) => {
         const rates: Record<string, string> = {
             'SUPER_ADMIN': 'SUPER ADMIN',
@@ -101,14 +113,32 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                 </button>
             </div>
 
+            <div className="flex mb-4 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+                {['SUPER_ADMIN', 'ADMIN_ARU', 'PIC', 'WORKER'].map((role) => (
+                    <button
+                        key={role}
+                        onClick={() => handleRoleTab(role)}
+                        className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${filters.role === role ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300 dark:hover:border-slate-600'}`}
+                    >
+                        {translateRole(role)}
+                    </button>
+                ))}
+            </div>
+
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">Nama</th>
-                                <th className="px-6 py-4">Email</th>
-                                <th className="px-6 py-4">Role</th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('name')}>
+                                    <div className="flex items-center gap-1">Nama {filters?.sort === 'name' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('email')}>
+                                    <div className="flex items-center gap-1">Email {filters?.sort === 'email' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('role')}>
+                                    <div className="flex items-center gap-1">Role {filters?.sort === 'role' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
                                 <th className="px-6 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -163,7 +193,7 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                     </h2>
                     <div className="space-y-4">
                         <div>
-                            <InputLabel htmlFor="name" value="Nama Lengkap"/>
+                            <InputLabel htmlFor="name" value="Nama Lengkap" />
                             <TextInput
                                 id="name"
                                 type="text"
@@ -175,7 +205,7 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                             <InputError message={errors.name} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="email" value="Email"/>
+                            <InputLabel htmlFor="email" value="Email" />
                             <TextInput
                                 id="email"
                                 type="email"
@@ -187,7 +217,7 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                             <InputError message={errors.email} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="role" value="Role"/>
+                            <InputLabel htmlFor="role" value="Role" />
                             <select value={data.role} onChange={e => setData('role', e.target.value)} className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                                 {isSuperAdmin && <option value="SUPER_ADMIN">SUPER ADMIN</option>}
                                 <option value="ADMIN_ARU">ARU</option>
@@ -197,7 +227,7 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                             <InputError message={errors.role} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="password" value="Password"/>
+                            <InputLabel htmlFor="password" value="Password" />
                             <TextInput
                                 id="password"
                                 type="password"
@@ -209,7 +239,7 @@ export default function UserManagementIndex({ users }: PageProps<{ users: User[]
                             <InputError message={errors.password} />
                         </div>
                         <div>
-                            <InputLabel htmlFor="password_confirmation" value="Konfirmasi Password"/>
+                            <InputLabel htmlFor="password_confirmation" value="Konfirmasi Password" />
                             <TextInput
                                 id="password_confirmation"
                                 type="password"

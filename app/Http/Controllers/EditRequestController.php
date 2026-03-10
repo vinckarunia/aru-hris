@@ -15,7 +15,10 @@ class EditRequestController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $query = EditRequest::with(['worker:id,name', 'project:id,name', 'requester:id,name', 'reviewer:id,name'])->latest();
+        $sort = $request->input('sort', 'created_at');
+        $direction = $request->input('direction', 'desc');
+
+        $query = EditRequest::with(['worker:id,name', 'project:id,name', 'requester:id,name', 'reviewer:id,name']);
 
         if ($user->isWorker()) {
             $query->where('worker_id', $user->worker_id);
@@ -26,8 +29,27 @@ class EditRequestController extends Controller
         }
         // Super Admin and Admin ARU can view all records
 
+        $status = $request->input('status');
+
+        if ($sort === 'worker_name') {
+            $query->join('workers', 'edit_requests.worker_id', '=', 'workers.id')
+                  ->select('edit_requests.*')
+                  ->orderBy('workers.name', $direction);
+        } else {
+            $query->orderBy('edit_requests.' . $sort, $direction);
+        }
+
+        if ($status) {
+            $query->where('edit_requests.status', $status);
+        }
+
         return Inertia::render('EditRequest/Index', [
-            'editRequests' => $query->get()
+            'editRequests' => $query->get(),
+            'filters' => [
+                'sort' => $sort,
+                'direction' => $direction,
+                'status' => $status,
+            ],
         ]);
     }
 

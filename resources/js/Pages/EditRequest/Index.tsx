@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { PageProps, User } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkerLayout from '@/Layouts/WorkerLayout';
 import Modal from '@/Components/Modal';
 
 interface Worker {
-    id: number;
+    id: string;
     name: string;
 }
 
 interface Project {
-    id: number;
+    id: string;
     name: string;
 }
 
 interface EditRequest {
-    id: number;
-    worker_id: number;
-    project_id: number;
+    id: string;
+    worker_id: string;
+    project_id: string;
     requested_by: number;
     requested_fields: string[];
     requested_data: Record<string, string | null>;
@@ -30,11 +30,16 @@ interface EditRequest {
     created_at: string;
     worker: Worker;
     project: Project;
-    requester: { id: number; name: string };
-    reviewer: { id: number; name: string } | null;
+    requester: { id: string; name: string };
+    reviewer: { id: string; name: string } | null;
 }
 
-export default function EditRequestIndex({ editRequests }: PageProps<{ editRequests: EditRequest[] }>) {
+interface EditRequestIndexProps extends PageProps {
+    editRequests: EditRequest[];
+    filters?: { sort: string; direction: string; status?: string };
+}
+
+export default function EditRequestIndex({ editRequests, filters }: EditRequestIndexProps) {
     const { auth } = usePage<PageProps>().props;
     const isWorker = auth.user.role === 'WORKER';
     const Layout = isWorker ? WorkerLayout : AdminLayout;
@@ -49,6 +54,18 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
         status: 'approved',
         review_notes: '',
     });
+
+    const handleSort = (field: string) => {
+        let newDirection = 'asc';
+        if (filters?.sort === field && filters?.direction === 'asc') {
+            newDirection = 'desc';
+        }
+        router.get(route('edit-requests.index'), { ...filters, sort: field, direction: newDirection }, { preserveState: true, preserveScroll: true });
+    };
+
+    const handleFilterChange = (field: string, value: string) => {
+        router.get(route('edit-requests.index'), { ...filters, [field]: value }, { preserveState: true, preserveScroll: true });
+    };
 
     const openReviewModal = (req: EditRequest) => {
         setReviewingRequest(req);
@@ -109,6 +126,18 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
         <Layout title="Edit Request" header="Edit Request">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Manajemen Pengajuan Perubahan Data Karyawan</h1>
+                <div className="flex items-center gap-4">
+                    <select
+                        value={filters?.status || ''}
+                        onChange={e => handleFilterChange('status', e.target.value)}
+                        className="py-2 pl-3 pr-8 rounded-xl border-slate-300 text-sm shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    >
+                        <option value="">Semua Status</option>
+                        <option value="pending">Menunggu Review</option>
+                        <option value="approved">Disetujui</option>
+                        <option value="rejected">Ditolak</option>
+                    </select>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -116,11 +145,17 @@ export default function EditRequestIndex({ editRequests }: PageProps<{ editReque
                     <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">Tanggal</th>
-                                <th className="px-6 py-4">Karyawan</th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('created_at')}>
+                                    <div className="flex items-center gap-1">Tanggal {filters?.sort === 'created_at' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('worker_name')}>
+                                    <div className="flex items-center gap-1">Karyawan {filters?.sort === 'worker_name' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
                                 <th className="px-6 py-4">Project</th>
                                 <th className="px-6 py-4">Data yang Ingin Diubah</th>
-                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('status')}>
+                                    <div className="flex items-center gap-1">Status {filters?.sort === 'status' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
+                                </th>
                                 <th className="px-6 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>

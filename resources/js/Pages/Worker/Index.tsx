@@ -20,7 +20,7 @@ interface SortConfig {
  * These interfaces define the expected structure of data passed to the component.
  */
 interface Client {
-    id: number;
+    id: string;
     name: string;
     full_name: string;
     short_name: string;
@@ -28,14 +28,14 @@ interface Client {
 }
 
 interface Project {
-    id: number;
-    client_id?: number;
+    id: string;
+    client_id?: string;
     name: string;
 }
 
 interface Assignment {
-    id: number;
-    project_id: number;
+    id: string;
+    project_id: string;
     status: string;
     hire_date: string;
     termination_date: string | null;
@@ -44,7 +44,7 @@ interface Assignment {
 }
 
 interface Contract {
-    id: number;
+    id: string;
     contract_type: string;
     pkwt_type: string | null;
     pkwt_number: number;
@@ -53,7 +53,7 @@ interface Contract {
 }
 
 interface Worker {
-    id: number;
+    id: string;
     nik_aru: string | null;
     name: string;
     ktp_number: string;
@@ -89,7 +89,7 @@ export default function Index({ workers, clients }: Props) {
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
-    const [selectedWorkers, setSelectedWorkers] = useState<number[]>([]); // For multi-select
+    const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]); // For multi-select
 
     // Filter State
     const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
@@ -237,7 +237,7 @@ export default function Index({ workers, clients }: Props) {
         }
     };
 
-    const handleSelectRow = (workerId: number) => {
+    const handleSelectRow = (workerId: string) => {
         setSelectedWorkers(prev =>
             prev.includes(workerId) ? prev.filter(id => id !== workerId) : [...prev, workerId]
         );
@@ -442,7 +442,7 @@ export default function Index({ workers, clients }: Props) {
                                         {renderSortIndicator('phone')}
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 text-right">
+                                <th className="px-6 py-4 text-center">
                                     {!isPic && "Aksi"}
                                 </th>
                             </tr>
@@ -515,7 +515,7 @@ export default function Index({ workers, clients }: Props) {
                                             <td className="py-4 px-6">
                                                 {worker.phone}
                                             </td>
-                                            <td className="px-6 py-4 text-right space-x-2">
+                                            <td className="px-6 py-4 text-center space-x-2">
                                                 {!isPic && (
                                                     <>
                                                         <Link

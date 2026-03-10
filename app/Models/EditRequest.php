@@ -9,6 +9,8 @@ use App\Models\User;
 
 class EditRequest extends Model
 {
+    use \App\Traits\HasHashid;
+
     protected $fillable = [
         'worker_id',
         'project_id',

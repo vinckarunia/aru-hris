@@ -16,7 +16,7 @@ const BANK_OPTIONS = [
 const FLAT_BANK_LIST = BANK_OPTIONS.flatMap(group => group.banks);
 
 interface Worker {
-    id: number; nik_aru: string | null; name: string; ktp_number: string; kk_number: string | null;
+    id: string; nik_aru: string | null; name: string; ktp_number: string; kk_number: string | null;
     birth_place: string | null; birth_date: string | null; gender: 'male' | 'female' | null; phone: string | null;
     education: string | null; religion: string | null; tax_status: string | null; address_ktp: string | null;
     address_domicile: string | null; mother_name: string | null; npwp: string | null; bpjs_kesehatan: string | null;

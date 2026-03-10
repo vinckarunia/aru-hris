@@ -30,7 +30,7 @@ use App\Models\Document;
  */
 class Assignment extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasHashid;
 
     /**
      * The table associated with the model.

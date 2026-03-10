@@ -14,11 +14,23 @@ use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $users = User::orderBy('name')->get();
+        $role = $request->input('role', UserRole::SUPER_ADMIN->value);
+        $sort = $request->input('sort', 'name');
+        $direction = $request->input('direction', 'asc');
+
+        $users = User::where('role', $role)
+            ->orderBy($sort, $direction)
+            ->get();
+
         return Inertia::render('UserManagement/Index', [
             'users' => $users,
+            'filters' => [
+                'role' => $role,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 

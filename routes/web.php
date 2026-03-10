@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ClientController;
@@ -17,7 +18,18 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::redirect('/', '/login');
+Route::get('/', function () {
+    if (! auth()->check()) {
+        return redirect()->route('login');
+    }
+
+    return match (auth()->user()->role) {
+        UserRole::SUPER_ADMIN, UserRole::ADMIN_ARU => redirect()->route('dashboard'),
+        UserRole::PIC                              => redirect()->route('projects.index'),
+        UserRole::WORKER                           => redirect()->route('workers.index'),
+        default                                    => redirect()->route('login'),
+    };
+});
 
 // Akses terbatas hanya ARU dan super admin yang boleh melihat dashboard
 Route::middleware(['auth', 'verified', 'role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {

@@ -10,9 +10,9 @@ import PrimaryButton from '@/Components/PrimaryButton';
  * Interface representing the structure of a Contract and its nested Assignment/Compensation data.
  */
 interface Contract {
-    id: number; contract_type: string; pkwt_type: string | null; pkwt_number: number;
+    id: string; contract_type: string; pkwt_type: string | null; pkwt_number: number;
     start_date: string; end_date: string | null; duration_months: number | null; evaluation_notes: string | null;
-    assignment: { id: number; worker: { name: string; }; project: { name: string; }; };
+    assignment: { id: string; worker: { name: string; }; project: { name: string; }; };
     compensation: {
         base_salary: string; salary_rate: string; meal_allowance: string | null; transport_allowance: string | null;
         allowance_rate: string; overtime_weekday_rate: string | null; overtime_holiday_rate: string | null; overtime_rate: string;

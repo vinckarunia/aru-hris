@@ -69,7 +69,7 @@ class ContractController extends Controller
             ]);
         });
 
-        return redirect()->route('assignments.show', $request->assignment_id)->with('message', 'Kontrak & Kompensasi berhasil dibuat!');
+        return redirect()->route('assignments.show', \App\Models\Assignment::encodeHashid($request->assignment_id))->with('message', 'Kontrak & Kompensasi berhasil dibuat!');
     }
 
     /**
@@ -152,7 +152,7 @@ class ContractController extends Controller
             }
         });
 
-        return redirect()->route('contracts.show', $contract->id)->with('message', 'Kontrak & Kompensasi berhasil diperbarui!');
+        return redirect()->route('contracts.show', $contract)->with('message', 'Kontrak & Kompensasi berhasil diperbarui!');
     }
 
     /**
@@ -168,7 +168,7 @@ class ContractController extends Controller
         $assignmentId = $contract->assignment_id;
         $contract->delete();
         
-        return redirect()->route('assignments.show', $assignmentId)->with('message', 'Kontrak berhasil dihapus.');
+        return redirect()->route('assignments.show', \App\Models\Assignment::encodeHashid($assignmentId))->with('message', 'Kontrak berhasil dihapus.');
     }
 
     /**

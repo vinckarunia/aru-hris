@@ -6,9 +6,9 @@ import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
-interface Branch { id: number; name: string; }
-interface Project { id: number; name: string; prefix: string; branches: Branch[]; }
-interface Worker { id: number; name: string; nik_aru: string | null; }
+interface Branch { id: string; name: string; }
+interface Project { id: string; name: string; prefix: string; branches: Branch[]; }
+interface Worker { id: string; name: string; nik_aru: string | null; }
 
 interface Props { worker: Worker; projects: Project[]; }
 

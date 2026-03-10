@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
@@ -15,7 +15,7 @@ interface SortConfig {
  * Represents a branch within a project.
  */
 interface Branch {
-    id: number;
+    id: string;
     name: string;
 }
 
@@ -23,7 +23,7 @@ interface Branch {
  * Represents a worker's basic profile data.
  */
 interface Worker {
-    id: number;
+    id: string;
     nik_aru: string | null;
     name: string;
 }
@@ -32,7 +32,7 @@ interface Worker {
  * Represents a contract associated with an assignment.
  */
 interface Contract {
-    id: number;
+    id: string;
     contract_type: string;
     pkwt_type: string | null;
     pkwt_number: number;
@@ -44,8 +44,8 @@ interface Contract {
  * Represents a single assignment record linking a worker to this project.
  */
 interface Assignment {
-    id: number;
-    worker_id: number;
+    id: string;
+    worker_id: string;
     employee_id: string | null;
     position: string | null;
     hire_date: string | null;
@@ -60,7 +60,7 @@ interface Assignment {
  * Represents a client company.
  */
 interface Client {
-    id: number;
+    id: string;
     full_name: string;
     short_name: string;
 }
@@ -69,8 +69,8 @@ interface Client {
  * Represents the full project data passed to this page.
  */
 interface Project {
-    id: number;
-    client_id: number;
+    id: string;
+    client_id: string;
     name: string;
     prefix: string;
     id_running_number: number;
@@ -98,6 +98,9 @@ interface Props {
 const PER_PAGE = 10;
 
 export default function Show({ project }: Props) {
+    const { auth } = usePage<any>().props;
+    const user = auth.user;
+
     const [currentPage, setCurrentPage] = useState<number>(1);
 
     /**
@@ -118,7 +121,7 @@ export default function Show({ project }: Props) {
                 }
             }
             return acc;
-        }, {} as Record<number, Assignment>)
+        }, {} as Record<string, Assignment>)
     );
 
     const activeCount = uniqueWorkerAssignments.filter(
@@ -164,7 +167,7 @@ export default function Show({ project }: Props) {
 
         if (key.includes('.')) {
             const keys = key.split('.');
-            let val = obj;
+            let val: any = obj;
             for (const k of keys) {
                 if (val === null || val === undefined) return '';
                 val = val[k];
@@ -281,7 +284,7 @@ export default function Show({ project }: Props) {
                 </div>
 
                 <div className="z-10 flex items-center gap-2">
-                    {project.client && (
+                    {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && project.client && (
                         <Link
                             href={route('clients.show', project.client_id)}
                             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm"

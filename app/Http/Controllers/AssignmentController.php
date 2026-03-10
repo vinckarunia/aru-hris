@@ -90,7 +90,7 @@ class AssignmentController extends Controller
             $worker->update(['nik_aru' => $newNik]);
         }
 
-        return redirect()->route('assignments.show', $assignment->id)
+        return redirect()->route('assignments.show', $assignment)
             ->with('message', 'Penempatan karyawan berhasil ditambahkan!');
     }
 
@@ -193,7 +193,7 @@ class AssignmentController extends Controller
         }
         // Same project and still active: NIK is left unchanged.
 
-        return redirect()->route('assignments.show', $assignment->id)
+        return redirect()->route('assignments.show', $assignment)
             ->with('message', 'Data penempatan berhasil diperbarui.');
     }
 
@@ -209,7 +209,7 @@ class AssignmentController extends Controller
         // After deletion, clear the worker's NIK — they have no active assignment.
         $worker->update(['nik_aru' => null]);
 
-        return redirect()->route('workers.show', $worker->id)
+        return redirect()->route('workers.show', $worker)
             ->with('message', 'Penempatan berhasil dihapus.');
     }
 

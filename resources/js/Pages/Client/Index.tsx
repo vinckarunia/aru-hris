@@ -20,7 +20,7 @@ interface SortConfig {
  * Interface for the Client data structure.
  */
 interface Client {
-    id: number;
+    id: string;
     full_name: string;
     short_name: string;
     created_at: string;
@@ -30,8 +30,8 @@ interface Client {
  * Represents a project that can be associated with multiple branches.
  */
 interface Project {
-    id: number;
-    client_id: number;
+    id: string;
+    client_id: string;
     name: string;
     prefix: string;
     id_running_number: number;
@@ -41,21 +41,21 @@ interface Project {
  * Represents an assignment connecting a worker to a project/branch.
  */
 interface Assignment {
-    id: number;
-    worker_id: number;
-    project_id: number;
-    branch_id: number;
+    id: string;
+    worker_id: string;
+    project_id: string;
+    branch_id: string;
     position: string | null;
     status: string | null;
-    project: { id: number; name: string } | null;
-    branch: { id: number; name: string } | null;
+    project: { id: string; name: string } | null;
+    branch: { id: string; name: string } | null;
 }
 
 /**
  * Represents a worker affiliated with this client via an assignment.
  */
 interface AffiliatedWorker {
-    id: number;
+    id: string;
     assignments: Assignment[];
 }
 
@@ -458,7 +458,7 @@ export default function Index({ clients, projects, workers }: Props) {
                                                 })()}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right space-x-2">
+                                        <td className="px-6 py-4 text-center space-x-2">
                                             <button
                                                 onClick={() => openEditModal(client)}
                                                 className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"

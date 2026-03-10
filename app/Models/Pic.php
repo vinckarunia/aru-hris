@@ -8,6 +8,8 @@ use App\Models\Project;
 
 class Pic extends Model
 {
+    use \App\Traits\HasHashid;
+
     protected $fillable = [
         'user_id',
         'name',

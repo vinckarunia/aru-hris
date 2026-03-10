@@ -24,7 +24,7 @@ use App\Models\Pic;
  */
 class Project extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasHashid;
 
     /**
      * The attributes that are mass assignable.

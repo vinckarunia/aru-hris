@@ -60,6 +60,21 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
         localStorage.setItem('sidebarCollapsed', String(newState));
     };
 
+    // Manage expanded/collapsed state for sidebar menus
+    const [collapsedMenus, setCollapsedMenus] = useState<Record<string, boolean>>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('collapsedMenus');
+            return saved ? JSON.parse(saved) : {};
+        }
+        return {};
+    });
+
+    const toggleMenu = (menuKey: string) => {
+        const newCollapsedMenus = { ...collapsedMenus, [menuKey]: !collapsedMenus[menuKey] };
+        setCollapsedMenus(newCollapsedMenus);
+        localStorage.setItem('collapsedMenus', JSON.stringify(newCollapsedMenus));
+    };
+
     // Retrieve the authenticated user data from Inertia's shared props
     const user = usePage<PageProps>().props.auth.user;
 
@@ -105,27 +120,53 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                     </div>
 
                     {/* Navigation Links */}
-                    <nav className="flex-1 overflow-y-auto py-6 space-y-4 px-4 overflow-x-hidden">
+                    <nav className="flex-1 overflow-y-auto py-6 space-y-4 px-4 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {/* General Section */}
-                        <div>
-                            <div className={`mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
-                                <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>General</span>
-                                <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                        {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
+                            <div>
+                                <div
+                                    onClick={() => toggleMenu('general')}
+                                    className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                    title="General"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <iconify-icon icon="solar:layers-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['general'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                        <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>General</span>
+                                    </div>
+                                    <iconify-icon
+                                        icon="solar:alt-arrow-down-linear"
+                                        width="14"
+                                        className={`transition-transform duration-300 ${collapsedMenus['general'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                    ></iconify-icon>
+                                </div>
+                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['general'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
+                                    <Link href="/dashboard" className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Dashboard">
+                                        <iconify-icon icon="solar:widget-add-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Dashboard</span>
+                                    </Link>
+                                </div>
                             </div>
-                            <Link href="/dashboard" className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Dashboard">
-                                <iconify-icon icon="solar:widget-add-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Dashboard</span>
-                            </Link>
-                        </div>
+                        )}
 
                         {/* Admin Setup Section */}
                         {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
-                            <div>
-                                <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
-                                    <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin Setup</span>
-                                    <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                            <div className="mb-6">
+                                <div
+                                    onClick={() => toggleMenu('adminSetup')}
+                                    className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                    title="Admin Setup"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <iconify-icon icon="solar:shield-keyhole-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['adminSetup'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                        <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin Setup</span>
+                                    </div>
+                                    <iconify-icon
+                                        icon="solar:alt-arrow-down-linear"
+                                        width="14"
+                                        className={`transition-transform duration-300 ${collapsedMenus['adminSetup'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                    ></iconify-icon>
                                 </div>
-                                <div className="space-y-1">
+                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['adminSetup'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
                                     <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
                                         <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
                                         <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>
@@ -143,12 +184,23 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         )}
 
                         {/* Master Data Modules Section */}
-                        <div>
-                            <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
-                                <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Master Data</span>
-                                <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                        <div className="mb-6">
+                            <div
+                                onClick={() => toggleMenu('masterData')}
+                                className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                title="Master Data"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <iconify-icon icon="solar:database-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['masterData'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                    <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Master Data</span>
+                                </div>
+                                <iconify-icon
+                                    icon="solar:alt-arrow-down-linear"
+                                    width="14"
+                                    className={`transition-transform duration-300 ${collapsedMenus['masterData'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                ></iconify-icon>
                             </div>
-                            <div className="space-y-1">
+                            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['masterData'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
                                 {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
                                     <Link href={route('clients.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Client">
                                         <iconify-icon icon="solar:buildings-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
@@ -167,12 +219,23 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         </div>
 
                         {/* Operational Section */}
-                        <div>
-                            <div className={`mb-2 mt-6 text-xs font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:text-center px-0' : 'px-4'}`}>
-                                <span className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Operasional</span>
-                                <span className={`hidden transition-all duration-300 text-slate-300 ${isSidebarCollapsed ? 'lg:inline-block' : ''}`}>•••</span>
+                        <div className="mb-6">
+                            <div
+                                onClick={() => toggleMenu('operational')}
+                                className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                title="Operasional"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <iconify-icon icon="solar:clipboard-list-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['operational'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                    <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Operasional</span>
+                                </div>
+                                <iconify-icon
+                                    icon="solar:alt-arrow-down-linear"
+                                    width="14"
+                                    className={`transition-transform duration-300 ${collapsedMenus['operational'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                ></iconify-icon>
                             </div>
-                            <div className="space-y-1">
+                            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['operational'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
                                 <Link href={route('edit-requests.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Edit Requests">
                                     <iconify-icon icon="solar:file-check-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
                                     <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Edit Request</span>
@@ -266,7 +329,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                     </span>
                                 </Link>
                             )}
-        
+
                             {/* Desktop Navigation Links */}
                             <nav className="hidden md:flex items-center gap-1 border-l border-slate-200 dark:border-slate-700/50 pl-8 h-10">
                                 {user.worker_id && (
@@ -287,7 +350,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 </Link>
                             </nav>
                         </div>
-        
+
                         {/* Right Area: Mobile Menu Toggle & User Profile */}
                         <div className="flex items-center gap-4">
                             <button onClick={toggleTheme} className="flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
@@ -301,7 +364,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                             >
                                 <iconify-icon icon={isMobileMenuOpen ? "solar:close-circle-linear" : "solar:hamburger-menu-linear"} width="28"></iconify-icon>
                             </button>
-        
+
                             {/* User Profile Info & Logout */}
                             <Dropdown>
                                 <Dropdown.Trigger>
@@ -320,13 +383,13 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                         </button>
                                     </span>
                                 </Dropdown.Trigger>
-        
+
                                 <Dropdown.Content align="right" width="48" contentClasses="py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">
                                         <iconify-icon icon="solar:settings-linear" width="18"></iconify-icon>
                                         Pengaturan Profil
                                     </Dropdown.Link>
-        
+
                                     <Dropdown.Link
                                         href={route('logout')}
                                         method="post"
@@ -339,7 +402,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 </Dropdown.Content>
                             </Dropdown>
                         </div>
-                    </header>                    
+                    </header>
                 ))}
 
                 {/* Page Content */}

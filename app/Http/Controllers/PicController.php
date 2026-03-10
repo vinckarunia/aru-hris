@@ -14,9 +14,22 @@ use Illuminate\Validation\Rule;
 
 class PicController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $pics = Pic::with(['user', 'projects:id,name'])->latest()->get();
+        $sort = $request->input('sort', 'created_at');
+        $direction = $request->input('direction', 'desc');
+        $projectId = $request->input('project_id');
+
+        $query = Pic::with(['user', 'projects:id,name']);
+
+        if ($projectId) {
+            $query->whereHas('projects', function ($q) use ($projectId) {
+                $q->where('projects.id', $projectId);
+            });
+        }
+
+        $pics = $query->orderBy($sort, $direction)->get();
+            
         // Users dengan role PIC yang belum punya profile PIC
         $availableUsers = User::where('role', UserRole::PIC)->doesntHave('pic')->get(['id', 'name']);
         $projects = Project::get(['id', 'name']);
@@ -25,6 +38,11 @@ class PicController extends Controller
             'pics' => $pics,
             'availableUsers' => $availableUsers,
             'projects' => $projects,
+            'filters' => [
+                'sort' => $sort,
+                'direction' => $direction,
+                'project_id' => $projectId,
+            ],
         ]);
     }
 
