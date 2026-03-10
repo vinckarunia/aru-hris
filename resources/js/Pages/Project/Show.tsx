@@ -76,6 +76,7 @@ interface Project {
     id_running_number: number;
     client: Client | null;
     branches: Branch[];
+    pics?: { id: string; name: string }[];
     assignments: Assignment[];
 }
 
@@ -258,20 +259,39 @@ export default function Show({ project }: Props) {
                                 </Link>
                             )}
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            <span className="flex items-center gap-1">
-                                <iconify-icon icon="solar:tag-bold" width="14"></iconify-icon>
-                                <span className="font-mono font-bold text-slate-600 dark:text-slate-400">{project.prefix}</span>
-                            </span>
-                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             {/* Branch badges */}
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex flex-wrap gap-1.5">
                                 {project.branches.map(dept => (
-                                    <span key={dept.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md font-medium text-slate-500">
-                                        {dept.name}
+                                    <span key={dept.id} className="flex items-center gap-1.5">
+                                        <iconify-icon icon="solar:buildings-bold" width="14"></iconify-icon>
+                                        Cabang: {dept.name}
                                     </span>
                                 ))}
                             </div>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                            {/* PIC Badges */}
+                            {project.pics && project.pics.length > 0 && (
+                                <>
+                                    <div className="flex items-center gap-1.5">
+                                        <iconify-icon icon="solar:user-id-linear" width="14"></iconify-icon>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {project.pics.map(pic => (
+                                                <span key={pic.id}>
+                                                    {pic.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                            {/* Project Prefix */}
+                            <span className="flex items-center gap-1.5">
+                                <iconify-icon icon="solar:tag-bold" width="14"></iconify-icon>
+                                <span className="font-mono font-bold text-slate-600 dark:text-slate-400">{project.prefix}</span>
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-slate-500 font-medium">
                             <span>{uniqueWorkerAssignments.length} Karyawan</span>
                             {activeCount > 0 && (
                                 <>

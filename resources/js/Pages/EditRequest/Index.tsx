@@ -8,6 +8,7 @@ import Modal from '@/Components/Modal';
 interface Worker {
     id: string;
     name: string;
+    nik_aru?: string;
 }
 
 interface Project {
@@ -151,6 +152,7 @@ export default function EditRequestIndex({ editRequests, filters }: EditRequestI
                                 <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('worker_name')}>
                                     <div className="flex items-center gap-1">Karyawan {filters?.sort === 'worker_name' ? (filters.direction === 'asc' ? <iconify-icon icon="solar:sort-from-bottom-to-top-bold" width="16"></iconify-icon> : <iconify-icon icon="solar:sort-from-top-to-bottom-bold" width="16"></iconify-icon>) : <iconify-icon icon="solar:sort-vertical-linear" width="16" className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400"></iconify-icon>}</div>
                                 </th>
+                                <th className="px-6 py-4">NIK ARU</th>
                                 <th className="px-6 py-4">Project</th>
                                 <th className="px-6 py-4">Data yang Ingin Diubah</th>
                                 <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none" onClick={() => handleSort('status')}>
@@ -181,6 +183,15 @@ export default function EditRequestIndex({ editRequests, filters }: EditRequestI
                                             <div className="font-bold text-slate-800 dark:text-slate-200">
                                                 {req.worker?.name || 'Tidak diketahui'}
                                             </div>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                                        {req.worker?.nik_aru ? (
+                                            <span className="font-mono text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md">
+                                                {req.worker.nik_aru}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 italic text-xs">-</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
@@ -247,6 +258,10 @@ export default function EditRequestIndex({ editRequests, filters }: EditRequestI
                                 <div>
                                     <p className="text-slate-500 mb-1">Karyawan</p>
                                     <p className="font-medium dark:text-white">{reviewingRequest.worker?.name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-slate-500 mb-1">NIK ARU</p>
+                                    <p className="font-medium dark:text-white font-mono text-sm">{reviewingRequest.worker?.nik_aru || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-slate-500 mb-1">Project Terkait</p>

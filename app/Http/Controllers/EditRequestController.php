@@ -18,7 +18,7 @@ class EditRequestController extends Controller
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc');
 
-        $query = EditRequest::with(['worker:id,name', 'project:id,name', 'requester:id,name', 'reviewer:id,name']);
+        $query = EditRequest::with(['worker:id,nik_aru,name', 'project:id,name', 'requester:id,name', 'reviewer:id,name']);
 
         if ($user->isWorker()) {
             $query->where('worker_id', $user->worker_id);

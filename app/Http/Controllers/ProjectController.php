@@ -73,6 +73,7 @@ class ProjectController extends Controller
         $project->load([
             'client:id,full_name,short_name',
             'branches:id,name',
+            'pics:id,name',
             'assignments' => function ($query) {
                 $query->with([
                     'worker:id,nik_aru,name',

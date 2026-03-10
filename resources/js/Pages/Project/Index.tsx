@@ -386,6 +386,9 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                         {renderSortIndicator('prefix')}
                                     </div>
                                 </th>
+                                <th className="px-6 py-4">
+                                    <div className="flex items-center gap-2">PIC</div>
+                                </th>
                                 <th className="px-6 py-4 text-center">
                                     {!isPic && "Aksi"}
                                 </th>
@@ -425,6 +428,19 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{project.prefix}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                {project.pics && project.pics.length > 0 ? (
+                                                    project.pics.map((pic: Pic) => (
+                                                        <span key={pic.id} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-md font-medium inline-block w-max">
+                                                            {pic.name}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">-</span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-center space-x-2">
                                             {!isPic && (

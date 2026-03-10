@@ -408,7 +408,7 @@ export default function Show({ client, workers }: Props) {
                                         <tr key={dept.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                             <td className="px-6 py-4">{deptOffset + idx + 1}</td>
                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{dept.name}</td>
-                                            <td className="px-6 py-4 text-right space-x-2">
+                                            <td className="px-6 py-4 text-center space-x-2">
                                                 <button onClick={() => openEditBranch(dept)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
                                                 <button onClick={() => { setSelectedBranch(dept); setIsDeptDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
                                             </td>
@@ -481,7 +481,7 @@ export default function Show({ client, workers }: Props) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{proj.prefix}</span></td>
-                                            <td className="px-6 py-4 text-right space-x-2">
+                                            <td className="px-6 py-4 text-center space-x-2">
                                                 <button onClick={() => openEditProj(proj)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
                                                 <button onClick={() => { setSelectedProj(proj); setIsProjDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
                                             </td>
