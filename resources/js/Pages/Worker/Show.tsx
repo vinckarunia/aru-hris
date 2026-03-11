@@ -1,7 +1,7 @@
 import React, { useState, FormEventHandler } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkerLayout from '@/Layouts/WorkerLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
@@ -28,6 +28,48 @@ interface FamilyMember {
 }
 
 /**
+ * Interface for a worker identity Document.
+ *
+ * The `type` field corresponds to a value from the backend `DocumentType` Enum.
+ * To support a new document type, add a case to `app/Enums/DocumentType.php` and
+ * a matching entry to the `DOCUMENT_TYPES` constant below — no other changes needed.
+ */
+interface Document {
+    id: string;
+    worker_id: string;
+    /** Type key matching a DocumentType Enum case value (e.g. 'KK', 'KTP'). */
+    type: string;
+    file_path: string;
+    verified_at: string | null;
+    created_at: string | null;
+}
+
+/**
+ * Defines all supported document types displayed on the Documents tab.
+ *
+ * ## Scalability
+ * This constant mirrors the backend `DocumentType` PHP Enum.
+ * To add a new document type:
+ *   1. Add a new `case` to `app/Enums/DocumentType.php` (e.g. `case IJAZAH = 'IJAZAH'`).
+ *   2. Add a matching entry here with the same `value`.
+ * No other frontend changes are required.
+ *
+ * ## Cloud Storage Transition
+ * Download URLs are served via the backend `documents.download` route, which resolves
+ * the storage disk at runtime. Switching to cloud storage only requires changing
+ * the `FILESYSTEM_DISK` environment variable — no frontend changes needed.
+ */
+/**
+ * Maps document type values to Iconify icon names.
+ * Falls back to a generic file icon for unknown types.
+ */
+const DOCUMENT_ICON_MAP: Record<string, string> = {
+    KTP: 'solar:card-2-bold',
+    KK: 'solar:users-group-two-rounded-bold',
+};
+const DEFAULT_DOC_ICON = 'solar:document-bold';
+
+/**
  * Interface for Worker properties in the Show view.
  */
 interface Worker {
@@ -37,10 +79,17 @@ interface Worker {
     address_domicile: string | null; mother_name: string | null; npwp: string | null; bpjs_kesehatan: string | null;
     bpjs_ketenagakerjaan: string | null; bank_name: string | null; bank_account_number: string | null;
     assignments?: any[];
-    family_members?: FamilyMember[]; // Added Family Members relation
+    family_members?: FamilyMember[];
+    documents?: Document[];
 }
 
-interface Props { worker: Worker; }
+interface Props {
+    worker: Worker;
+    /** Active document types from system settings (filtered by enabled: true). */
+    documentTypes: { value: string; label: string; enabled: boolean }[];
+    /** Document upload constraints from system settings. */
+    documentSettings: { max_size_kb: number; allowed_mimes: string };
+}
 
 /**
  * Reusable component to display a label and value pair nicely.
@@ -57,13 +106,16 @@ const DetailItem = ({ label, value, isMono = false }: { label: string, value: st
 /**
  * Worker Show Page Component
  */
-export default function Show({ worker }: Props) {
+export default function Show({ worker, documentTypes, documentSettings }: Props) {
     const { auth } = usePage<PageProps>().props;
     const isWorker = auth.user.role === 'WORKER';
+    const isPic = auth.user.role === 'PIC';
     const Layout = isWorker ? WorkerLayout : AdminLayout;
 
+    /** Only active document types are shown in the Documents tab. */
+    const activeDocTypes = documentTypes.filter(dt => dt.enabled);
     // Added 'family' to the activeTab state
-    const [activeTab, setActiveTab] = useState<'profile' | 'assignments' | 'family'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'assignments' | 'family' | 'documents'>('profile');
 
     // Modals State for Family Members
     const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
@@ -80,6 +132,23 @@ export default function Show({ worker }: Props) {
         nik: '',
         bpjs_number: '',
     });
+
+    // --- Document State ---
+    const [isDocUploadModalOpen, setIsDocUploadModalOpen] = useState(false);
+    const [isDocDeleteModalOpen, setIsDocDeleteModalOpen] = useState(false);
+    const [deletingDocument, setDeletingDocument] = useState<Document | null>(null);
+    const [uploadingDocType, setUploadingDocType] = useState<string>('');
+
+    /** Form for document upload (uses multipart, so we use a raw form ref) */
+    const {
+        data: docData,
+        setData: setDocData,
+        post: postDoc,
+        delete: deleteDoc,
+        processing: docProcessing,
+        errors: docErrors,
+        reset: resetDoc,
+    } = useForm<{ type: string; file: File | null }>({ type: '', file: null });
 
     /** Helper to format date nicely */
     const formatDate = (dateString: string | null) => {
@@ -234,6 +303,9 @@ export default function Show({ worker }: Props) {
                     <button onClick={() => setActiveTab('family')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'family' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:users-group-rounded-bold" width="18"></iconify-icon> Data Keluarga
                     </button>
+                    <button onClick={() => setActiveTab('documents')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'documents' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                        <iconify-icon icon="solar:folder-open-bold" width="18"></iconify-icon> Dokumen
+                    </button>
                     <button onClick={() => setActiveTab('assignments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:suitcase-bold" width="18"></iconify-icon> Penempatan & Kontrak
                     </button>
@@ -339,6 +411,108 @@ export default function Show({ worker }: Props) {
                     </div>
                 )}
 
+                {/* Tab: Documents */}
+                {activeTab === 'documents' && (
+                    <div className="p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            {activeDocTypes.map((docType) => {
+                                const existing = worker.documents?.find(d => d.type === docType.value);
+                                const icon = DOCUMENT_ICON_MAP[docType.value] ?? DEFAULT_DOC_ICON;
+                                return (
+                                    <div key={docType.value} className="border border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col gap-4 bg-slate-50 dark:bg-slate-900/30">
+                                        {/* Header */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                                <iconify-icon icon={icon} width="22"></iconify-icon>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 dark:text-white text-sm">{docType.label}</h4>
+                                                {existing?.verified_at ? (
+                                                    <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                                                        <iconify-icon icon="solar:check-circle-bold" width="14"></iconify-icon> Terverifikasi
+                                                    </span>
+                                                ) : existing ? (
+                                                    <span className="text-xs font-semibold text-amber-500 flex items-center gap-1">
+                                                        <iconify-icon icon="solar:clock-circle-bold" width="14"></iconify-icon> Menunggu Verifikasi
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">Belum ada dokumen</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* File Info */}
+                                        {existing ? (
+                                            <div className="flex items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm">
+                                                <iconify-icon icon="solar:file-bold" width="18" className="text-primary shrink-0"></iconify-icon>
+                                                <span className="truncate text-slate-600 dark:text-slate-300 flex-1 font-mono text-xs">
+                                                    {existing.file_path.split('/').pop()}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-sm text-slate-400">
+                                                <iconify-icon icon="solar:file-broken" width="18"></iconify-icon>
+                                                <span className="text-xs">Belum ada file diunggah</span>
+                                            </div>
+                                        )}
+
+                                        {/* Actions */}
+                                        <div className="flex gap-2">
+                                            {existing && (
+                                                <a
+                                                    href={route('documents.download', existing.id)}
+                                                    className="flex-1 py-2 text-center text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl hover:text-primary hover:border-primary transition-colors flex items-center justify-center gap-1.5"
+                                                >
+                                                    <iconify-icon icon="solar:download-bold" width="16"></iconify-icon> Unduh
+                                                </a>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    setUploadingDocType(docType.value);
+                                                    setDocData('type', docType.value);
+                                                    setDocData('file', null);
+                                                    setIsDocUploadModalOpen(true);
+                                                }}
+                                                className="flex-1 py-2 text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                                            >
+                                                <iconify-icon icon="solar:upload-bold" width="16"></iconify-icon>
+                                                {existing ? 'Ganti' : 'Upload'}
+                                            </button>
+                                            {existing && (
+                                                <button
+                                                    onClick={() => {
+                                                        setDeletingDocument(existing);
+                                                        setIsDocDeleteModalOpen(true);
+                                                    }}
+                                                    className="flex py-2 px-3 text-sm items-center font-semibold text-red-500 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-900/20 transition-colors"
+                                                >
+                                                    <iconify-icon icon="solar:trash-bin-trash-bold" width="16"></iconify-icon>
+                                                </button>
+                                            )}
+                                            {/* Verify / Unverify — only for Admin & PIC (non-workers) */}
+                                            {!isWorker && existing && (
+                                                <button
+                                                    onClick={() => router.put(route('documents.verify', existing.id))}
+                                                    title={existing.verified_at ? 'Batalkan Verifikasi' : 'Verifikasi Dokumen'}
+                                                    className={`flex py-2 px-3 text-sm items-center font-semibold rounded-xl border transition-colors ${existing.verified_at
+                                                        ? 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-400'
+                                                        : 'text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-400'
+                                                        }`}
+                                                >
+                                                    <iconify-icon
+                                                        icon={existing.verified_at ? 'solar:close-circle-bold' : 'solar:check-circle-bold'}
+                                                        width="16"
+                                                    ></iconify-icon>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {/* Tab: Assignments */}
                 {activeTab === 'assignments' && (
                     <div className="p-6">
@@ -384,6 +558,82 @@ export default function Show({ worker }: Props) {
                     </div>
                 )}
             </div>
+
+            {/* Modal: Upload Document */}
+            <Modal show={isDocUploadModalOpen} onClose={() => { setIsDocUploadModalOpen(false); resetDoc(); }} maxWidth="md">
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        postDoc(route('documents.store', worker.id), {
+                            forceFormData: true,
+                            onSuccess: () => { setIsDocUploadModalOpen(false); resetDoc(); },
+                        });
+                    }}
+                    className="p-6 dark:bg-slate-800"
+                >
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                        Upload Dokumen
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                        {documentTypes.find(t => t.value === uploadingDocType)?.label}
+                    </p>
+
+                    <input type="hidden" value={docData.type} readOnly />
+
+                    <div className="mb-5">
+                        <InputLabel htmlFor="doc_file" value="Pilih File (PDF, JPG, PNG — maks. 5 MB)" />
+                        <input
+                            id="doc_file"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => setDocData('file', e.target.files?.[0] ?? null)}
+                            className="mt-2 block w-full text-sm text-slate-600 dark:text-slate-300
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-xl file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-primary/10 file:text-primary
+                                hover:file:bg-primary/20 cursor-pointer"
+                        />
+                        <InputError message={docErrors.file as string} className="mt-2" />
+                        <InputError message={docErrors.type as string} className="mt-1" />
+                    </div>
+
+                    <div className="flex justify-end gap-3">
+                        <SecondaryButton onClick={() => { setIsDocUploadModalOpen(false); resetDoc(); }}>Batal</SecondaryButton>
+                        <PrimaryButton disabled={docProcessing || !docData.file} className="bg-primary hover:bg-primary-dark text-white dark:bg-primary dark:hover:bg-primary-dark dark:text-white">
+                            {docProcessing ? 'Mengunggah...' : 'Upload Dokumen'}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Modal: Delete Document Confirmation */}
+            <Modal show={isDocDeleteModalOpen} onClose={() => { setIsDocDeleteModalOpen(false); setDeletingDocument(null); }} maxWidth="sm">
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!deletingDocument) return;
+                        deleteDoc(route('documents.destroy', deletingDocument.id), {
+                            onSuccess: () => { setIsDocDeleteModalOpen(false); setDeletingDocument(null); },
+                        });
+                    }}
+                    className="p-6 dark:bg-slate-800 text-center"
+                >
+                    <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4 text-red-500">
+                        <iconify-icon icon="solar:trash-bin-trash-bold" width="32"></iconify-icon>
+                    </div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                        Hapus Dokumen?
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                        File <strong>{documentTypes.find(t => t.value === deletingDocument?.type)?.label}</strong> akan dihapus secara permanen.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                        <SecondaryButton onClick={() => { setIsDocDeleteModalOpen(false); setDeletingDocument(null); }}>Batal</SecondaryButton>
+                        <DangerButton disabled={docProcessing}>Hapus</DangerButton>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Modal Create / Edit Family */}
             <Modal show={isFamilyModalOpen} onClose={closeModals} maxWidth="2xl">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import TextInput from '@/Components/TextInput';
@@ -13,15 +13,91 @@ import { PageProps } from '@/types';
 export default function Index({ settings }: { settings: Record<string, string | null> }) {
     const user = usePage<PageProps>().props.auth.user;
 
+    /** Document type entry stored in the document_types JSON setting. */
+    interface DocType { value: string; label: string; enabled: boolean; }
+
+    const rawDocTypes: DocType[] = useMemo(() => {
+        const raw = settings.document_types;
+        if (!raw) return [
+            { value: 'KTP', label: 'Kartu Tanda Penduduk (KTP)', enabled: true },
+            { value: 'KK', label: 'Kartu Keluarga (KK)', enabled: true },
+        ];
+        try { return JSON.parse(raw); } catch { return []; }
+    }, [settings.document_types]);
+
     const { data, setData, post, processing, recentlySuccessful, errors } = useForm({
         settings: {
-            app_name: settings.app_name !== undefined ? settings.app_name : 'ARU HRIS',
-            company_name: settings.company_name !== undefined ? settings.company_name : '',
-            company_email: settings.company_email !== undefined ? settings.company_email : '',
-            company_phone: settings.company_phone !== undefined ? settings.company_phone : '',
-            company_address: settings.company_address !== undefined ? settings.company_address : '',
+            app_name: settings.app_name ?? 'ARU HRIS',
+            company_name: settings.company_name ?? '',
+            company_email: settings.company_email ?? '',
+            company_phone: settings.company_phone ?? '',
+            company_address: settings.company_address ?? '',
+            document_max_size_kb: settings.document_max_size_kb ?? '5120',
+            document_allowed_mimes: settings.document_allowed_mimes ?? 'pdf,jpg,jpeg,png',
+            document_types: settings.document_types ?? JSON.stringify(rawDocTypes),
         }
     });
+
+    const handleSettingChange = (key: string, value: string) => {
+        setData('settings', { ...data.settings, [key]: value } as typeof data.settings);
+    };
+
+    const [docTypes, setDocTypes] = useState<DocType[]>(rawDocTypes);
+    const [newDocValue, setNewDocValue] = useState('');
+    const [newDocLabel, setNewDocLabel] = useState('');
+
+    /** All MIME checkboxes available in settings. */
+    const MIME_OPTIONS = [
+        { key: 'pdf', label: 'PDF' },
+        { key: 'jpg,jpeg', label: 'JPG / JPEG' },
+        { key: 'png', label: 'PNG' },
+    ];
+
+    const currentMimes = (data.settings as any).document_allowed_mimes ?? 'pdf,jpg,jpeg,png';
+    const currentMaxKb = Number((data.settings as any).document_max_size_kb ?? 5120);
+
+    /** Toggle a MIME extension group on/off */
+    const toggleMime = (keys: string) => {
+        const parts = currentMimes.split(',').map((s: string) => s.trim()).filter(Boolean);
+        const keyArr = keys.split(',');
+        const allPresent = keyArr.every((k: string) => parts.includes(k));
+        let next: string[];
+        if (allPresent) {
+            next = parts.filter((p: string) => !keyArr.includes(p));
+        } else {
+            next = Array.from(new Set([...parts, ...keyArr]));
+        }
+        handleSettingChange('document_allowed_mimes', next.join(','));
+    };
+
+    const isMimeActive = (keys: string) => {
+        const parts = currentMimes.split(',').map((s: string) => s.trim());
+        return keys.split(',').every((k: string) => parts.includes(k));
+    };
+
+    /** Sync docTypes → JSON string into form data */
+    const syncDocTypes = (updated: DocType[]) => {
+        setDocTypes(updated);
+        handleSettingChange('document_types', JSON.stringify(updated));
+    };
+
+    const addDocType = () => {
+        const val = newDocValue.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '');
+        const lbl = newDocLabel.trim();
+        if (!val || !lbl) return;
+        if (docTypes.some(d => d.value === val)) return;
+        syncDocTypes([...docTypes, { value: val, label: lbl, enabled: true }]);
+        setNewDocValue('');
+        setNewDocLabel('');
+    };
+
+    const toggleDocType = (value: string) => {
+        syncDocTypes(docTypes.map(d => d.value === value ? { ...d, enabled: !d.enabled } : d));
+    };
+
+    const removeDocType = (value: string) => {
+        syncDocTypes(docTypes.filter(d => d.value !== value));
+    };
 
     // Reset Data Form
     const {
@@ -56,12 +132,6 @@ export default function Index({ settings }: { settings: Record<string, string | 
         post(route('settings.update'));
     };
 
-    const handleSettingChange = (key: string, value: string) => {
-        setData('settings', {
-            ...data.settings,
-            [key]: value
-        });
-    };
 
     const openResetDataModal = () => setIsResetDataModalOpen(true);
     const closeResetDataModal = () => {
@@ -110,7 +180,7 @@ export default function Index({ settings }: { settings: Record<string, string | 
                             </p>
                         </header>
 
-                        <form onSubmit={submit} className="space-y-6 max-w-full">
+                        <form id="global-settings-form" onSubmit={submit} className="space-y-6 max-w-full">
                             <div>
                                 <InputLabel htmlFor="app_name" value="Nama Aplikasi" />
                                 <TextInput
@@ -171,7 +241,7 @@ export default function Index({ settings }: { settings: Record<string, string | 
 
 
                             <div className="flex items-center gap-4">
-                                <PrimaryButton disabled={processing} className="bg-primary hover:bg-primary-dark">
+                                <PrimaryButton disabled={processing} className="bg-primary hover:bg-primary-dark dark:bg-primary dark:hover:bg-primary-dark dark:text-white">
                                     Simpan Pengaturan
                                 </PrimaryButton>
 
@@ -188,6 +258,141 @@ export default function Index({ settings }: { settings: Record<string, string | 
                                 </Transition>
                             </div>
                         </form>
+                    </div>
+
+                    {/* Document Settings Section */}
+                    <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">
+                        <header className="mb-6">
+                            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                <iconify-icon icon="solar:folder-open-bold" width="24" className="text-primary"></iconify-icon>
+                                Pengaturan Dokumen
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                Konfigurasi jenis dokumen, format file, dan batas ukuran. Perubahan berlaku segera setelah disimpan.
+                            </p>
+                        </header>
+
+                        <div className="space-y-8">
+                            {/* Max file size */}
+                            <div>
+                                <InputLabel htmlFor="doc_max_size" value="Ukuran Maksimum File" />
+                                <div className="flex items-center gap-3 mt-1">
+                                    <input
+                                        id="doc_max_size"
+                                        type="number"
+                                        min={512}
+                                        max={20480}
+                                        step={512}
+                                        value={currentMaxKb}
+                                        onChange={e => handleSettingChange('document_max_size_kb', e.target.value)}
+                                        className="w-36 border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm"
+                                    />
+                                    <span className="text-sm font-medium text-slate-500">KB</span>
+                                    <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2.5 py-1 rounded-lg">
+                                        ≈ {(currentMaxKb / 1024).toFixed(1)} MB
+                                    </span>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Minimal 512 KB, Maksimal 20480 KB (20 MB). 1 MB = 1024 KB.</p>
+                            </div>
+
+                            {/* Allowed MIME types */}
+                            <div>
+                                <InputLabel value="Format File yang Diizinkan" />
+                                <div className="flex flex-wrap gap-3 mt-2">
+                                    {MIME_OPTIONS.map(opt => (
+                                        <label key={opt.key} className={`flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-colors text-sm font-semibold select-none ${isMimeActive(opt.key)
+                                            ? 'bg-primary/10 border-primary text-primary'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400'
+                                            }`}>
+                                            <input
+                                                type="checkbox"
+                                                className="hidden"
+                                                checked={isMimeActive(opt.key)}
+                                                onChange={() => toggleMime(opt.key)}
+                                            />
+                                            <iconify-icon icon={isMimeActive(opt.key) ? 'solar:check-circle-bold' : 'solar:circle-linear'} width="16"></iconify-icon>
+                                            {opt.label}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Document types */}
+                            <div>
+                                <InputLabel value="Jenis Dokumen" />
+                                <p className="text-xs text-slate-400 mb-3">Jenis yang tidak aktif tidak akan ditampilkan di tab Dokumen karyawan. Jenis baru yang ditambahkan otomatis lolos validasi upload.</p>
+
+                                <div className="space-y-2 mb-4">
+                                    {docTypes.map(dt => (
+                                        <div key={dt.value} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleDocType(dt.value)}
+                                                className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${dt.enabled ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
+                                                    }`}
+                                                title={dt.enabled ? 'Nonaktifkan' : 'Aktifkan'}
+                                            >
+                                                <span className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${dt.enabled ? 'translate-x-5' : 'translate-x-0'
+                                                    }`} />
+                                            </button>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-semibold truncate ${dt.enabled ? 'text-slate-800 dark:text-white' : 'text-slate-400 line-through'}`}>{dt.label}</p>
+                                                <p className="text-xs font-mono text-slate-400">{dt.value}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeDocType(dt.value)}
+                                                className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                title="Hapus jenis dokumen"
+                                            >
+                                                <iconify-icon icon="solar:trash-bin-trash-bold" width="16"></iconify-icon>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Add new doc type */}
+                                <div className="flex gap-2 items-end p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-semibold text-slate-500 mb-1">Kode (contoh: IJAZAH)</label>
+                                        <input
+                                            type="text"
+                                            value={newDocValue}
+                                            onChange={e => setNewDocValue(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+                                            placeholder="IJAZAH"
+                                            className="w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm font-mono"
+                                        />
+                                    </div>
+                                    <div className="flex-[2]">
+                                        <label className="block text-xs font-semibold text-slate-500 mb-1">Nama Tampilan</label>
+                                        <input
+                                            type="text"
+                                            value={newDocLabel}
+                                            onChange={e => setNewDocLabel(e.target.value)}
+                                            placeholder="Ijazah Pendidikan"
+                                            className="w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={addDocType}
+                                        disabled={!newDocValue.trim() || !newDocLabel.trim()}
+                                        className="px-4 py-2 bg-primary hover:bg-primary-dark disabled:opacity-40 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 shrink-0"
+                                    >
+                                        <iconify-icon icon="solar:add-circle-bold" width="16"></iconify-icon> Tambah
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 pt-2">
+                                <PrimaryButton type="submit" form="global-settings-form" disabled={processing} className="dark:bg-primary dark:hover:bg-primary-dark dark:text-white">
+                                    Simpan Semua Pengaturan
+                                </PrimaryButton>
+                                <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">Tersimpan.</p>
+                                </Transition>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Danger Zone Section */}

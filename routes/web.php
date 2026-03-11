@@ -10,6 +10,7 @@ use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\FamilyMemberController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\PicController;
@@ -65,6 +66,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Worker CRUD Routes
     Route::resource('workers', WorkerController::class);
     Route::resource('family-members', App\Http\Controllers\FamilyMemberController::class)->except(['index']);
+
+    // Document Routes
+    Route::post('/workers/{worker}/documents', [DocumentController::class, 'store'])->name('documents.store');
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+    Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::put('/documents/{document}/verify', [DocumentController::class, 'verify'])->name('documents.verify');
 
     // Assignment and Contract Routes
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);

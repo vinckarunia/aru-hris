@@ -27,14 +27,20 @@ class SettingController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'settings' => 'required|array',
-            'settings.*' => 'nullable|string',
+            'settings'                          => 'required|array',
+            'settings.document_types'           => ['nullable', function ($attr, $val, $fail) {
+                if ($val !== null && json_decode($val) === null) {
+                    $fail('Format data jenis dokumen tidak valid.');
+                }
+            }],
+            'settings.*'                        => 'nullable|string',
         ]);
 
         foreach ($validated['settings'] as $key => $value) {
+            $group = str_starts_with($key, 'document_') ? 'documents' : 'general';
             Setting::updateOrCreate(
                 ['key' => $key, 'role_specifier' => null],
-                ['value' => $value, 'group' => 'general']
+                ['value' => $value, 'group' => $group]
             );
         }
 
@@ -108,12 +114,17 @@ class SettingController extends Controller
             'role' => \App\Enums\UserRole::SUPER_ADMIN,
         ]);
 
-        // Ensure settings table exists implicitly by migrate:fresh, so we recreate defaults
-        Setting::create([
-            'key' => 'app_name',
-            'value' => 'ARU HRIS',
-            'group' => 'general'
+        // Recreate default settings
+        Setting::create(['key' => 'app_name', 'value' => 'ARU HRIS', 'group' => 'general']);
+
+        // Default document settings
+        $defaultDocTypes = json_encode([
+            ['value' => 'KTP', 'label' => 'Kartu Tanda Penduduk (KTP)', 'enabled' => true],
+            ['value' => 'KK',  'label' => 'Kartu Keluarga (KK)',        'enabled' => true],
         ]);
+        Setting::create(['key' => 'document_max_size_kb',    'value' => '5120',          'group' => 'documents']);
+        Setting::create(['key' => 'document_allowed_mimes',  'value' => 'pdf,jpg,jpeg,png', 'group' => 'documents']);
+        Setting::create(['key' => 'document_types',          'value' => $defaultDocTypes,  'group' => 'documents']);
 
         // Clear all uploaded files
         \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('documents');

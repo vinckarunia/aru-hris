@@ -118,8 +118,32 @@ class WorkerController extends Controller
             }
         }
 
-        $worker->load(['assignments.project', 'assignments.branch', 'assignments.contracts', 'familyMembers']);
-        return Inertia::render('Worker/Show', ['worker' => $worker]);
+        $worker->load(['assignments.project', 'assignments.branch', 'assignments.contracts', 'familyMembers', 'documents']);
+
+        // Load document settings for the frontend (active types, max size, allowed formats)
+        $docTypesJson = \App\Models\Setting::where('key', 'document_types')->value('value');
+        if ($docTypesJson) {
+            $documentTypes = json_decode($docTypesJson, true) ?? [];
+        } else {
+            // Default seed from DocumentType Enum
+            $documentTypes = collect(\App\Enums\DocumentType::cases())->map(fn($c) => [
+                'value'   => $c->value,
+                'label'   => $c->label(),
+                'enabled' => true,
+            ])->values()->all();
+        }
+
+        $docMaxKb    = (int) (\App\Models\Setting::where('key', 'document_max_size_kb')->value('value') ?? 5120);
+        $docMimes    = \App\Models\Setting::where('key', 'document_allowed_mimes')->value('value') ?? 'pdf,jpg,jpeg,png';
+
+        return Inertia::render('Worker/Show', [
+            'worker'           => $worker,
+            'documentTypes'    => $documentTypes,
+            'documentSettings' => [
+                'max_size_kb'    => $docMaxKb,
+                'allowed_mimes'  => $docMimes,
+            ],
+        ]);
     }
 
     /**
