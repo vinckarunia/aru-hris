@@ -221,28 +221,28 @@ class ProcessBulkImport implements ShouldQueue
                     $projectToBind = $existingProject;
                 }
 
-                $deptName = ImportDataCleaner::extractField($row, $this->mapping, 'branch_name');
-                if ($deptName && !empty($this->globalSettings['client_id'])) {
-                    $query = Branch::where('name', 'ilike', trim($deptName));
+                $branchName = ImportDataCleaner::extractField($row, $this->mapping, 'branch_name');
+                if ($branchName && !empty($this->globalSettings['client_id'])) {
+                    $query = Branch::where('name', 'ilike', trim($branchName));
                     if ($projectToBind) {
                         $query->where('client_id', $projectToBind->client_id);
                     }
-                    $existingDept = $query->first();
+                    $existingBranch = $query->first();
 
-                    if (!$existingDept) {
-                        $existingDept = Branch::create([
+                    if (!$existingBranch) {
+                        $existingBranch = Branch::create([
                             'client_id' => $this->globalSettings['client_id'],
-                            'name'      => trim($deptName)
+                            'name'      => trim($branchName)
                         ]);
                     }
-                    $this->globalSettings['branch_id'] = $existingDept->id;
+                    $this->globalSettings['branch_id'] = $existingBranch->id;
 
                     if ($projectToBind) {
-                        $projectToBind->branches()->syncWithoutDetaching([$existingDept->id]);
+                        $projectToBind->branches()->syncWithoutDetaching([$existingBranch->id]);
                     } elseif (!empty($this->globalSettings['project_id'])) {
                         $p = Project::find($this->globalSettings['project_id']);
                         if ($p) {
-                            $p->branches()->syncWithoutDetaching([$existingDept->id]);
+                            $p->branches()->syncWithoutDetaching([$existingBranch->id]);
                         }
                     }
                 }

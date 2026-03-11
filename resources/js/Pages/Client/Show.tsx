@@ -25,6 +25,8 @@ interface Branch {
     id: string;
     client_id: string;
     name: string;
+    projects_count: number;
+    active_workers_count: number;
 }
 
 /**
@@ -98,19 +100,19 @@ export default function Show({ client, workers }: Props) {
 
     /** Resets all tab pages to 1 and switches the active tab. */
     const switchTab = (tab: 'branches' | 'projects' | 'workers') => {
-        setDeptPage(1);
+        setBranchPage(1);
         setProjPage(1);
         setWorkerPage(1);
         setActiveTab(tab);
     };
 
     // Pagination states for each tab
-    const [deptPage, setDeptPage] = useState<number>(1);
+    const [branchPage, setBranchPage] = useState<number>(1);
     const [projPage, setProjPage] = useState<number>(1);
     const [workerPage, setWorkerPage] = useState<number>(1);
 
     // Sorting states
-    const [deptSortConfigs, setDeptSortConfigs] = useState<SortConfig[]>([]);
+    const [branchSortConfigs, setBranchSortConfigs] = useState<SortConfig[]>([]);
     const [projSortConfigs, setProjSortConfigs] = useState<SortConfig[]>([]);
     const [workerSortConfigs, setWorkerSortConfigs] = useState<SortConfig[]>([]);
 
@@ -219,56 +221,56 @@ export default function Show({ client, workers }: Props) {
     };
 
     // Sliced arrays for display
-    const sortedBranches = sortData(client.branches, deptSortConfigs);
+    const sortedBranches = sortData(client.branches, branchSortConfigs);
     const sortedProjs = sortData(client.projects, projSortConfigs);
     const sortedWorkers = sortData(workers, workerSortConfigs);
 
-    const paginatedDepts = sortedBranches.slice((deptPage - 1) * PER_PAGE, deptPage * PER_PAGE);
+    const paginatedBranchs = sortedBranches.slice((branchPage - 1) * PER_PAGE, branchPage * PER_PAGE);
     const paginatedProjs = sortedProjs.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
     const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
 
     // Row offsets per tab
-    const deptOffset = (deptPage - 1) * PER_PAGE;
+    const branchOffset = (branchPage - 1) * PER_PAGE;
     const projOffset = (projPage - 1) * PER_PAGE;
     const workerOffset = (workerPage - 1) * PER_PAGE;
     // ==========================================
     // STATE & FORM FOR DEPARTMENT
     // ==========================================
-    const [isDeptModalOpen, setIsDeptModalOpen] = useState<boolean>(false);
-    const [isDeptDeleteModalOpen, setIsDeptDeleteModalOpen] = useState<boolean>(false);
-    const [deptModalMode, setDeptModalMode] = useState<'add' | 'edit'>('add');
+    const [isBranchModalOpen, setIsBranchModalOpen] = useState<boolean>(false);
+    const [isBranchDeleteModalOpen, setIsBranchDeleteModalOpen] = useState<boolean>(false);
+    const [branchModalMode, setBranchModalMode] = useState<'add' | 'edit'>('add');
     const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-    const deptForm = useForm({
+    const branchForm = useForm({
         client_id: client.id.toString(),
         name: ''
     });
     /** Opens the modal to add a new department. */
-    const openAddDept = () => {
-        setDeptModalMode('add');
+    const openAddBranch = () => {
+        setBranchModalMode('add');
         setSelectedBranch(null);
-        deptForm.reset('name');
-        deptForm.clearErrors();
-        setIsDeptModalOpen(true);
+        branchForm.reset('name');
+        branchForm.clearErrors();
+        setIsBranchModalOpen(true);
     };
     /** Opens the modal to edit an existing department. */
     const openEditBranch = (branch: Branch) => {
-        setDeptModalMode('edit');
+        setBranchModalMode('edit');
         setSelectedBranch(branch);
-        deptForm.setData({ client_id: client.id.toString(), name: branch.name });
-        deptForm.clearErrors();
-        setIsDeptModalOpen(true);
+        branchForm.setData({ client_id: client.id.toString(), name: branch.name });
+        branchForm.clearErrors();
+        setIsBranchModalOpen(true);
     };
     /** Closes the department modal. */
-    const closeDeptModal = () => {
-        setIsDeptModalOpen(false);
-        deptForm.reset('name');
-        deptForm.clearErrors();
+    const closeBranchModal = () => {
+        setIsBranchModalOpen(false);
+        branchForm.reset('name');
+        branchForm.clearErrors();
     };
     /** Submits the department form (Create/Update). */
-    const submitDept = (e: React.FormEvent) => {
+    const submitBranch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (deptModalMode === 'add') deptForm.post(route('branches.store'), { onSuccess: () => closeDeptModal() });
-        else deptForm.put(route('branches.update', selectedBranch?.id), { onSuccess: () => closeDeptModal() });
+        if (branchModalMode === 'add') branchForm.post(route('branches.store'), { onSuccess: () => closeBranchModal() });
+        else branchForm.put(route('branches.update', selectedBranch?.id), { onSuccess: () => closeBranchModal() });
     };
     // ==========================================
     // STATE & FORM FOR PROJECT
@@ -383,7 +385,7 @@ export default function Show({ client, workers }: Props) {
                     <div className="p-0">
                         <div className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                             <div><h3 className="font-semibold text-slate-800 dark:text-white">Cabang {client.short_name}</h3></div>
-                            <button onClick={openAddDept} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm">
+                            <button onClick={openAddBranch} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm">
                                 <iconify-icon icon="solar:add-circle-bold" width="18"></iconify-icon> Tambah
                             </button>
                         </div>
@@ -392,27 +394,47 @@ export default function Show({ client, workers }: Props) {
                                 <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                                     <tr>
                                         <th className="px-6 py-4">No</th>
-                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, deptSortConfigs, setDeptSortConfigs)}>
-                                            <div className="flex items-center gap-1">
-                                                Nama Cabang
-                                                {renderSortIndicator('name', deptSortConfigs)}
-                                            </div>
-                                        </th>
-                                        <th className="px-6 py-4 text-center">Aksi</th>
+                                         <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, branchSortConfigs, setBranchSortConfigs)}>
+                                             <div className="flex items-center gap-1">
+                                                 Nama Cabang
+                                                 {renderSortIndicator('name', branchSortConfigs)}
+                                             </div>
+                                         </th>
+                                         <th className="px-6 py-4">Project</th>
+                                         <th className="px-6 py-4">Karyawan Aktif</th>
+                                         <th className="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {client.branches.length === 0 ? (
-                                        <tr><td colSpan={3} className="px-6 py-6"><EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada cabang." /></td></tr>
-                                    ) : paginatedDepts.map((dept, idx) => (
-                                        <tr key={dept.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                            <td className="px-6 py-4">{deptOffset + idx + 1}</td>
-                                            <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{dept.name}</td>
-                                            <td className="px-6 py-4 text-center space-x-2">
-                                                <button onClick={() => openEditBranch(dept)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
-                                                <button onClick={() => { setSelectedBranch(dept); setIsDeptDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
-                                            </td>
-                                        </tr>
+                                        <tr><td colSpan={5} className="px-6 py-6"><EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada cabang." /></td></tr>
+                                    ) : paginatedBranchs.map((branch, idx) => (
+                                         <tr key={branch.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                                             <td className="px-6 py-4">{branchOffset + idx + 1}</td>
+                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">
+                                                 <Link
+                                                     href={route('branches.show', branch.id)}
+                                                     className="hover:text-primary transition-colors flex items-center gap-1.5 group"
+                                                 >
+                                                     {branch.name}
+                                                     <iconify-icon icon="solar:arrow-right-up-outline" width="14" className="opacity-0 group-hover:opacity-100 transition-all text-primary" />
+                                                 </Link>
+                                             </td>
+                                             <td className="px-6 py-4 text-center">
+                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                     {branch.projects_count}
+                                                 </span>
+                                             </td>
+                                             <td className="px-6 py-4 text-center">
+                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                     {branch.active_workers_count}
+                                                 </span>
+                                             </td>
+                                             <td className="px-6 py-4 text-center space-x-2">
+                                                 <button onClick={() => openEditBranch(branch)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
+                                                 <button onClick={() => { setSelectedBranch(branch); setIsBranchDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
+                                             </td>
+                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
@@ -420,8 +442,8 @@ export default function Show({ client, workers }: Props) {
                         <Pagination
                             totalItems={client.branches.length}
                             itemsPerPage={PER_PAGE}
-                            currentPage={deptPage}
-                            onPageChange={setDeptPage}
+                            currentPage={branchPage}
+                            onPageChange={setBranchPage}
                         />
                     </div>
                 )}
@@ -445,7 +467,7 @@ export default function Show({ client, workers }: Props) {
                                                 {renderSortIndicator('name', projSortConfigs)}
                                             </div>
                                         </th>
-                                        <th className="px-6 py-4">Departemen</th>
+                                        <th className="px-6 py-4">Cabang</th>
                                         <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('prefix', e, projSortConfigs, setProjSortConfigs)}>
                                             <div className="flex items-center gap-1">
                                                 Prefix
@@ -462,18 +484,18 @@ export default function Show({ client, workers }: Props) {
                                         <tr key={proj.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                             <td className="px-6 py-4">{projOffset + idx + 1}</td>
                                             <td className="px-6 py-4">
-                                                <Link href={route('projects.show', proj.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1.5 group">
+                                                <Link href={route('projects.show', proj.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1.5 group">
                                                     {proj.name}
-                                                    <iconify-icon icon="solar:arrow-right-up-linear" width="14" class="text-slate-400 group-hover:text-primary transition-colors"></iconify-icon>
+                                                    <iconify-icon icon="solar:arrow-right-up-linear" width="14" class="text-slate-400 group-hover:text-primary dark:group-hover:text-primary transition-colors"></iconify-icon>
                                                 </Link>
                                             </td>
                                             <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                                 <div className="flex flex-wrap gap-1">
                                                     {proj.branches && proj.branches.length > 0 ? (
-                                                        proj.branches.map(dept => (
-                                                            <span key={dept.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
-                                                                {dept.name}
-                                                            </span>
+                                                        proj.branches.map(branch => (
+                                                            <Link href={route('branches.show', branch.id)} key={branch.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-md font-medium text-slate-500">
+                                                                {branch.name}
+                                                            </Link>
                                                         ))
                                                     ) : (
                                                         <span className="text-xs text-slate-400 italic">-</span>
@@ -616,31 +638,31 @@ export default function Show({ client, workers }: Props) {
             {/* ========================================== */}
             {/* BRANCH MODALS */}
             {/* ========================================== */}
-            <Modal show={isDeptModalOpen} onClose={closeDeptModal} maxWidth="md">
-                <form onSubmit={submitDept} className="p-6">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{deptModalMode === 'add' ? `Tambah Cabang` : 'Edit Cabang'}</h2>
+            <Modal show={isBranchModalOpen} onClose={closeBranchModal} maxWidth="md">
+                <form onSubmit={submitBranch} className="p-6">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{branchModalMode === 'add' ? `Tambah Cabang` : 'Edit Cabang'}</h2>
                     <div className="space-y-4">
                         <div>
-                            <InputLabel htmlFor="dept_name" value="Nama Cabang" />
-                            <TextInput id="dept_name" type="text" className="mt-1 block w-full" value={deptForm.data.name} onChange={(e) => deptForm.setData('name', e.target.value)} placeholder="Contoh: Jakarta Barat" />
-                            <InputError message={deptForm.errors.name} className="mt-2" />
+                            <InputLabel htmlFor="branch_name" value="Nama Cabang" />
+                            <TextInput id="branch_name" type="text" className="mt-1 block w-full" value={branchForm.data.name} onChange={(e) => branchForm.setData('name', e.target.value)} placeholder="Contoh: Jakarta Barat" />
+                            <InputError message={branchForm.errors.name} className="mt-2" />
                         </div>
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
-                        <SecondaryButton onClick={closeDeptModal} type="button" className="font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">Batal</SecondaryButton>
-                        <PrimaryButton disabled={deptForm.processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">
-                            {deptForm.processing ? 'Menyimpan...' : 'Simpan'}
+                        <SecondaryButton onClick={closeBranchModal} type="button" className="font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">Batal</SecondaryButton>
+                        <PrimaryButton disabled={branchForm.processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">
+                            {branchForm.processing ? 'Menyimpan...' : 'Simpan'}
                         </PrimaryButton>
                     </div>
                 </form>
             </Modal>
-            <Modal show={isDeptDeleteModalOpen} onClose={() => setIsDeptDeleteModalOpen(false)} maxWidth="sm">
+            <Modal show={isBranchDeleteModalOpen} onClose={() => setIsBranchDeleteModalOpen(false)} maxWidth="sm">
                 <div className="p-6 text-center">
                     <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><iconify-icon icon="solar:danger-triangle-bold" width="32"></iconify-icon></div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Cabang?</h2>
                     <div className="flex justify-center gap-3 mt-6">
-                        <SecondaryButton onClick={() => setIsDeptDeleteModalOpen(false)} type="button">Batal</SecondaryButton>
-                        <DangerButton onClick={() => { if (selectedBranch) deptForm.delete(route('branches.destroy', selectedBranch.id), { onSuccess: () => setIsDeptDeleteModalOpen(false) }) }} disabled={deptForm.processing}>Ya, Hapus</DangerButton>
+                        <SecondaryButton onClick={() => setIsBranchDeleteModalOpen(false)} type="button">Batal</SecondaryButton>
+                        <DangerButton onClick={() => { if (selectedBranch) branchForm.delete(route('branches.destroy', selectedBranch.id), { onSuccess: () => setIsBranchDeleteModalOpen(false) }) }} disabled={branchForm.processing}>Ya, Hapus</DangerButton>
                     </div>
                 </div>
             </Modal>

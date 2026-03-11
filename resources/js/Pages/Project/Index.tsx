@@ -9,6 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import Pagination from '@/Components/Pagination';
+import { User } from '@/types';
 
 type SortDirection = 'asc' | 'desc';
 interface SortConfig {
@@ -57,7 +58,9 @@ const PER_PAGE = 10;
 // Defining Pic interface 
 interface Pic {
     id: string;
+    user_id: string;
     name: string;
+    user: User;
 }
 
 /**
@@ -119,7 +122,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     const handleBranchToggle = (id: string) => {
         const currentIds = data.branch_ids;
         if (currentIds.includes(id)) {
-            setData('branch_ids', currentIds.filter(deptId => deptId !== id));
+            setData('branch_ids', currentIds.filter(branchId => branchId !== id));
         } else {
             setData('branch_ids', [...currentIds, id]);
         }
@@ -416,9 +419,9 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                             <div className="flex flex-wrap gap-1 mt-1.5">
                                                 {/* Render all branches connected to this project */}
                                                 {project.branches && project.branches.length > 0 ? (
-                                                    project.branches.map((dept: Branch) => (
-                                                        <span key={dept.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
-                                                            {dept.name}
+                                                    project.branches.map((branch: Branch) => (
+                                                        <span key={branch.id} className="text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
+                                                            {branch.name}
                                                         </span>
                                                     ))
                                                 ) : (
@@ -434,7 +437,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                                 {project.pics && project.pics.length > 0 ? (
                                                     project.pics.map((pic: Pic) => (
                                                         <span key={pic.id} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-md font-medium inline-block w-max">
-                                                            {pic.name}
+                                                            {pic.user?.name || pic.name}
                                                         </span>
                                                     ))
                                                 ) : (

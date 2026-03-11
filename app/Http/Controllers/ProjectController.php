@@ -31,7 +31,7 @@ class ProjectController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $query = Project::with(['client', 'branches', 'pics:id,name']);
+        $query = Project::with(['client', 'branches', 'pics', 'pics.user:id,name']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
@@ -45,7 +45,7 @@ class ProjectController extends Controller
         $branches = Branch::orderBy('name')->get(['id', 'client_id', 'name']);
         
         // Pass PIC details for assignment in Create/Edit Modal Form
-        $pics = Pic::orderBy('name')->get(['id', 'name']);
+        $pics = Pic::with('user:id,name')->orderBy('name')->get(['id', 'user_id', 'name']);
 
         return Inertia::render('Project/Index', [
             'projects' => $projects,
@@ -73,7 +73,8 @@ class ProjectController extends Controller
         $project->load([
             'client:id,full_name,short_name',
             'branches:id,name',
-            'pics:id,name',
+            'pics',
+            'pics.user:id,name',
             'assignments' => function ($query) {
                 $query->with([
                     'worker:id,nik_aru,name',

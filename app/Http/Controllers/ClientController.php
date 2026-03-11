@@ -65,8 +65,19 @@ class ClientController extends Controller implements HasMiddleware
      */
     public function show(Client $client): Response
     {
-        // Eager load branches and projects (along with project's branch relation)
-        $client->load(['branches', 'projects.branches']);
+        // Eager load branches (with project count) and projects (with their branches)
+        $client->load(['branches.projects', 'projects.branches']);
+
+        // Attach derived counts to each branch for the frontend table
+        $client->branches->each(function ($branch) {
+            $branch->projects_count = $branch->projects->count();
+
+            // Count workers with at least one active assignment in this branch
+            $branch->active_workers_count = \App\Models\Worker::whereHas(
+                'assignments',
+                fn($q) => $q->where('branch_id', $branch->id)->where('status', 'active')
+            )->count();
+        });
 
         // Collect all project IDs belonging to this client
         $projectIds = $client->projects->pluck('id');
@@ -89,6 +100,7 @@ class ClientController extends Controller implements HasMiddleware
             'workers' => $workers,
         ]);
     }
+
 
     /**
      * Store a newly created client in storage.

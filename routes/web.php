@@ -44,7 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Client Routes
     Route::resource('clients', ClientController::class)->except(['create', 'edit']);
-    Route::resource('branches', BranchController::class)->except(['index', 'create', 'show', 'edit']);
+    Route::resource('branches', BranchController::class)->except(['index', 'create', 'edit']);
 
     // Project Routes
     Route::resource('projects', ProjectController::class)->except(['create', 'edit']);

@@ -4,6 +4,7 @@ import { Link, usePage } from '@inertiajs/react';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
+import { User } from '@/types';
 
 type SortDirection = 'asc' | 'desc';
 interface SortConfig {
@@ -76,8 +77,15 @@ interface Project {
     id_running_number: number;
     client: Client | null;
     branches: Branch[];
-    pics?: { id: string; name: string }[];
+    pics?: Pic[];
     assignments: Assignment[];
+}
+
+interface Pic {
+    id: string;
+    user_id: string;
+    name: string;
+    user: User;
 }
 
 /**
@@ -261,25 +269,29 @@ export default function Show({ project }: Props) {
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             {/* Branch badges */}
                             <div className="flex flex-wrap gap-1.5">
-                                {project.branches.map(dept => (
-                                    <span key={dept.id} className="flex items-center gap-1.5">
+                                {project.branches.map(branch => (
+                                    <Link href={route('branches.show', branch.id)} key={branch.id} className="flex items-center gap-1.5 hover:text-primary transition-colors">
                                         <iconify-icon icon="solar:buildings-bold" width="14"></iconify-icon>
-                                        Cabang: {dept.name}
-                                    </span>
+                                        Cabang: {branch.name}
+                                    </Link>
                                 ))}
                             </div>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             {/* PIC Badges */}
-                            {project.pics && project.pics.length > 0 && (
+                            {project.pics && (
                                 <>
                                     <div className="flex items-center gap-1.5">
                                         <iconify-icon icon="solar:user-id-linear" width="14"></iconify-icon>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {project.pics.map(pic => (
-                                                <span key={pic.id}>
-                                                    {pic.name}
-                                                </span>
-                                            ))}
+                                            {project.pics && project.pics.length > 0 ? (
+                                                project.pics.map(pic => (
+                                                    <span key={pic.id}>
+                                                        PIC: {pic.user?.name || pic.name}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span>PIC: -</span>
+                                            )}
                                         </div>
                                     </div>
                                 </>
@@ -426,9 +438,9 @@ export default function Show({ project }: Props) {
 
                                         <td className="px-6 py-4">
                                             {assignment.branch ? (
-                                                <span className="text-[11px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-medium text-slate-500">
+                                                <Link href={route('branches.show', assignment.branch.id)} className="text-[11px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-md font-medium text-slate-500">
                                                     {assignment.branch.name}
-                                                </span>
+                                                </Link>
                                             ) : (
                                                 <span className="text-slate-400 italic text-xs">-</span>
                                             )}

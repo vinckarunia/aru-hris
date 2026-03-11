@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Client;
+use App\Models\Project;
+use App\Models\Assignment;
+use App\Models\Worker;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,6 +37,40 @@ class BranchController extends Controller
         return Inertia::render('Branch/Index', [
             'branches' => $branches,
             'clients'  => $clients,
+        ]);
+    }
+
+    /**
+     * Display the specified branch with its active projects and active workers.
+     *
+     * @param Branch $branch
+     * @return Response
+     */
+    public function show(Branch $branch): Response
+    {
+        // Eager-load the parent client
+        $branch->load('client');
+
+        // Active projects linked to this branch via the branch_project pivot
+        $projects = $branch->projects()->get(['projects.id', 'projects.name', 'projects.prefix']);
+
+        // Workers with at least one active assignment in this branch
+        $projectIds = $projects->pluck('id');
+        $workers = Worker::whereHas('assignments', function ($query) use ($branch) {
+                $query->where('branch_id', $branch->id)
+                      ->where('status', 'active');
+            })
+            ->with(['assignments' => function ($query) use ($branch) {
+                $query->where('branch_id', $branch->id)
+                      ->where('status', 'active')
+                      ->with(['project:id,name']);
+            }])
+            ->get(['id', 'nik_aru', 'name']);
+
+        return Inertia::render('Branch/Show', [
+            'branch'   => $branch,
+            'projects' => $projects,
+            'workers'  => $workers,
         ]);
     }
 
