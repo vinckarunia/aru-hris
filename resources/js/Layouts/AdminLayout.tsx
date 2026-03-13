@@ -205,6 +205,12 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 ></iconify-icon>
                             </div>
                             <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['operational'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
+                                {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
+                                    <Link href={route('reminders.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Reminder">
+                                        <iconify-icon icon="solar:bell-bing-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Reminder</span>
+                                    </Link>
+                                )}
                                 <Link href={route('edit-requests.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Edit Requests">
                                     <iconify-icon icon="solar:file-check-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
                                     <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Edit Request</span>
@@ -231,7 +237,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                     ></iconify-icon>
                                 </div>
                                 <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['adminSetup'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
-                                    {(user.role === "SUPER_ADMIN") && (                                   
+                                    {(user.role === "SUPER_ADMIN") && (
                                         <Link href={route('users.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="User Management">
                                             <iconify-icon icon="solar:users-group-rounded-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
                                             <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Manajemen User</span>

@@ -91,6 +91,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/reset-data', [\App\Http\Controllers\SettingController::class, 'resetData'])->name('settings.reset-data');
         Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
+
+        // Reminders
+        Route::get('/reminders', [\App\Http\Controllers\ReminderController::class, 'index'])->name('reminders.index');
+        Route::post('/reminders/{reminder}/dismiss', [\App\Http\Controllers\ReminderController::class, 'dismiss'])->name('reminders.dismiss');
+        Route::post('/reminders/{reminder}/restore', [\App\Http\Controllers\ReminderController::class, 'restore'])->name('reminders.restore');
     });
 
     // Edit Request Routes

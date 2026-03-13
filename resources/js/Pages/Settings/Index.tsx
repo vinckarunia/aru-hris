@@ -35,6 +35,9 @@ export default function Index({ settings }: { settings: Record<string, string | 
             document_max_size_kb: settings.document_max_size_kb ?? '5120',
             document_allowed_mimes: settings.document_allowed_mimes ?? 'pdf,jpg,jpeg,png',
             document_types: settings.document_types ?? JSON.stringify(rawDocTypes),
+            reminder_contract_expiry_enabled: settings.reminder_contract_expiry_enabled ?? '1',
+            reminder_contract_expiry_days: settings.reminder_contract_expiry_days ?? '30',
+            reminder_bpjs_incomplete_enabled: settings.reminder_bpjs_incomplete_enabled ?? '1',
         }
     });
 
@@ -387,6 +390,87 @@ export default function Index({ settings }: { settings: Record<string, string | 
                             <div className="flex items-center gap-4 pt-2">
                                 <PrimaryButton type="submit" form="global-settings-form" disabled={processing} className="dark:bg-primary dark:hover:bg-primary-dark dark:text-white">
                                     Simpan Semua Pengaturan
+                                </PrimaryButton>
+                                <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">Tersimpan.</p>
+                                </Transition>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Reminder Settings Section */}
+                    <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">
+                        <header className="mb-6">
+                            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                <iconify-icon icon="solar:bell-bing-bold" width="24" className="text-primary"></iconify-icon>
+                                Pengaturan Reminder
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                Atur notifikasi peringatan sistem. Reminder dievaluasi setiap hari secara otomatis.
+                            </p>
+                        </header>
+
+                        <div className="space-y-8">
+                            {/* Contract Expiry */}
+                            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-slate-800 dark:text-slate-200">Reminder Kontrak Berakhir</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Peringatan saat kontrak karyawan akan segera habis.</p>
+                                </div>
+                                <div className="flex items-center gap-4 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="365"
+                                            value={data.settings.reminder_contract_expiry_days}
+                                            onChange={e => handleSettingChange('reminder_contract_expiry_days', e.target.value)}
+                                            className="w-20 border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm"
+                                        />
+                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">hari sebelumnya</span>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSettingChange('reminder_contract_expiry_enabled', data.settings.reminder_contract_expiry_enabled === '1' ? '0' : '1')}
+                                        className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${data.settings.reminder_contract_expiry_enabled === '1' ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                    >
+                                        <span className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${data.settings.reminder_contract_expiry_enabled === '1' ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* BPJS Incomplete */}
+                            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-slate-800 dark:text-slate-200">Reminder BPJS</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Peringatan bila karyawan dengan penempatan aktif belum memiliki nomor BPJS Kesehatan/Ketenagakerjaan.</p>
+                                </div>
+                                <div className="shrink-0 flex items-center pr-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSettingChange('reminder_bpjs_incomplete_enabled', data.settings.reminder_bpjs_incomplete_enabled === '1' ? '0' : '1')}
+                                        className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${data.settings.reminder_bpjs_incomplete_enabled === '1' ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                    >
+                                        <span className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${data.settings.reminder_bpjs_incomplete_enabled === '1' ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Email Integration Note */}
+                            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30 flex gap-3">
+                                <iconify-icon icon="solar:info-circle-bold-duotone" width="24" className="text-indigo-500 shrink-0"></iconify-icon>
+                                <div>
+                                    <h4 className="text-sm font-bold text-indigo-800 dark:text-indigo-300">Integrasi Email (SMTP)</h4>
+                                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                                        Saat ini reminder hanya dikirimkan ke Dashboard. Untuk mengaktifkan pengiriman notifikasi via email kepada Admin/PIC, silakan tim developer mengonfigurasi fitur <strong>EmailChannel</strong> dan kredensial SMTP di server.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 pt-2">
+                                <PrimaryButton onClick={submit} disabled={processing} className="dark:bg-primary dark:hover:bg-primary-dark dark:text-white">
+                                    Simpan Pengaturan
                                 </PrimaryButton>
                                 <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
                                     <p className="text-sm text-slate-600 dark:text-slate-400">Tersimpan.</p>

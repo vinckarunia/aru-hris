@@ -5,25 +5,6 @@ import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-/**
- * Interface representing the expiring contract structure.
- */
-interface ExpiringContract {
-    id: string;
-    end_date: string;
-    assignment: {
-        id: string;
-        worker: {
-            id: string;
-            name: string;
-        };
-        project: {
-            id: string;
-            name: string;
-            client: { short_name: string };
-        };
-    };
-}
 
 /**
  * Interface representing an idle worker structure.
@@ -59,7 +40,6 @@ interface DashboardData {
         idle_workers: number;
     };
     alerts: {
-        expiring_contracts: ExpiringContract[];
         idle_workers: IdleWorker[];
     };
     charts: {
@@ -69,11 +49,25 @@ interface DashboardData {
     recent_assignments: RecentAssignment[];
 }
 
+interface DashboardReminderItem {
+    id: number;
+    title: string;
+    message: string;
+    status: 'pending' | 'critical' | 'done';
+}
+
+interface DashboardReminderGroup {
+    label: string;
+    count: number;
+    items: DashboardReminderItem[];
+}
+
 /**
  * Props for the Dashboard component.
  */
 interface Props {
     dashboardData: DashboardData;
+    remindersSummary: Record<string, DashboardReminderGroup>;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FCA5A5', '#FCD34D'];
@@ -115,7 +109,7 @@ const calculateIdleDuration = (terminationDate?: string) => {
  * @param {Props} props - Component properties containing dashboardData
  * @returns {JSX.Element} The rendered React component.
  */
-export default function Dashboard({ dashboardData }: Props) {
+export default function Dashboard({ dashboardData, remindersSummary }: Props) {
     const { quick_stats, alerts, charts, recent_assignments } = dashboardData;
 
     return (
@@ -338,36 +332,50 @@ export default function Dashboard({ dashboardData }: Props) {
                             </div>
                         </div>
 
-                        {/* Actionable Alerts */}
-                        <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 shadow-sm border border-red-100 dark:border-red-900/50">
-                            <h3 className="font-bold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2">
-                                <iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>
-                                Perhatian Segera
-                            </h3>
+                        {/* Reminders Summary Panel */}
+                        <div className="bg-amber-50 dark:bg-amber-900/10 rounded-2xl p-6 shadow-sm border border-amber-100 dark:border-amber-900/30">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-amber-700 dark:text-amber-500 flex items-center gap-2">
+                                    <iconify-icon icon="solar:bell-bing-bold"></iconify-icon>
+                                    Ringkasan Reminder
+                                </h3>
+                                <Link href={route('reminders.index')} className="text-sm font-semibold text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors">
+                                    Lihat Semua
+                                </Link>
+                            </div>
 
-                            <div className="space-y-4">
-                                <div>
-                                    <h4 className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">Kontrak Segera Berakhir (≤ 30 Hari)</h4>
-                                    {alerts.expiring_contracts.length > 0 ? (
-                                        <ul className="space-y-2">
-                                            {alerts.expiring_contracts.map((contract) => (
-                                                <li key={contract.id} className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-lg text-sm border border-red-200 dark:border-red-800/50 flex justify-between items-center">
-                                                    <div>
-                                                        <Link href={route('workers.show', contract.assignment.worker.id)} className="font-bold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
-                                                            {contract.assignment.worker.name}
-                                                        </Link>
-                                                        <p className="text-xs text-slate-500 mt-0.5">{contract.assignment.project.client.short_name} - {contract.assignment.project.name}</p>
-                                                    </div>
-                                                    <span className="text-red-600 dark:text-red-400 font-semibold text-xs whitespace-nowrap bg-red-100 dark:bg-red-900/40 px-2 py-1 rounded-md">
-                                                        {formatDate(contract.end_date)}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p className="text-sm text-slate-500 italic px-2">Tidak ada kontrak yang akan segera berakhir.</p>
-                                    )}
-                                </div>
+                            <div className="space-y-6">
+                                {Object.values(remindersSummary).map((group, idx) => (
+                                    <div key={idx}>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-400">
+                                                {group.label}
+                                            </h4>
+                                            <span className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-xs px-2 py-0.5 rounded-full font-bold">
+                                                {group.count}
+                                            </span>
+                                        </div>
+
+                                        {group.items.length > 0 ? (
+                                            <ul className="space-y-2">
+                                                {group.items.map((item) => (
+                                                    <li key={item.id} className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-800/30 shadow-sm flex flex-col gap-1">
+                                                        <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                            {item.title}
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                                            {item.message}
+                                                        </p>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div className="bg-white/50 dark:bg-slate-800/30 p-4 rounded-xl text-center border border-dashed border-amber-200 dark:border-amber-800/30">
+                                                <p className="text-sm text-slate-500 italic">Tidak ada reminder aktif.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

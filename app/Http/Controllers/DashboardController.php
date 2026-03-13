@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Project;
 use App\Models\Contract;
 use App\Models\Assignment;
+use App\Services\Reminder\ReminderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -48,16 +49,6 @@ class DashboardController extends Controller
             $totalIdleWorkers = Worker::whereDoesntHave('assignments', function ($query) {
                 $query->where('status', 'active');
             })->count();
-
-            // FR-DASH-02: Actionable Alerts
-            $expiringContracts = Contract::with(['assignment.worker', 'assignment.project.client'])
-                ->where('end_date', '<=', Carbon::now()->addDays(30))
-                ->where('end_date', '>=', Carbon::now())
-                ->whereHas('assignment', function ($q) {
-                    $q->where('status', 'active');
-                })
-                ->orderBy('end_date', 'asc')
-                ->get();
 
             // Karyawan Tanpa Penempatan (Idle Workers) - Order by longest idle duration (oldest termination_date)
             // We find workers without active assignments, and join their latest assignment to get the termination date.
@@ -111,7 +102,6 @@ class DashboardController extends Controller
                     'idle_workers' => $totalIdleWorkers,
                 ],
                 'alerts' => [
-                    'expiring_contracts' => $expiringContracts,
                     'idle_workers' => $idleWorkers,
                 ],
                 'charts' => [
@@ -122,8 +112,12 @@ class DashboardController extends Controller
             ];
         });
 
+        // FR-DASH-X: Reminders Summary (from Cache)
+        $remindersSummary = ReminderService::getDashboardSummary();
+
         return Inertia::render('Dashboard', [
-            'dashboardData' => $dashboardData
+            'dashboardData' => $dashboardData,
+            'remindersSummary' => $remindersSummary,
         ]);
     }
 }
