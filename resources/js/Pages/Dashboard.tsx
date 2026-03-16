@@ -41,6 +41,13 @@ interface DashboardData {
     };
     alerts: {
         idle_workers: IdleWorker[];
+        pending_edit_requests: number;
+        unverified_documents: Array<{
+            id: number;
+            type: string;
+            created_at: string;
+            worker: { id: string; name: string } | null;
+        }>;
     };
     charts: {
         worker_distribution: Array<{ name: string; value: number }>;
@@ -297,6 +304,71 @@ export default function Dashboard({ dashboardData, remindersSummary }: Props) {
 
                     {/* Actionable Alerts & Quick Actions */}
                     <div className="space-y-6">
+
+                        {/* Operational Alerts */}
+                        {(alerts.pending_edit_requests > 0 || alerts.unverified_documents.length > 0) && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-rose-100 dark:border-rose-900/30">
+                                <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                    <iconify-icon icon="solar:danger-triangle-bold" className="text-rose-500"></iconify-icon>
+                                    Tindakan Diperlukan
+                                </h3>
+                                <div className="space-y-4">
+                                    {/* Pending Edit Requests Alert */}
+                                    {alerts.pending_edit_requests > 0 && (
+                                        <Link href={route('edit-requests.index')} className="flex items-center justify-between p-3 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 rounded-xl transition-colors border border-amber-200 dark:border-amber-500/30 group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                                    <iconify-icon icon="solar:document-text-bold" width="20"></iconify-icon>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-amber-900 dark:text-amber-100 text-sm">Pengajuan Perubahan Data</h4>
+                                                    <p className="text-xs text-amber-700 dark:text-amber-400/80">Menunggu review HR Admin</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-amber-500 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow-sm">
+                                                    {alerts.pending_edit_requests}
+                                                </span>
+                                                <iconify-icon icon="solar:alt-arrow-right-line-duotone" className="text-amber-500" width="20"></iconify-icon>
+                                            </div>
+                                        </Link>
+                                    )}
+
+                                    {/* Unverified Documents Alert */}
+                                    {alerts.unverified_documents.length > 0 && (
+                                        <div className="p-4 bg-rose-50 dark:bg-rose-500/10 rounded-xl border border-rose-200 dark:border-rose-500/30">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <iconify-icon icon="solar:shield-warning-bold" className="text-rose-500" width="20"></iconify-icon>
+                                                <h4 className="font-semibold text-rose-900 dark:text-rose-100 text-sm">Dokumen Menunggu Verifikasi</h4>
+                                            </div>
+                                            <ul className="space-y-2">
+                                                {alerts.unverified_documents.map(doc => (
+                                                    <li key={doc.id}>
+                                                        {doc.worker ? (
+                                                            <Link href={route('workers.show', doc.worker.id)} className="flex items-center justify-between group p-2 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm font-semibold text-rose-900 dark:text-rose-100 group-hover:text-rose-700 dark:group-hover:text-rose-300">
+                                                                        {doc.worker.name}
+                                                                    </span>
+                                                                    <span className="text-xs text-rose-600 dark:text-rose-400 uppercase tracking-wider font-medium">
+                                                                        {doc.type}
+                                                                    </span>
+                                                                </div>
+                                                                <iconify-icon icon="solar:eye-bold" className="text-rose-400 group-hover:text-rose-600 transition-colors"></iconify-icon>
+                                                            </Link>
+                                                        ) : (
+                                                            <div className="flex items-center justify-between p-2">
+                                                                <span className="text-sm text-slate-500 italic">Pekerja telah dihapus</span>
+                                                            </div>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Quick Actions */}
                         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">

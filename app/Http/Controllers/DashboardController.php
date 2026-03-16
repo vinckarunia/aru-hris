@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Models\Project;
 use App\Models\Contract;
 use App\Models\Assignment;
+use App\Models\EditRequest;
+use App\Models\Document;
 use App\Services\Reminder\ReminderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -93,6 +95,16 @@ class DashboardController extends Controller
                 ->orderBy('hire_date', 'desc')
                 ->take(10)
                 ->get();
+            
+            // Pending Edit Requests Count
+            $pendingEditRequestsCount = EditRequest::where('status', 'pending')->count();
+
+            // Unverified Documents
+            $unverifiedDocuments = Document::with('worker')
+                ->whereNull('verified_at')
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
 
             return [
                 'quick_stats' => [
@@ -103,6 +115,8 @@ class DashboardController extends Controller
                 ],
                 'alerts' => [
                     'idle_workers' => $idleWorkers,
+                    'pending_edit_requests' => $pendingEditRequestsCount,
+                    'unverified_documents' => $unverifiedDocuments,
                 ],
                 'charts' => [
                     'worker_distribution' => $workerDistribution,
