@@ -94,6 +94,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Reminders
         Route::get('/reminders', [\App\Http\Controllers\ReminderController::class, 'index'])->name('reminders.index');
+        Route::post('/reminders/process', [\App\Http\Controllers\ReminderController::class, 'process'])->name('reminders.process');
         Route::post('/reminders/{reminder}/dismiss', [\App\Http\Controllers\ReminderController::class, 'dismiss'])->name('reminders.dismiss');
         Route::post('/reminders/{reminder}/restore', [\App\Http\Controllers\ReminderController::class, 'restore'])->name('reminders.restore');
     });

@@ -60,6 +60,7 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
     const [currentType, setCurrentType] = useState(filters.type);
     const [currentStatus, setCurrentStatus] = useState(filters.status);
     const [currentTab, setCurrentTab] = useState(filters.tab || 'active');
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,7 +101,11 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
     };
 
     const handleRefresh = () => {
-        router.reload({ only: ['reminders'] });
+        router.post(route('reminders.process'), {}, {
+            preserveScroll: true,
+            onStart: () => setIsProcessing(true),
+            onFinish: () => setIsProcessing(false),
+        });
     };
 
     const handleDismiss = (id: number) => {
@@ -168,10 +173,16 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleRefresh}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                        disabled={isProcessing}
+                        className={`flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors shadow-sm
+                            ${isProcessing ? 'text-slate-400 dark:text-slate-500 cursor-wait' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
                     >
-                        <iconify-icon icon="solar:refresh-linear" width="18"></iconify-icon>
-                        <span className="font-medium">Refresh</span>
+                        <iconify-icon
+                            icon={isProcessing ? "solar:refresh-circle-bold-duotone" : "solar:refresh-linear"}
+                            width="18"
+                            className={isProcessing ? "animate-spin text-primary" : ""}
+                        ></iconify-icon>
+                        <span className="font-medium">{isProcessing ? 'Memproses...' : 'Refresh'}</span>
                     </button>
                     {/* Manual job trigger button could be added here if needed */}
                 </div>
@@ -195,35 +206,35 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                    {/* Filter Type */}
-                    <select
-                        value={currentType}
-                        onChange={(e) => {
-                            setCurrentType(e.target.value);
-                            applyFilters({ type: e.target.value });
-                        }}
-                        className="py-2 pl-3 pr-8 rounded-xl border-slate-300 text-sm shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    >
-                        <option value="">Semua Jenis</option>
-                        {typeOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
+                        {/* Filter Type */}
+                        <select
+                            value={currentType}
+                            onChange={(e) => {
+                                setCurrentType(e.target.value);
+                                applyFilters({ type: e.target.value });
+                            }}
+                            className="py-2 pl-3 pr-8 rounded-xl border-slate-300 text-sm shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        >
+                            <option value="">Semua Jenis</option>
+                            {typeOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
 
-                    {/* Filter Status */}
-                    <select
-                        value={currentStatus}
-                        onChange={(e) => {
-                            setCurrentStatus(e.target.value);
-                            applyFilters({ status: e.target.value });
-                        }}
-                        className="py-2 pl-3 pr-8 rounded-xl border-slate-300 text-sm shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    >
-                        <option value="">Semua Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="critical">Critical</option>
-                        <option value="missed">Missed</option>
-                    </select>
+                        {/* Filter Status */}
+                        <select
+                            value={currentStatus}
+                            onChange={(e) => {
+                                setCurrentStatus(e.target.value);
+                                applyFilters({ status: e.target.value });
+                            }}
+                            className="py-2 pl-3 pr-8 rounded-xl border-slate-300 text-sm shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        >
+                            <option value="">Semua Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="critical">Critical</option>
+                            <option value="missed">Missed</option>
+                        </select>
                     </div>
                 </div>
 

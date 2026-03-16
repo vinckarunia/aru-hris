@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Services\Reminder\Channels\DashboardChannel;
 use App\Services\Reminder\Evaluators\BpjsIncompleteEvaluator;
 use App\Services\Reminder\Evaluators\ContractExpiryEvaluator;
+use App\Services\Reminder\Evaluators\ClientMouExpiryEvaluator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -62,6 +63,7 @@ class ReminderService
     private array $evaluators = [
         ReminderType::ContractExpiry->value => ContractExpiryEvaluator::class,
         ReminderType::BpjsIncomplete->value => BpjsIncompleteEvaluator::class,
+        ReminderType::ClientMouExpiry->value => ClientMouExpiryEvaluator::class,
     ];
 
     /**

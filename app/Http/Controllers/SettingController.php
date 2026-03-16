@@ -134,6 +134,8 @@ class SettingController extends Controller
         Setting::create(['key' => 'reminder_contract_expiry_enabled', 'value' => '1',  'group' => 'reminders']);
         Setting::create(['key' => 'reminder_contract_expiry_days',    'value' => '30', 'group' => 'reminders']);
         Setting::create(['key' => 'reminder_bpjs_incomplete_enabled', 'value' => '1',  'group' => 'reminders']);
+        Setting::create(['key' => 'reminder_client_mou_expiry_enabled', 'value' => '1', 'group' => 'reminders']);
+        Setting::create(['key' => 'reminder_client_mou_expiry_days', 'value' => '30', 'group' => 'reminders']);
 
         // Log the user back in
         \Illuminate\Support\Facades\Auth::login($newSuperAdmin);

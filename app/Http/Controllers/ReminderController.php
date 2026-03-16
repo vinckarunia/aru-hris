@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ReminderType;
+use App\Jobs\ProcessReminders;
 use App\Models\Reminder;
 use App\Services\Reminder\ReminderService;
 use Illuminate\Http\Request;
@@ -117,5 +118,19 @@ class ReminderController extends Controller
         Cache::forget(ReminderService::CACHE_KEY);
 
         return back()->with('success', 'Reminder berhasil dipulihkan.');
+    }
+
+    /**
+     * Manually trigger the reminder evaluation process.
+     * Equivalent to `php artisan reminders:process`.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function process(Request $request)
+    {
+        ProcessReminders::dispatchSync();
+        Cache::forget(ReminderService::CACHE_KEY);
+
+        return back()->with('success', 'Proses kalkulasi ulang reminder berhasil diselesaikan.');
     }
 }

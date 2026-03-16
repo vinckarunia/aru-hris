@@ -23,6 +23,9 @@ enum ReminderType: string
     /** Worker's BPJS Kesehatan or BPJS Ketenagakerjaan number is missing. */
     case BpjsIncomplete = 'bpjs_incomplete';
 
+    /** Client MOU End Date is approaching. */
+    case ClientMouExpiry = 'client_mou_expiry';
+
     /**
      * Return a human-readable Indonesian label for the reminder type.
      *
@@ -33,6 +36,7 @@ enum ReminderType: string
         return match($this) {
             self::ContractExpiry  => 'Kontrak',
             self::BpjsIncomplete  => 'BPJS',
+            self::ClientMouExpiry => 'MOU Client',
         };
     }
 
