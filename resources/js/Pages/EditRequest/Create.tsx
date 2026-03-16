@@ -247,7 +247,7 @@ export default function Create({ worker }: Props) {
                     </div>
 
                     <div className="mt-6">
-                        <InputLabel htmlFor="req_notes" value="Keterangan / Alasan Perubahan Data (Opsional)" />
+                        <InputLabel htmlFor="req_notes" value="Keterangan / Alasan Perubahan Data" />
                         <textarea
                             id="req_notes"
                             value={requestData.notes}

@@ -71,6 +71,8 @@ interface Client {
     id: string;
     full_name: string;
     short_name: string;
+    mou_start_date?: string | null;
+    mou_end_date?: string | null;
     branches: Branch[];
     projects: Project[];
 }
@@ -346,8 +348,18 @@ export default function Show({ client, workers }: Props) {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{client.full_name}</h2>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-slate-500 font-medium">
-                            <span className="flex items-center gap-1.5"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Kode Client: {client.short_name}</span>
+                        <div className="flex flex-col gap-1 mt-2">
+                            <div className="flex items-center gap-3 text-sm text-slate-500 font-medium">
+                                <span className="flex items-center gap-1.5"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Kode Client: {client.short_name}</span>
+                            </div>
+                            {(client.mou_start_date || client.mou_end_date) && (
+                                <div className="flex items-center gap-3 text-sm text-slate-500 font-medium">
+                                    <span className="flex items-center gap-1.5">
+                                        <iconify-icon icon="solar:calendar-date-bold"></iconify-icon>
+                                        Periode MOU: {client.mou_start_date ? new Date(client.mou_start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'} s/d {client.mou_end_date ? new Date(client.mou_end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -394,47 +406,47 @@ export default function Show({ client, workers }: Props) {
                                 <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                                     <tr>
                                         <th className="px-6 py-4">No</th>
-                                         <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, branchSortConfigs, setBranchSortConfigs)}>
-                                             <div className="flex items-center gap-1">
-                                                 Nama Cabang
-                                                 {renderSortIndicator('name', branchSortConfigs)}
-                                             </div>
-                                         </th>
-                                         <th className="px-6 py-4">Project</th>
-                                         <th className="px-6 py-4">Karyawan Aktif</th>
-                                         <th className="px-6 py-4 text-center">Aksi</th>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, branchSortConfigs, setBranchSortConfigs)}>
+                                            <div className="flex items-center gap-1">
+                                                Nama Cabang
+                                                {renderSortIndicator('name', branchSortConfigs)}
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4">Project</th>
+                                        <th className="px-6 py-4">Karyawan Aktif</th>
+                                        <th className="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {client.branches.length === 0 ? (
                                         <tr><td colSpan={5} className="px-6 py-6"><EmptyState icon="solar:users-group-two-rounded-bold" message="Belum ada cabang." /></td></tr>
                                     ) : paginatedBranchs.map((branch, idx) => (
-                                         <tr key={branch.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                             <td className="px-6 py-4">{branchOffset + idx + 1}</td>
-                                             <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">
-                                                 <Link
-                                                     href={route('branches.show', branch.id)}
-                                                     className="hover:text-primary transition-colors flex items-center gap-1.5 group"
-                                                 >
-                                                     {branch.name}
-                                                     <iconify-icon icon="solar:arrow-right-up-outline" width="14" className="opacity-0 group-hover:opacity-100 transition-all text-primary" />
-                                                 </Link>
-                                             </td>
-                                             <td className="px-6 py-4 text-center">
-                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                     {branch.projects_count}
-                                                 </span>
-                                             </td>
-                                             <td className="px-6 py-4 text-center">
-                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                     {branch.active_workers_count}
-                                                 </span>
-                                             </td>
-                                             <td className="px-6 py-4 text-center space-x-2">
-                                                 <button onClick={() => openEditBranch(branch)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
-                                                 <button onClick={() => { setSelectedBranch(branch); setIsBranchDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
-                                             </td>
-                                         </tr>
+                                        <tr key={branch.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                                            <td className="px-6 py-4">{branchOffset + idx + 1}</td>
+                                            <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">
+                                                <Link
+                                                    href={route('branches.show', branch.id)}
+                                                    className="hover:text-primary transition-colors flex items-center gap-1.5 group"
+                                                >
+                                                    {branch.name}
+                                                    <iconify-icon icon="solar:arrow-right-up-outline" width="14" className="opacity-0 group-hover:opacity-100 transition-all text-primary" />
+                                                </Link>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                    {branch.projects_count}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                    {branch.active_workers_count}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center space-x-2">
+                                                <button onClick={() => openEditBranch(branch)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="18"></iconify-icon></button>
+                                                <button onClick={() => { setSelectedBranch(branch); setIsBranchDeleteModalOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon></button>
+                                            </td>
+                                        </tr>
                                     ))}
                                 </tbody>
                             </table>

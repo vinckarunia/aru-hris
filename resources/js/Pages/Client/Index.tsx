@@ -23,6 +23,8 @@ interface Client {
     id: string;
     full_name: string;
     short_name: string;
+    mou_start_date?: string | null;
+    mou_end_date?: string | null;
     created_at: string;
 }
 
@@ -97,6 +99,8 @@ export default function Index({ clients, projects, workers }: Props) {
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         full_name: '',
         short_name: '',
+        mou_start_date: '',
+        mou_end_date: '',
     });
 
     const activeFilterCount = filterHasActive !== 'all' ? 1 : 0;
@@ -218,6 +222,8 @@ export default function Index({ clients, projects, workers }: Props) {
         setData({
             full_name: client.full_name,
             short_name: client.short_name,
+            mou_start_date: client.mou_start_date ? client.mou_start_date : '',
+            mou_end_date: client.mou_end_date ? client.mou_end_date : '',
         });
         clearErrors();
         setIsModalOpen(true);
@@ -383,11 +389,20 @@ export default function Index({ clients, projects, workers }: Props) {
                                 </th>
                                 <th
                                     className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
-                                    onClick={(e) => handleSort('short_name', e)}
+                                    onClick={(e) => handleSort('mou_start_date', e)}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        Kode
-                                        {renderSortIndicator('short_name')}
+                                    <div className="flex items-center gap-2 whitespace-nowrap">
+                                        Mulai MOU
+                                        {renderSortIndicator('mou_start_date')}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors group select-none"
+                                    onClick={(e) => handleSort('mou_end_date', e)}
+                                >
+                                    <div className="flex items-center gap-2 whitespace-nowrap">
+                                        Akhir MOU
+                                        {renderSortIndicator('mou_end_date')}
                                     </div>
                                 </th>
                                 <th
@@ -404,7 +419,7 @@ export default function Index({ clients, projects, workers }: Props) {
                                     onClick={(e) => handleSort('worker_count', e)}
                                 >
                                     <div className="flex items-center gap-2">
-                                        Karyawan Aktif
+                                        Karyawan
                                         {renderSortIndicator('worker_count')}
                                     </div>
                                 </th>
@@ -414,7 +429,7 @@ export default function Index({ clients, projects, workers }: Props) {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                             {filteredClients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-400 italic">
+                                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400 italic">
                                         {clients.length === 0 ? 'Belum ada data client. Silakan tambahkan baru.' : 'Data client tidak ditemukan.'}
                                     </td>
                                 </tr>
@@ -428,10 +443,15 @@ export default function Index({ clients, projects, workers }: Props) {
                                                 <iconify-icon icon="solar:arrow-right-up-outline" width="16" className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-primary"></iconify-icon>
                                             </Link>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
-                                                {client.short_name}
-                                            </span>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center text-slate-600 dark:text-slate-400">
+                                                {client.mou_start_date ? new Date(client.mou_start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center text-slate-600 dark:text-slate-400">
+                                                {client.mou_end_date ? new Date(client.mou_end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-2 py-1 font-semibold text-slate-800 dark:text-slate-200">
@@ -520,6 +540,32 @@ export default function Index({ clients, projects, workers }: Props) {
                                 placeholder="CONTOH: ABC"
                             />
                             <InputError message={errors.short_name} className="mt-2" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <InputLabel htmlFor="mou_start_date" value="Tanggal Mulai MOU" />
+                                <TextInput
+                                    id="mou_start_date"
+                                    type="date"
+                                    className="mt-1 block w-full"
+                                    value={data.mou_start_date}
+                                    onChange={(e) => setData('mou_start_date', e.target.value)}
+                                />
+                                <InputError message={errors.mou_start_date} className="mt-2" />
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="mou_end_date" value="Tanggal Berakhir MOU" />
+                                <TextInput
+                                    id="mou_end_date"
+                                    type="date"
+                                    className="mt-1 block w-full"
+                                    value={data.mou_end_date}
+                                    onChange={(e) => setData('mou_end_date', e.target.value)}
+                                />
+                                <InputError message={errors.mou_end_date} className="mt-2" />
+                            </div>
                         </div>
                     </div>
 

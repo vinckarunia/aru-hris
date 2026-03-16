@@ -100,7 +100,7 @@ export default function Create({ worker, projects }: Props) {
                             <InputError message={errors.position} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="employee_id" value="ID Karyawan di Client (Opsional)" />
+                            <InputLabel htmlFor="employee_id" value="ID Karyawan di Client" />
                             <TextInput id="employee_id" type="text" className="mt-1 block w-full font-mono" value={data.employee_id} onChange={e => setData('employee_id', e.target.value)} placeholder="Nomor Induk internal perusahaan client" />
                             <InputError message={errors.employee_id} className="mt-1" />
                         </div>

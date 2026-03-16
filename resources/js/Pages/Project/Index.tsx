@@ -520,7 +520,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
 
                         {/* Checkbox Group for Multiple PICs */}
                         <div>
-                            <InputLabel value="PIC Project (Opsional)" />
+                            <InputLabel value="PIC Project" />
                             <div className="mt-2 grid grid-cols-2 gap-3 max-h-40 overflow-y-auto pr-1">
                                 {pics && pics.length === 0 ? (
                                     <p className="text-xs text-slate-500 col-span-2 italic">Belum ada profil PIC terdaftar.</p>

@@ -31,6 +31,18 @@ class Client extends Model
     protected $fillable = [
         'full_name',
         'short_name',
+        'mou_start_date',
+        'mou_end_date',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'mou_start_date' => 'date',
+        'mou_end_date' => 'date',
     ];
 
     /**
