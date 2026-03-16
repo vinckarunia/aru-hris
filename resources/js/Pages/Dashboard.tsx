@@ -73,6 +73,13 @@ interface DashboardReminderGroup {
  * Props for the Dashboard component.
  */
 interface Props {
+    auth: {
+        user: {
+            id: number;
+            name: string;
+            role: string;
+        };
+    };
     dashboardData: DashboardData;
     remindersSummary: Record<string, DashboardReminderGroup>;
 }
@@ -116,42 +123,48 @@ const calculateIdleDuration = (terminationDate?: string) => {
  * @param {Props} props - Component properties containing dashboardData
  * @returns {JSX.Element} The rendered React component.
  */
-export default function Dashboard({ dashboardData, remindersSummary }: Props) {
+export default function Dashboard({ auth, dashboardData, remindersSummary }: Props) {
     const { quick_stats, alerts, charts, recent_assignments } = dashboardData;
+    const isPic = auth.user.role === 'PIC';
 
     return (
         <AdminLayout title="Dashboard" header="Dashboard">
             <Head title="Dashboard Overview" />
 
             <div className="space-y-6">
-
                 {/* FR-DASH-01: Quick Statistics */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Link href={route('workers.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Karyawan Aktif</p>
+                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                    {isPic ? "Karyawan Project Anda" : "Total Karyawan Aktif"}
+                                </p>
                                 <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.active_workers}</h3>
                             </div>
                             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
                                 <iconify-icon icon="solar:users-group-rounded-bold" width="24"></iconify-icon>
                             </div>
                         </div>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Karyawan dengan penempatan aktif</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                            {isPic ? "Karyawan dengan penempatan aktif di project Anda" : "Karyawan dengan penempatan aktif"}
+                        </p>
                     </Link>
 
-                    <Link href={route('clients.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Client Aktif</p>
-                                <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.active_clients}</h3>
+                    {!isPic && (
+                        <Link href={route('clients.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Total Client Aktif</p>
+                                    <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.active_clients}</h3>
+                                </div>
+                                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                    <iconify-icon icon="solar:city-bold" width="24"></iconify-icon>
+                                </div>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                                <iconify-icon icon="solar:city-bold" width="24"></iconify-icon>
-                            </div>
-                        </div>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Memiliki project sedang berjalan</p>
-                    </Link>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">Memiliki project sedang berjalan</p>
+                        </Link>
+                    )}
 
                     <Link href={route('projects.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
@@ -163,21 +176,25 @@ export default function Dashboard({ dashboardData, remindersSummary }: Props) {
                                 <iconify-icon icon="solar:folder-bold" width="24"></iconify-icon>
                             </div>
                         </div>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Terdapat penempatan aktif</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                            {isPic ? "Project Anda dengan penempatan aktif" : "Terdapat penempatan aktif"}
+                        </p>
                     </Link>
 
-                    <Link href={route('workers.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Karyawan Idle</p>
-                                <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.idle_workers}</h3>
+                    {!isPic && (
+                        <Link href={route('workers.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Karyawan Idle</p>
+                                    <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.idle_workers}</h3>
+                                </div>
+                                <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center">
+                                    <iconify-icon icon="solar:user-block-bold" width="24"></iconify-icon>
+                                </div>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center">
-                                <iconify-icon icon="solar:user-block-bold" width="24"></iconify-icon>
-                            </div>
-                        </div>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Karyawan tanpa penempatan</p>
-                    </Link>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">Karyawan tanpa penempatan</p>
+                        </Link>
+                    )}
                 </div>
 
                 {/* Main Content Layout */}
@@ -187,42 +204,44 @@ export default function Dashboard({ dashboardData, remindersSummary }: Props) {
                     <div className="lg:col-span-2 space-y-6">
 
                         {/* Charts */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className={`grid grid-cols-1 ${isPic ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-6`}>
 
                             {/* Worker Distribution */}
-                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                                <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                                    <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
-                                    Distribusi Karyawan (Client)
-                                </h3>
-                                <div className="h-64">
-                                    {charts.worker_distribution.length > 0 ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={charts.worker_distribution}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    innerRadius={60}
-                                                    outerRadius={80}
-                                                    paddingAngle={5}
-                                                    dataKey="value"
-                                                >
-                                                    {charts.worker_distribution.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <RechartsTooltip />
-                                                <Legend />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    ) : (
-                                        <div className="h-full flex items-center justify-center text-slate-400 italic">
-                                            Tidak ada data distribusi.
-                                        </div>
-                                    )}
+                            {!isPic && (
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                        <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
+                                        Distribusi Karyawan (Client)
+                                    </h3>
+                                    <div className="h-64">
+                                        {charts.worker_distribution.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={charts.worker_distribution}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={80}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
+                                                    >
+                                                        {charts.worker_distribution.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip />
+                                                    <Legend />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="h-full flex items-center justify-center text-slate-400 italic">
+                                                Tidak ada data distribusi.
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Employment Status Demographics */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
@@ -370,86 +389,90 @@ export default function Dashboard({ dashboardData, remindersSummary }: Props) {
                             </div>
                         )}
 
-                        {/* Quick Actions */}
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                            <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                                <iconify-icon icon="solar:electric-plug-bold" className="text-primary"></iconify-icon>
-                                Akses Cepat
-                            </h3>
-                            <div className="grid grid-cols-1 gap-3">
-                                <Link href={route('workers.create')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
-                                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                                        <iconify-icon icon="solar:user-plus-bold" width="20"></iconify-icon>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Karyawan Baru</h4>
-                                    </div>
-                                </Link>
-                                <Link href={route('workers.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
-                                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                        <iconify-icon icon="solar:document-add-bold" width="20"></iconify-icon>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Buat Penempatan</h4>
-                                    </div>
-                                </Link>
-                                <Link href={route('clients.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
-                                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                                        <iconify-icon icon="solar:buildings-bold" width="20"></iconify-icon>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Client/Project</h4>
-                                    </div>
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* Reminders Summary Panel */}
-                        <div className="bg-amber-50 dark:bg-amber-900/10 rounded-2xl p-6 shadow-sm border border-amber-100 dark:border-amber-900/30">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-amber-700 dark:text-amber-500 flex items-center gap-2">
-                                    <iconify-icon icon="solar:bell-bing-bold"></iconify-icon>
-                                    Ringkasan Reminder
+                        {/* Quick Actions (Admin Only) */}
+                        {!isPic && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                    <iconify-icon icon="solar:electric-plug-bold" className="text-primary"></iconify-icon>
+                                    Akses Cepat
                                 </h3>
-                                <Link href={route('reminders.index')} className="text-sm font-semibold text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors">
-                                    Lihat Semua
-                                </Link>
-                            </div>
-
-                            <div className="space-y-6">
-                                {Object.values(remindersSummary).map((group, idx) => (
-                                    <div key={idx}>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-400">
-                                                {group.label}
-                                            </h4>
-                                            <span className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-xs px-2 py-0.5 rounded-full font-bold">
-                                                {group.count}
-                                            </span>
+                                <div className="grid grid-cols-1 gap-3">
+                                    <Link href={route('workers.create')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                                            <iconify-icon icon="solar:user-plus-bold" width="20"></iconify-icon>
                                         </div>
-
-                                        {group.items.length > 0 ? (
-                                            <ul className="space-y-2">
-                                                {group.items.map((item) => (
-                                                    <li key={item.id} className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-800/30 shadow-sm flex flex-col gap-1">
-                                                        <div className="font-bold text-slate-800 dark:text-slate-200">
-                                                            {item.title}
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                                                            {item.message}
-                                                        </p>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <div className="bg-white/50 dark:bg-slate-800/30 p-4 rounded-xl text-center border border-dashed border-amber-200 dark:border-amber-800/30">
-                                                <p className="text-sm text-slate-500 italic">Tidak ada reminder aktif.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Karyawan Baru</h4>
+                                        </div>
+                                    </Link>
+                                    <Link href={route('workers.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                            <iconify-icon icon="solar:document-add-bold" width="20"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Buat Penempatan</h4>
+                                        </div>
+                                    </Link>
+                                    <Link href={route('clients.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                            <iconify-icon icon="solar:buildings-bold" width="20"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Client/Project</h4>
+                                        </div>
+                                    </Link>
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Reminders Summary Panel (Admin Only) */}
+                        {!isPic && (
+                            <div className="bg-amber-50 dark:bg-amber-900/10 rounded-2xl p-6 shadow-sm border border-amber-100 dark:border-amber-900/30">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="font-bold text-amber-700 dark:text-amber-500 flex items-center gap-2">
+                                        <iconify-icon icon="solar:bell-bing-bold"></iconify-icon>
+                                        Ringkasan Reminder
+                                    </h3>
+                                    <Link href={route('reminders.index')} className="text-sm font-semibold text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors">
+                                        Lihat Semua
+                                    </Link>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {Object.values(remindersSummary).map((group, idx) => (
+                                        <div key={idx}>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-400">
+                                                    {group.label}
+                                                </h4>
+                                                <span className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-xs px-2 py-0.5 rounded-full font-bold">
+                                                    {group.count}
+                                                </span>
+                                            </div>
+
+                                            {group.items.length > 0 ? (
+                                                <ul className="space-y-2">
+                                                    {group.items.map((item) => (
+                                                        <li key={item.id} className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-800/30 shadow-sm flex flex-col gap-1">
+                                                            <div className="font-bold text-slate-800 dark:text-slate-200">
+                                                                {item.title}
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                                                {item.message}
+                                                            </p>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <div className="bg-white/50 dark:bg-slate-800/30 p-4 rounded-xl text-center border border-dashed border-amber-200 dark:border-amber-800/30">
+                                                    <p className="text-sm text-slate-500 italic">Tidak ada reminder aktif.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

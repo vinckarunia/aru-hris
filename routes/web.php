@@ -26,14 +26,14 @@ Route::get('/', function () {
 
     return match (auth()->user()->role) {
         UserRole::SUPER_ADMIN, UserRole::ADMIN_ARU => redirect()->route('dashboard'),
-        UserRole::PIC                              => redirect()->route('projects.index'),
+        UserRole::PIC                              => redirect()->route('dashboard'),
         UserRole::WORKER                           => redirect()->route('workers.index'),
         default                                    => redirect()->route('login'),
     };
 });
 
-// Akses terbatas hanya ARU dan super admin yang boleh melihat dashboard
-Route::middleware(['auth', 'verified', 'role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
+// Akses terbatas PIC, ARU dan super admin yang boleh melihat dashboard
+Route::middleware(['auth', 'verified', 'role:SUPER_ADMIN,ADMIN_ARU,PIC'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 

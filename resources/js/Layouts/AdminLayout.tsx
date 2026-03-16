@@ -126,31 +126,29 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                     {/* Navigation Links */}
                     <nav className="flex-1 overflow-y-auto py-6 space-y-8 px-4 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         {/* General Section */}
-                        {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
-                            <div>
-                                <div
-                                    onClick={() => toggleMenu('general')}
-                                    className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
-                                    title="General"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <iconify-icon icon="solar:layers-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['general'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
-                                        <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>General</span>
-                                    </div>
-                                    <iconify-icon
-                                        icon="solar:alt-arrow-down-linear"
-                                        width="14"
-                                        className={`transition-transform duration-300 ${collapsedMenus['general'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
-                                    ></iconify-icon>
+                        <div>
+                            <div
+                                onClick={() => toggleMenu('general')}
+                                className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                title="General"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <iconify-icon icon="solar:layers-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['general'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                    <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>General</span>
                                 </div>
-                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['general'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
-                                    <Link href="/dashboard" className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Dashboard">
-                                        <iconify-icon icon="solar:widget-add-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
-                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Dashboard</span>
-                                    </Link>
-                                </div>
+                                <iconify-icon
+                                    icon="solar:alt-arrow-down-linear"
+                                    width="14"
+                                    className={`transition-transform duration-300 ${collapsedMenus['general'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                ></iconify-icon>
                             </div>
-                        )}
+                            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['general'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
+                                <Link href="/dashboard" className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Dashboard">
+                                    <iconify-icon icon="solar:widget-add-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                    <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Dashboard</span>
+                                </Link>
+                            </div>
+                        </div>
 
                         {/* Master Data Modules Section */}
                         <div>
