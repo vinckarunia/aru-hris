@@ -3,11 +3,17 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Note: The PostgreSQL partial index (`CREATE UNIQUE INDEX ... WHERE end_date IS NULL`)
+     * that enforced only one active contract per assignment has been removed, as MySQL does
+     * not support partial indexes. This uniqueness constraint is now enforced at the
+     * application layer (e.g., in ContractService before creating a new contract).
      */
     public function up(): void
     {
@@ -26,12 +32,11 @@ return new class extends Migration
             $table->string('file_path')->nullable();
             $table->timestamps();
 
-            $table->unique(['assignment_id', 'contract_type', 'pkwt_type', 'pkwt_number']);
+            $table->unique(['assignment_id', 'contract_type', 'pkwt_type', 'pkwt_number'], 'contracts_type_combo_unique');
         });
 
-        DB::statement('CREATE UNIQUE INDEX contracts_assignment_active_unique ON contracts(assignment_id) WHERE end_date IS NULL;');
         DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwt_number_positive CHECK (pkwt_number > 0);');
-        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwtt_enddate CHECK ((pkwt_type = \'PKWTT\' AND end_date IS NULL) OR pkwt_type = \'PKWT\');');
+        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwtt_enddate CHECK ((pkwt_type = \'PKWTT\' AND end_date IS NULL) OR pkwt_type = \'PKWT\' OR pkwt_type IS NULL);');
     }
 
     /**
@@ -39,9 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('DROP INDEX IF EXISTS contracts_assignment_active_unique;');
-        DB::statement('ALTER TABLE contracts DROP CONSTRAINT IF EXISTS check_contract_number_positive;');
-        DB::statement('ALTER TABLE contracts DROP CONSTRAINT IF EXISTS check_pkwtt_enddate;');
         Schema::dropIfExists('contracts');
     }
 };

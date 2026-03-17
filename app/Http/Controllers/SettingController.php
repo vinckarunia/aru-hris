@@ -57,10 +57,9 @@ class SettingController extends Controller
         ]);
 
         \Illuminate\Support\Facades\DB::transaction(function () {
-            \Illuminate\Support\Facades\DB::statement('SET CONSTRAINTS ALL DEFERRED');
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0');
             
-            // Clear operational data using delete() instead of truncate() 
-            // because postgres truncate() cascades to users table due to foreign keys.
+            // Clear operational data using delete() to respect model events and observers.
             \App\Models\ContractCompensation::query()->delete();
             \App\Models\Contract::query()->delete();
             \App\Models\Assignment::query()->delete();
@@ -77,7 +76,7 @@ class SettingController extends Controller
             \Illuminate\Support\Facades\DB::table('branch_project')->delete();
             \Illuminate\Support\Facades\DB::table('pic_project')->delete();
 
-            \Illuminate\Support\Facades\DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
             // Delete storage files (documents, photos)
             \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('documents');
