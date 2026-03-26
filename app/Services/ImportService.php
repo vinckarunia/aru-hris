@@ -9,8 +9,8 @@ use App\Models\Branch;
 use App\Models\FamilyMember;
 use App\Models\Project;
 use App\Models\Worker;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -327,10 +327,10 @@ class ImportService
             'total_rows' => $totalRows,
         ];
 
-        Redis::setex(
+        Cache::put(
             self::REDIS_PREFIX . "session:{$sessionId}",
-            self::CACHE_TTL,
-            json_encode($cacheData)
+            json_encode($cacheData),
+            self::CACHE_TTL
         );
 
         return [
@@ -449,10 +449,10 @@ class ImportService
         fclose($handle);
 
         // Cache validation results in Redis for the process step
-        Redis::setex(
+        Cache::put(
             self::REDIS_PREFIX . "validation:{$sessionId}",
-            self::CACHE_TTL,
-            json_encode(['mapping' => $mapping, 'global_settings' => $globalSettings])
+            json_encode(['mapping' => $mapping, 'global_settings' => $globalSettings]),
+            self::CACHE_TTL
         );
 
         return [
@@ -1059,7 +1059,7 @@ class ImportService
      */
     public function getCachedSession(string $sessionId): ?array
     {
-        $data = Redis::get(self::REDIS_PREFIX . "session:{$sessionId}");
+        $data = Cache::get(self::REDIS_PREFIX . "session:{$sessionId}");
         return $data ? json_decode($data, true) : null;
     }
 
@@ -1091,10 +1091,10 @@ class ImportService
             'updated_at' => now()->toIso8601String(),
         ];
 
-        Redis::setex(
+        Cache::put(
             self::REDIS_PREFIX . "progress:{$sessionId}",
-            self::CACHE_TTL,
-            json_encode($data)
+            json_encode($data),
+            self::CACHE_TTL
         );
     }
 
@@ -1106,7 +1106,7 @@ class ImportService
      */
     public function getProgress(string $sessionId): ?array
     {
-        $data = Redis::get(self::REDIS_PREFIX . "progress:{$sessionId}");
+        $data = Cache::get(self::REDIS_PREFIX . "progress:{$sessionId}");
         return $data ? json_decode($data, true) : null;
     }
 
