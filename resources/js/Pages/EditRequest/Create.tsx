@@ -1,6 +1,7 @@
 import React, { useState, FormEventHandler } from 'react';
 import WorkerLayout from '@/Layouts/WorkerLayout';
 import AdminLayout from '@/Layouts/AdminLayout';
+// import { PageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';

@@ -282,7 +282,7 @@ export default function Index({ workers, clients }: Props) {
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manajemen Karyawan</h2>
                     <p className="text-sm text-slate-500">Kelola karyawan yang terafiliasi dengan ARU</p>
                 </div>
-                
+
                 <div className="flex gap-3 w-full md:w-auto">
                     <Link
                         href={route('workers.import.index')}
@@ -298,7 +298,7 @@ export default function Index({ workers, clients }: Props) {
                         Tambah Karyawan
                     </Link>
                 </div>
-            
+
             </div>
 
             {/* Search Bar & Filters */}
@@ -358,7 +358,7 @@ export default function Index({ workers, clients }: Props) {
                                 <option value="active">Aktif</option>
                                 <option value="resign">Resign</option>
                                 <option value="end_contract">Habis Kontrak</option>
-                                <option value="none">Belum Ditempatkan</option>
+                                <option value="none">Non-Aktif</option>
                             </select>
                         </div>
 
@@ -509,7 +509,7 @@ export default function Index({ workers, clients }: Props) {
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-slate-400 italic">- Belum ditempatkan -</span>
+                                                    <span className="text-xs text-slate-400 italic">- Non-Aktif -</span>
                                                 )}
                                             </td>
                                             <td className="py-4 px-6">

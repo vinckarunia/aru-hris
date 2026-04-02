@@ -6,7 +6,7 @@ import React from 'react';
 interface Props {
     /** The raw status string from the database (e.g. 'active', 'resign', 'contract_end'). */
     status: string | null | undefined;
-    
+
     /** Optional display label override. Defaults to the formatted status string. */
     label?: string;
 }
@@ -17,14 +17,14 @@ interface Props {
  * @returns The translated status string.
  */
 const translateStatus = (status: string | null | undefined) => {
-        const rates: Record<string, string> = {
-            'active': 'Aktif',
-            'resign': 'Resign',
-            'contract expired': 'Kontrak Habis',
-            'fired': 'Diberhentikan'
-        };
-        return status && rates[status] ? rates[status] : status;
+    const rates: Record<string, string> = {
+        'active': 'Aktif',
+        'resign': 'Resign',
+        'contract expired': 'Kontrak Habis',
+        'fired': 'Fraud'
     };
+    return status && rates[status] ? rates[status] : status;
+};
 
 /**
  * Returns Tailwind CSS classes for the badge based on the given status value.

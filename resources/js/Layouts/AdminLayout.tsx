@@ -213,6 +213,12 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                     <iconify-icon icon="solar:file-check-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
                                     <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Edit Request</span>
                                 </Link>
+                                {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN_ARU') && (
+                                    <Link href={route('reports.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Laporan">
+                                        <iconify-icon icon="solar:document-text-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                        <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Laporan</span>
+                                    </Link>
+                                )}
                             </div>
                         </div>
 

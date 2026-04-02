@@ -15,6 +15,7 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\PicController;
 use App\Http\Controllers\EditRequestController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -97,6 +98,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/reminders/process', [\App\Http\Controllers\ReminderController::class, 'process'])->name('reminders.process');
         Route::post('/reminders/{reminder}/dismiss', [\App\Http\Controllers\ReminderController::class, 'dismiss'])->name('reminders.dismiss');
         Route::post('/reminders/{reminder}/restore', [\App\Http\Controllers\ReminderController::class, 'restore'])->name('reminders.restore');
+
+        // Reports (Query Builder)
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('/reports/preview', [ReportController::class, 'preview'])->name('reports.preview');
+        Route::post('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     });
 
     // Edit Request Routes

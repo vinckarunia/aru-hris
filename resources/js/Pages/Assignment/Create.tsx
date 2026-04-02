@@ -124,7 +124,7 @@ export default function Create({ worker, projects }: Props) {
                                 <option value="active">Aktif</option>
                                 <option value="contract expired">Habis Kontrak</option>
                                 <option value="resign">Resign</option>
-                                <option value="fired">Diberhentikan</option>
+                                <option value="fired">Fraud</option>
                                 <option value="other">Lainnya</option>
                             </select>
                             <InputError message={errors.status} className="mt-1" />

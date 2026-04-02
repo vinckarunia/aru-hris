@@ -289,7 +289,7 @@ class ImportDataCleaner
      * - "Resign,30/10/2023" → {status: "resign", date: "2023-10-30"}
      * - "Habis Kontrak" → {status: "contract expired", date: null}
      * - "Habis Kontrak (25/02/2022)" → {status: "contract expired", date: "2022-02-25"}
-     * - "Diberhentikan (29/10/2024)" → {status: "fired", date: "2024-10-29"}
+     * - "Fraud (29/10/2024)" → {status: "fired", date: "2024-10-29"}
      * - "Resign (22/08/2022)" embedded in status column
      *
      * @param string|null $statusString The raw status text from CSV.

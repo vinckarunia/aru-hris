@@ -185,7 +185,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                         <Link href={route('workers.index')} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Karyawan Idle</p>
+                                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Karyawan Non-Aktif</p>
                                     <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.idle_workers}</h3>
                                 </div>
                                 <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center">
