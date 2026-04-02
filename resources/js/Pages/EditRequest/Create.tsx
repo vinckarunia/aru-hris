@@ -1,7 +1,7 @@
 import React, { useState, FormEventHandler } from 'react';
 import WorkerLayout from '@/Layouts/WorkerLayout';
 import AdminLayout from '@/Layouts/AdminLayout';
-// import { PageProps } from '@/types';
+import { PageProps } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -26,9 +26,9 @@ interface Worker {
     assignments?: any[];
 }
 
-interface Props {
+type Props = {
     worker: Worker;
-}
+};
 
 export default function Create({ worker, auth }: PageProps<Props>) {
     const Layout = auth.user.role === 'WORKER' ? WorkerLayout : AdminLayout;
@@ -42,7 +42,15 @@ export default function Create({ worker, auth }: PageProps<Props>) {
         : '';
     const [bankDropdown, setBankDropdown] = useState<string>(initialBankDropdown);
 
-    const { data: requestData, setData: setRequestData, post: postRequest, processing: requestProcessing } = useForm({
+    interface FormState {
+        worker_id: string;
+        project_id: string;
+        requested_fields: string[];
+        requested_data: Record<string, string>;
+        notes: string;
+    }
+
+    const { data: requestData, setData: setRequestData, post: postRequest, processing: requestProcessing } = useForm<FormState>({
         worker_id: worker.id,
         project_id: defaultProjectId,
         requested_fields: ['FULL_PROFILE_SUBMITTED'],
