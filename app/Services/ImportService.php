@@ -17,10 +17,10 @@ use Illuminate\Support\Str;
 /**
  * Class ImportService
  *
- * Core service for the CSV Import Supertool. Handles file parsing, caching to Redis,
+ * Core service for the Import Supertool. Handles file parsing, caching to Redis,
  * per-module validation, data building for each entity, and progress tracking.
  *
- * The service orchestrates data flow from raw CSV → cleaned data → validated entities,
+ * The service orchestrates data flow from raw → cleaned data → validated entities,
  * mirroring the validation rules used by the individual module controllers.
  *
  * @package App\Services
@@ -188,7 +188,7 @@ class ImportService
 
     /**
      * Smart auto-mapping dictionary.
-     * Maps common CSV header substrings to database field keys.
+     * Maps common header substrings to database field keys.
      *
      * @var array<string, string>
      */
@@ -286,45 +286,78 @@ class ImportService
     ];
 
     /**
-     * Parse an uploaded CSV file, cache its data in Redis, and return preview information.
+     * Parse an uploaded file, cache its data in Redis, and return preview information.
      *
-     * @param \Illuminate\Http\UploadedFile $file The uploaded CSV file.
+     * @param \Illuminate\Http\UploadedFile $file The uploaded file.
      * @param string $sessionId The unique session identifier for this import.
-     * @return array{file_path: string, headers: string[], preview_data: string[][], total_rows: int, auto_mapping: array<string, int>}
+     * @return array{sheets: array, session_id: string}
      */
     public function parseAndCacheUpload($file, string $sessionId): array
     {
-        $path = $file->storeAs('temp_imports', 'import_' . $sessionId . '.csv', 'local');
+        $extension = $file->getClientOriginalExtension();
+        $path = $file->storeAs('temp_imports', 'import_' . $sessionId . '.' . $extension, 'local');
         $fullPath = Storage::disk('local')->path($path);
 
-        $handle = fopen($fullPath, 'r');
-        $headers = fgetcsv($handle);
+        // Maximum raw rows to send to frontend per sheet (for preview flexibility)
+        $maxPreviewRows = 20;
+        $sheets = [];
 
-        $previewData = [];
-        $totalRows = 0;
-        $count = 0;
+        if (strtolower($extension) === 'csv') {
+            $handle = fopen($fullPath, 'r');
+            $allRows = [];
+            $rowCount = 0;
 
-        while (($row = fgetcsv($handle)) !== false) {
-            // Skip empty rows
-            if (empty(array_filter($row))) {
-                continue;
+            while (($row = fgetcsv($handle)) !== false) {
+                if ($rowCount < $maxPreviewRows) {
+                    $allRows[] = $row;
+                }
+                $rowCount++;
             }
-            $totalRows++;
-            if ($count < self::PREVIEW_ROW_COUNT) {
-                $previewData[] = $row;
-                $count++;
+            fclose($handle);
+
+            $sheets[] = [
+                'name' => 'CSV',
+                'all_rows' => $allRows,
+                'total_rows' => max(0, $rowCount - 1), // Approximate: total minus 1 header row
+            ];
+        } else {
+            $spreadsheet = $this->loadSpreadsheetReadOnly($fullPath);
+            foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                $rows = $worksheet->toArray();
+                if (empty($rows)) {
+                    continue;
+                }
+
+                // Count non-empty data rows (excluding first row as assumed header)
+                $dataRowCount = 0;
+                for ($i = 1; $i < count($rows); $i++) {
+                    if (!empty(array_filter($rows[$i]))) {
+                        $dataRowCount++;
+                    }
+                }
+
+                $sheets[] = [
+                    'name' => $worksheet->getTitle(),
+                    'all_rows' => array_slice($rows, 0, $maxPreviewRows),
+                    'total_rows' => $dataRowCount,
+                ];
             }
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
         }
-        fclose($handle);
 
-        // Auto-map CSV headers to DB fields
-        $autoMapping = $this->autoMapHeaders($headers);
+        // Auto-map using first sheet's first row as default header
+        $defaultHeaders = [];
+        if (!empty($sheets) && !empty($sheets[0]['all_rows'])) {
+            $defaultHeaders = $sheets[0]['all_rows'][0] ?? [];
+        }
+        $autoMapping = $this->autoMapHeaders($defaultHeaders);
 
-        // Cache to Redis
+        // Cache to Redis — store file path and total rows across all sheets
+        $totalAllSheets = array_sum(array_column($sheets, 'total_rows'));
         $cacheData = [
             'file_path' => $path,
-            'headers' => $headers,
-            'total_rows' => $totalRows,
+            'total_rows' => $totalAllSheets,
         ];
 
         Cache::put(
@@ -334,21 +367,18 @@ class ImportService
         );
 
         return [
-            'file_path' => $path,
-            'headers' => $headers,
-            'preview_data' => $previewData,
-            'total_rows' => $totalRows,
+            'sheets' => $sheets,
             'auto_mapping' => $autoMapping,
         ];
     }
 
     /**
-     * Perform smart auto-mapping of CSV headers to database field keys.
+     * Perform smart auto-mapping of headers to database field keys.
      *
      * Uses a dictionary of common Indonesian and English header patterns
      * to suggest mappings. Ensures 1-to-1 mapping (no duplicate assignments).
      *
-     * @param array $headers The CSV header row.
+     * @param array $headers The header row.
      * @return array<string, int> Mapping of db_field_key => csv_column_index.
      */
     public function autoMapHeaders(array $headers): array
@@ -367,7 +397,7 @@ class ImportService
 
             foreach ($headers as $index => $csvHeader) {
                 if (in_array($index, $usedIndices)) {
-                    continue; // This CSV column is already mapped
+                    continue; // This column is already mapped
                 }
 
                 $lowerHeader = strtolower(trim($csvHeader));
@@ -383,7 +413,27 @@ class ImportService
     }
 
     /**
-     * Validate all rows in the uploaded CSV against per-module rules.
+     * Load a spreadsheet file in read-data-only mode for optimal performance.
+     *
+     * Skips formatting, styles, and formula calculations to significantly
+     * reduce load time and memory usage for large Excel files.
+     * Extends PHP execution time to 120 seconds during loading.
+     *
+     * @param string $fullPath Absolute path to the spreadsheet file.
+     * @return \PhpOffice\PhpSpreadsheet\Spreadsheet
+     */
+    private function loadSpreadsheetReadOnly(string $fullPath): \PhpOffice\PhpSpreadsheet\Spreadsheet
+    {
+        set_time_limit(120);
+
+        $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($fullPath);
+        $reader->setReadDataOnly(true);
+
+        return $reader->load($fullPath);
+    }
+
+    /**
+     * Validate all rows in the uploaded against per-module rules.
      *
      * Reads the file from the cached path, applies mapping and global settings
      * to build entity data, and validates each row. Returns per-row validation results.
@@ -391,9 +441,10 @@ class ImportService
      * @param string $sessionId The import session ID.
      * @param array<string, int> $mapping The column mapping (db_field => csv_index).
      * @param array $globalSettings Global settings (project_id, department_id, rates, etc.).
+     * @param int $headerRow The 1-indexed row number containing headers (default: 1).
      * @return array{results: array, summary: array{total: int, valid: int, errors: int, conflicts: int}}
      */
-    public function validateAllRows(string $sessionId, array $mapping, array $globalSettings): array
+    public function validateAllRows(string $sessionId, array $mapping, array $globalSettings, int $headerRow = 1): array
     {
         $cached = $this->getCachedSession($sessionId);
         if (!$cached) {
@@ -405,9 +456,7 @@ class ImportService
             return ['results' => [], 'summary' => ['total' => 0, 'valid' => 0, 'errors' => 0, 'conflicts' => 0]];
         }
 
-        $handle = fopen($fullPath, 'r');
-        fgetcsv($handle); // Skip header
-
+        $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
         $results = [];
         $validCount = 0;
         $errorCount = 0;
@@ -415,38 +464,80 @@ class ImportService
         $rowNumber = 0;
         $seenKtpNumbers = [];
 
-        while (($row = fgetcsv($handle)) !== false) {
-            if (empty(array_filter($row))) {
-                continue;
+        if (strtolower($extension) === 'csv') {
+            $handle = fopen($fullPath, 'r');
+
+            // Skip rows up to and including the header row
+            for ($s = 0; $s < $headerRow; $s++) {
+                fgetcsv($handle);
             }
 
-            $rowNumber++;
+            while (($row = fgetcsv($handle)) !== false) {
+                if (empty(array_filter($row))) {
+                    continue;
+                }
 
-            // Validate the row and update the seen KTP tracker
-            $validation = $this->validateSingleRow($row, $mapping, $globalSettings, $seenKtpNumbers);
+                $rowNumber++;
+                $validation = $this->validateSingleRow($row, $mapping, $globalSettings, $seenKtpNumbers);
+                $preview = $this->buildRowPreview($row, $mapping, $globalSettings);
 
-            // Build preview of cleaned data for display
-            $preview = $this->buildRowPreview($row, $mapping, $globalSettings);
+                $result = [
+                    'row_number' => $rowNumber,
+                    'errors'     => $validation['errors'],
+                    'conflict'   => $validation['conflict'],
+                    'preview'    => $preview,
+                ];
 
-            $result = [
-                'row_number' => $rowNumber,
-                'errors'     => $validation['errors'],
-                'conflict'   => $validation['conflict'],
-                'preview'    => $preview,
-            ];
+                if (count($validation['errors']) > 0) {
+                    $errorCount++;
+                } elseif ($validation['conflict']) {
+                    $conflictCount++;
+                } else {
+                    $validCount++;
+                }
 
-            if (count($validation['errors']) > 0) {
-                $errorCount++;
-            } elseif ($validation['conflict']) {
-                $conflictCount++;
-            } else {
-                $validCount++;
+                $results[] = $result;
             }
 
-            $results[] = $result;
+            fclose($handle);
+        } else {
+            $spreadsheet = $this->loadSpreadsheetReadOnly($fullPath);
+            foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                $rows = $worksheet->toArray();
+                if (empty($rows)) {
+                    continue;
+                }
+
+                // Start from headerRow index (0-indexed: headerRow is 1-indexed, so data starts at headerRow)
+                for ($i = $headerRow; $i < count($rows); $i++) {
+                    $row = $rows[$i];
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+
+                    $rowNumber++;
+                    $validation = $this->validateSingleRow($row, $mapping, $globalSettings, $seenKtpNumbers);
+                    $preview = $this->buildRowPreview($row, $mapping, $globalSettings);
+
+                    $result = [
+                        'row_number' => $rowNumber,
+                        'errors'     => $validation['errors'],
+                        'conflict'   => $validation['conflict'],
+                        'preview'    => $preview,
+                    ];
+
+                    if (count($validation['errors']) > 0) {
+                        $errorCount++;
+                    } elseif ($validation['conflict']) {
+                        $conflictCount++;
+                    } else {
+                        $validCount++;
+                    }
+
+                    $results[] = $result;
+                }
+            }
         }
-
-        fclose($handle);
 
         // Cache validation results in Redis for the process step
         Cache::put(
@@ -467,13 +558,13 @@ class ImportService
     }
 
     /**
-     * Validate a single CSV row and update the seen-KTP tracker.
+     * Validate a single row and update the seen-KTP tracker.
      *
      * This is the canonical single-row validation entry point used by both
      * the preview step (validateAllRows) and the background import job
      * (ProcessBulkImport) to ensure consistent rules are enforced at all stages.
      *
-     * @param array          $row              The raw CSV row.
+     * @param array          $row              The raw row.
      * @param array          $mapping          The column mapping (db_field => csv_index).
      * @param array          $globalSettings   Global settings (project_id, branch_id, rates).
      * @param array          &$seenKtpNumbers  KTP numbers already validated in this batch (updated in-place).
@@ -512,7 +603,7 @@ class ImportService
      * Validate worker fields for a single row.
      * Returns both validation errors and optional conflict data for duplicate KTPs.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $seenKtpNumbers KTP numbers already seen in this batch.
      * @return array{errors: string[], conflict: array|null}
@@ -597,11 +688,11 @@ class ImportService
     }
 
     /**
-     * Build conflict comparison data between an existing worker and incoming CSV data.
+     * Build conflict comparison data between an existing worker and incoming data.
      * Shows side-by-side differences for the user to review.
      *
      * @param Worker $existing The existing worker from the database.
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @return array The conflict data with existing_id and field-level comparison.
      */
@@ -654,7 +745,7 @@ class ImportService
     /**
      * Validate assignment fields for a single row.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $globalSettings Global settings containing project_id and branch_id.
      * @return array<string> List of error messages.
@@ -664,25 +755,25 @@ class ImportService
         $errors = [];
         $c = ImportDataCleaner::class;
 
-        // Resolve project: CSV column first, fall back to global setting
+        // Resolve project: column first, fall back to global setting
         $projectName = ImportDataCleaner::extractField($row, $mapping, 'project_name');
         $projectResolved = $this->resolveProjectId($row, $mapping, $globalSettings);
         
         if (!$projectResolved) {
             // If project not found but client_id is set and projectName is in CSV, it will be auto-created
             if (empty($globalSettings['client_id']) || empty($projectName)) {
-                $errors[] = 'Project tidak ditemukan. Pastikan nama project di CSV benar atau pilih di pengaturan global.';
+                $errors[] = 'Project tidak ditemukan. Pastikan nama project di benar atau pilih di pengaturan global.';
             }
         }
 
-        // Resolve department: CSV column first, fall back to global setting
+        // Resolve department: column first, fall back to global setting
         $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
         $branchResolved = $this->resolveBranchId($row, $mapping, $globalSettings, $projectResolved);
         
         if (!$branchResolved) {
             // If branch not found but client_id is set and branchName is in CSV, it will be auto-created
             if (empty($globalSettings['client_id']) || empty($branchName)) {
-                $errors[] = 'Cabang tidak ditemukan. Pastikan nama cabang di CSV benar atau pilih di pengaturan global.';
+                $errors[] = 'Cabang tidak ditemukan. Pastikan nama cabang di benar atau pilih di pengaturan global.';
             }
         }
 
@@ -708,12 +799,12 @@ class ImportService
     }
 
     /**
-     * Resolve project_id from CSV column (by name) or global settings.
-     * CSV column takes priority over global settings.
+     * Resolve project_id from column (by name) or global settings.
+     * column takes priority over global settings.
      */
     private function resolveProjectId(array $row, array $mapping, array $globalSettings): ?int
     {
-        // Try CSV column first
+        // Try column first
         $projectName = ImportDataCleaner::extractField($row, $mapping, 'project_name');
         if ($projectName) {
             $project = Project::where('name', 'ilike', trim($projectName))->first();
@@ -732,13 +823,13 @@ class ImportService
     }
 
     /**
-     * Resolve branch_id from CSV column (by name) or global settings.
-     * CSV column takes priority over global settings.
+     * Resolve branch_id from column (by name) or global settings.
+     * column takes priority over global settings.
      * When resolved by name, scopes to the project's client.
      */
     private function resolveBranchId(array $row, array $mapping, array $globalSettings, ?int $projectId): ?int
     {
-        // Try CSV column first
+        // Try column first
         $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
         if ($branchName) {
             $query = Branch::where('name', 'ilike', trim($branchName));
@@ -772,7 +863,7 @@ class ImportService
     /**
      * Validate compensation fields for a single row.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $globalSettings Global settings.
      * @return array<string> List of error messages.
@@ -806,7 +897,7 @@ class ImportService
     /**
      * Build a cleaned preview of data for a single row for display in the validation step.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $globalSettings Global settings.
      * @return array Cleaned data preview grouped by module.
@@ -824,9 +915,9 @@ class ImportService
     }
 
     /**
-     * Build complete Worker model data from a CSV row.
+     * Build complete Worker model data from a row.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @return array The data array suitable for Worker::create().
      */
@@ -858,9 +949,9 @@ class ImportService
     }
 
     /**
-     * Build Assignment model data from a CSV row and global settings.
+     * Build Assignment model data from a row and global settings.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $globalSettings Global settings (project_id, branch_id).
      * @return array The data array suitable for Assignment::create() (minus worker_id).
@@ -883,15 +974,15 @@ class ImportService
             $terminationDate = null;
         }
 
-        // Resolve project_id and branch_id: CSV column takes priority, global settings as fallback
+        // Resolve project_id and branch_id: column takes priority, global settings as fallback
         $projectId = $this->resolveProjectId($row, $mapping, $globalSettings);
         if (!$projectId) {
-            throw new \Exception('Project tidak ditemukan. Pastikan nama project di CSV benar atau pilih project di pengaturan global.');
+            throw new \Exception('Project tidak ditemukan. Pastikan nama project di benar atau pilih project di pengaturan global.');
         }
 
         $branchId = $this->resolveBranchId($row, $mapping, $globalSettings, $projectId);
         if (!$branchId) {
-            throw new \Exception('Cabang tidak ditemukan. Pastikan nama cabang di CSV benar atau pilih cabang di pengaturan global.');
+            throw new \Exception('Cabang tidak ditemukan. Pastikan nama cabang di benar atau pilih cabang di pengaturan global.');
         }
 
         return [
@@ -906,9 +997,9 @@ class ImportService
     }
 
     /**
-     * Build Contract model data from a CSV row (horizontal PKWT 1-8 to vertical).
+     * Build Contract model data from a row (horizontal PKWT 1-8 to vertical).
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $globalSettings Global settings (contract_type override).
      * @return array<int, array> Array of contract data suitable for Contract::create() (minus assignment_id).
@@ -964,9 +1055,9 @@ class ImportService
     }
 
     /**
-     * Build ContractCompensation data from a CSV row and global settings.
+     * Build ContractCompensation data from a row and global settings.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $globalSettings Global settings (salary_rate, allowance_rate, overtime_rate).
      * @return array The data array suitable for ContractCompensation::create() (minus contract_id).
@@ -1002,10 +1093,10 @@ class ImportService
     }
 
     /**
-     * Build FamilyMember data from a CSV row.
+     * Build FamilyMember data from a row.
      * Supports 2 spouse groups with up to 3 children each.
      *
-     * @param array $row The CSV row data.
+     * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @return array<int, array> Array of family member data suitable for FamilyMember::create() (minus worker_id).
      */
@@ -1071,7 +1162,7 @@ class ImportService
      * @param int $total Total number of rows to process.
      * @param int $failed Number of rows that failed.
      * @param string $status Current status ('processing', 'completed', 'failed').
-     * @param string|null $failedFilePath Path to the failed rows CSV file.
+     * @param string|null $failedFilePath Path to the failed rows file.
      * @return void
      */
     public function updateProgress(
@@ -1111,7 +1202,7 @@ class ImportService
     }
 
     /**
-     * Generate a CSV template file with all mappable column headers.
+     * Generate a template file with all mappable column headers.
      *
      * @return string The storage path of the generated template file.
      */

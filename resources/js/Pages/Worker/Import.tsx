@@ -106,6 +106,13 @@ interface Props {
     dbColumns: DbColumnGroup[];
 }
 
+/** Represents data for a single sheet from the uploaded file. */
+interface SheetData {
+    name: string;
+    all_rows: (string | null)[][];
+    total_rows: number;
+}
+
 // ============================================================================
 // RATE OPTIONS
 // ============================================================================
@@ -120,7 +127,7 @@ const RATE_OPTIONS = [
 
 /** Available contract type options. */
 const CONTRACT_TYPE_OPTIONS = [
-    { value: '', label: '-- Dari CSV --' },
+    { value: '', label: '-- Dari File --' },
     { value: 'Kontrak', label: 'Kontrak (PKWT)' },
     { value: 'Harian', label: 'Harian' },
 ];
@@ -132,8 +139,8 @@ const CONTRACT_TYPE_OPTIONS = [
 /**
  * Import Wizard Page Component
  *
- * A 4-step wizard for importing CSV master data into the HRIS:
- * 1. Upload CSV file
+ * A 4-step wizard for importing master data into the HRIS:
+ * 1. Upload file
  * 2. Column mapping with global settings
  * 3. Validation preview with error details
  * 4. Background processing with real-time progress
@@ -156,9 +163,17 @@ export default function Import({ clients, projects, dbColumns }: Props) {
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [isUploading, setIsUploading] = useState<boolean>(false);
     const [sessionId, setSessionId] = useState<string | null>(null);
-    const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-    const [previewData, setPreviewData] = useState<string[][]>([]);
-    const [totalRows, setTotalRows] = useState<number>(0);
+
+    // ---- Sheet & Header Row State ----
+    const [sheets, setSheets] = useState<SheetData[]>([]);
+    const [activeSheetIndex, setActiveSheetIndex] = useState<number>(0);
+    const [headerRow, setHeaderRow] = useState<number>(1);
+
+    // Derived: compute headers and preview data from active sheet + header row
+    const activeSheet = sheets[activeSheetIndex] || null;
+    const csvHeaders: (string | null)[] = activeSheet?.all_rows?.[headerRow - 1] || [];
+    const previewData: (string | null)[][] = activeSheet?.all_rows?.slice(headerRow, headerRow + 5) || [];
+    const totalRows = sheets.reduce((sum, s) => sum + s.total_rows, 0);
 
     // ---- Mapping & Global Settings State ----
     const [mapping, setMapping] = useState<Record<string, number>>({});
@@ -193,11 +208,13 @@ export default function Import({ clients, projects, dbColumns }: Props) {
      * Handles file selection from the file input or drag-and-drop.
      * Uploads the file to the backend and receives headers + preview data.
      *
-     * @param {File} file - The selected CSV file.
+     * @param {File} file - The selected file.
      */
     const handleFileUpload = useCallback(async (file: File) => {
-        if (!file.name.endsWith('.csv')) {
-            alert('Hanya file berformat CSV (.csv) yang didukung.');
+        const validExtensions = ['.csv', '.xlsx', '.xls'];
+        const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+        if (!hasValidExtension) {
+            alert('Hanya file berformat CSV (.csv) atau Excel (.xlsx, .xls) yang didukung.');
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
@@ -212,15 +229,15 @@ export default function Import({ clients, projects, dbColumns }: Props) {
         try {
             const response = await axios.post(route('workers.import.upload'), formData);
             setSessionId(response.data.session_id);
-            setCsvHeaders(response.data.headers);
-            setPreviewData(response.data.preview_data);
-            setTotalRows(response.data.total_rows);
+            setSheets(response.data.sheets || []);
+            setActiveSheetIndex(0);
+            setHeaderRow(1);
             setMapping(response.data.auto_mapping || {});
             setCurrentStep(2);
         } catch (error: any) {
             const msg = error?.response?.data?.errors?.file?.[0]
                 || error?.response?.data?.message
-                || 'Gagal mengunggah file. Pastikan format CSV valid.';
+                || 'Gagal mengunggah file. Pastikan format valid.';
             alert(msg);
         } finally {
             setIsUploading(false);
@@ -248,13 +265,13 @@ export default function Import({ clients, projects, dbColumns }: Props) {
     /**
      * Updates the column mapping state. Ensures strict 1-to-1 mapping.
      *
-     * @param {number} csvIndex - The CSV column index being mapped.
+     * @param {number} csvIndex - The column index being mapped.
      * @param {string} dbKey - The database field key, or empty to unmap.
      */
     const handleColumnMap = (csvIndex: number, dbKey: string) => {
         setMapping(prev => {
             const newMapping = { ...prev };
-            // Remove any existing mapping for this CSV index
+            // Remove any existing mapping for this index
             const existingKey = Object.keys(newMapping).find(k => newMapping[k] === csvIndex);
             if (existingKey) delete newMapping[existingKey];
             // Assign new mapping
@@ -263,7 +280,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
         });
     };
 
-    /** Get the DB key mapped to a specific CSV column index. */
+    /** Get the DB key mapped to a specific column index. */
     const getMappedDbKey = (index: number): string => {
         return Object.keys(mapping).find(key => mapping[key] === index) || '';
     };
@@ -287,16 +304,16 @@ export default function Import({ clients, projects, dbColumns }: Props) {
     const handleValidate = async () => {
         if (!sessionId) return;
 
-        // Only require global project/department if not mapped from CSV columns
+        // Only require global project/department if not mapped from columns
         const hasProjectMapping = mapping['project_name'] !== undefined;
         const hasBranchMapping = mapping['branch_name'] !== undefined;
 
         if (!hasProjectMapping && !globalSettings.project_id) {
-            alert('Silakan pilih Project di pengaturan global, atau mapping kolom "Nama Project" dari CSV.');
+            alert('Silakan pilih Project di pengaturan global, atau mapping kolom "Nama Project" dari file.');
             return;
         }
         if (!hasBranchMapping && !globalSettings.branch_id) {
-            alert('Silakan pilih Cabang di pengaturan global, atau mapping kolom "Nama Cabang" dari CSV.');
+            alert('Silakan pilih Cabang di pengaturan global, atau mapping kolom "Nama Cabang" dari file.');
             return;
         }
 
@@ -314,6 +331,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                 session_id: sessionId,
                 mapping,
                 global_settings: globalSettings,
+                header_row: headerRow,
             });
             setValidationResults(response.data.results);
             setValidationSummary(response.data.summary);
@@ -353,6 +371,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                 mapping,
                 global_settings: globalSettings,
                 row_actions: rowActions,
+                header_row: headerRow,
             });
             setCurrentStep(4);
             startProgressPolling();
@@ -446,15 +465,15 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                     <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-5 shadow-glow">
                         <iconify-icon icon="solar:cloud-upload-linear" width="40"></iconify-icon>
                     </div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Upload Master Data CSV</h2>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Upload Master Data</h2>
                     <p className="text-slate-500 text-sm mb-6 max-w-md">
-                        Seret dan lepas file CSV ke area ini, atau klik tombol di bawah untuk memilih file.
-                        <br />Ukuran maksimal 10MB.
+                        Seret dan lepas file CSV atau Excel ke area ini, atau klik tombol di bawah untuk memilih file.
+                        <br />Format yang didukung: .csv, .xlsx, .xls — Ukuran maksimal 10MB.
                     </p>
 
                     <input
                         type="file"
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls"
                         className="hidden"
                         ref={fileInputRef}
                         onChange={handleFileChange}
@@ -474,7 +493,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                             ) : (
                                 <>
                                     <iconify-icon icon="solar:folder-with-files-bold" width="20"></iconify-icon>
-                                    Pilih File CSV
+                                    Pilih File
                                 </>
                             )}
                         </button>
@@ -499,7 +518,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                         <div>
                             <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Mapping Kolom & Pengaturan</h3>
                             <p className="text-xs text-slate-500 mt-1">
-                                Cocokkan kolom CSV dengan kolom database. Atur pengaturan global di panel bawah tabel.
+                                Cocokkan kolom dengan kolom database. Atur pengaturan global di panel bawah tabel.
                                 <span className="ml-2 text-primary font-semibold">{totalRows} baris terdeteksi</span>
                             </p>
                         </div>
@@ -514,6 +533,50 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                 <><iconify-icon icon="solar:check-read-linear" width="18"></iconify-icon> Validasi Data</>
                             )}
                         </button>
+                    </div>
+
+                    {/* Sheet Tabs & Header Row Config */}
+                    <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center gap-4 bg-white dark:bg-slate-800/80 shrink-0">
+                        {/* Sheet Tabs */}
+                        {sheets.length > 1 && (
+                            <div className="flex items-center gap-1 min-w-0 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                                <span className="text-xs font-semibold text-slate-500 mr-1 shrink-0">Sheet:</span>
+                                {sheets.map((sheet, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveSheetIndex(idx)}
+                                        className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all shrink-0 ${idx === activeSheetIndex
+                                            ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
+                                            : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
+                                            }`}
+                                    >
+                                        {sheet.name}
+                                        <span className={`ml-1 text-[10px] ${idx === activeSheetIndex ? 'text-white/70' : 'text-slate-400'}`}>
+                                            ({sheet.total_rows})
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Header Row Input */}
+                        <div className="flex items-center gap-2 ml-auto">
+                            <label className="text-xs font-semibold text-slate-500">Baris Header:</label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={activeSheet?.all_rows?.length || 1}
+                                value={headerRow}
+                                onChange={(e) => {
+                                    const val = Math.max(1, parseInt(e.target.value) || 1);
+                                    setHeaderRow(val);
+                                }}
+                                className="w-16 px-2 py-1.5 text-xs text-center rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary/20 outline-none"
+                            />
+                            <span className="text-[10px] text-slate-400">
+                                (Data dimulai dari baris {headerRow + 1})
+                            </span>
+                        </div>
                     </div>
 
                     {/* Scrollable Mapping Table */}
@@ -553,7 +616,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                         );
                                     })}
                                 </tr>
-                                {/* Row 2: Original CSV Headers */}
+                                {/* Row 2: Original Headers */}
                                 <tr>
                                     {csvHeaders.map((header, i) => (
                                         <th key={`h-${i}`} className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-r border-slate-200 dark:border-slate-600 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -566,7 +629,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                                 {previewData.map((row, rIdx) => (
                                     <tr key={rIdx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                                         {row.map((cell, cIdx) => (
-                                            <td key={cIdx} className={`px-4 py-2.5 border-r border-slate-100 dark:border-slate-700 last:border-r-0 max-w-[300px] truncate ${getMappedDbKey(cIdx) ? 'bg-primary/[0.02] dark:bg-primary/[0.05]' : ''}`} title={cell}>
+                                            <td key={cIdx} className={`px-4 py-2.5 border-r border-slate-100 dark:border-slate-700 last:border-r-0 max-w-[300px] truncate ${getMappedDbKey(cIdx) ? 'bg-primary/[0.02] dark:bg-primary/[0.05]' : ''}`} title={cell ?? undefined}>
                                                 {cell || <span className="text-slate-300 italic">-</span>}
                                             </td>
                                         ))}
@@ -605,7 +668,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                             {/* Project */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Project {mapping['project_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari CSV)</span> : <span className="text-red-500">*</span>}
+                                    Project {mapping['project_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari file)</span> : <span className="text-red-500">*</span>}
                                 </label>
                                 <select
                                     value={globalSettings.project_id ?? ''}
@@ -623,7 +686,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                             {/* Branch (cascading) */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Cabang {mapping['branch_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari CSV)</span> : <span className="text-red-500">*</span>}
+                                    Cabang {mapping['branch_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari file)</span> : <span className="text-red-500">*</span>}
                                 </label>
                                 <select
                                     value={globalSettings.branch_id ?? ''}

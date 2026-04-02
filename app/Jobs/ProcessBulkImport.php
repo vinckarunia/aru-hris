@@ -24,12 +24,12 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Class ProcessBulkImport
  *
- * Background job that processes a validated CSV import session. Reads the CSV file
+ * Background job that processes a validated import session. Reads the file
  * from storage, creates Worker, Assignment, Contract, ContractCompensation,
  * and FamilyMember records using per-row database transactions.
  *
  * Progress is tracked in Redis and polled by the frontend in real-time.
- * Failed rows are collected into a downloadable CSV with error reasons
+ * Failed rows are collected into a downloadable with error reasons
  * so users can fix and re-import them through the same tool.
  *
  * @package App\Jobs
@@ -78,6 +78,11 @@ class ProcessBulkImport implements ShouldQueue
     protected array $rowActions;
 
     /**
+     * @var int The 1-indexed row number containing headers.
+     */
+    protected int $headerRow;
+
+    /**
      * Create a new job instance.
      *
      * @param string $sessionId The unique import session ID.
@@ -85,23 +90,25 @@ class ProcessBulkImport implements ShouldQueue
      * @param array $globalSettings Global settings (project_id, branch_id, rates).
      * @param int $userId The ID of the authenticated user.
      * @param array $rowActions Per-row conflict actions: [row_number => 'update'|'skip'].
+     * @param int $headerRow The 1-indexed row number containing headers.
      */
-    public function __construct(string $sessionId, array $mapping, array $globalSettings, int $userId, array $rowActions = [])
+    public function __construct(string $sessionId, array $mapping, array $globalSettings, int $userId, array $rowActions = [], int $headerRow = 1)
     {
         $this->sessionId = $sessionId;
         $this->mapping = $mapping;
         $this->globalSettings = $globalSettings;
         $this->userId = $userId;
         $this->rowActions = $rowActions;
+        $this->headerRow = $headerRow;
         $this->onQueue('default');
     }
 
     /**
      * Execute the import job.
      *
-     * Processes each CSV row in its own database transaction so that a failure
+     * Processes each row in its own database transaction so that a failure
      * in one row does not affect others. Updates Redis progress after each row.
-     * Generates a failed rows CSV at the end if any rows failed.
+     * Generates a failed rows at the end if any rows failed.
      *
      * @return void
      */
@@ -123,11 +130,52 @@ class ProcessBulkImport implements ShouldQueue
             return;
         }
 
-        $handle = fopen($fullPath, 'r');
-        $headers = fgetcsv($handle);
+        $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
+        $headers = [];
+        $rowsData = [];
+
+        if (strtolower($extension) === 'csv') {
+            $handle = fopen($fullPath, 'r');
+
+            // Skip rows up to and including the header row
+            for ($s = 0; $s < $this->headerRow; $s++) {
+                $headerLine = fgetcsv($handle);
+                if ($s === $this->headerRow - 1) {
+                    $headers = $headerLine;
+                }
+            }
+
+            while (($row = fgetcsv($handle)) !== false) {
+                if (!empty(array_filter($row))) {
+                    $rowsData[] = $row;
+                }
+            }
+            fclose($handle);
+        } else {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($fullPath);
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($fullPath);
+            foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                $rows = $worksheet->toArray();
+                if (empty($rows)) {
+                    continue;
+                }
+                if (empty($headers) && isset($rows[$this->headerRow - 1])) {
+                    $headers = $rows[$this->headerRow - 1];
+                }
+                for ($i = $this->headerRow; $i < count($rows); $i++) {
+                    $row = $rows[$i];
+                    if (!empty(array_filter($row))) {
+                        $rowsData[] = $row;
+                    }
+                }
+            }
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }
 
         $failedRows = [];
-        $failedHeaders = $headers;
+        $failedHeaders = $headers ?: [];
         $failedHeaders[] = 'ERROR_REASON';
 
         $processed = 0;
@@ -137,18 +185,14 @@ class ProcessBulkImport implements ShouldQueue
         // Track KTP numbers seen in this batch for duplicate detection (mirrors validateAllRows logic)
         $seenKtpNumbers = [];
 
-        while (($row = fgetcsv($handle)) !== false) {
-            // Skip empty rows
-            if (empty(array_filter($row))) {
-                continue;
-            }
+        foreach ($rowsData as $row) {
 
             $processed++;
             $rowIdentifier = ImportDataCleaner::extractField($row, $this->mapping, 'name') ?? "Baris {$processed}";
 
             // ---------------------------------------------------------------
             // Pre-validation: run the same rules used in the preview step.
-            // Rows that fail validation are written to the failed CSV without
+            // Rows that fail validation are written to the failed without
             // ever touching the database, so they can be corrected and re-imported.
             // ---------------------------------------------------------------
             $preValidation = $importService->validateSingleRow($row, $this->mapping, $this->globalSettings, $seenKtpNumbers);
@@ -322,9 +366,7 @@ class ProcessBulkImport implements ShouldQueue
             $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
         }
 
-        fclose($handle);
-
-        // Generate failed rows CSV if any
+        // Generate failed rows if any
         $failedFilePath = null;
         if (count($failedRows) > 0) {
             $failedFilePath = $this->generateFailedCsv($failedHeaders, $failedRows);
@@ -385,14 +427,14 @@ class ProcessBulkImport implements ShouldQueue
     }
 
     /**
-     * Generate a CSV file containing rows that failed during import.
+     * Generate a file containing rows that failed during import.
      *
-     * The output CSV includes all original columns plus an ERROR_REASON column,
+     * The output includes all original columns plus an ERROR_REASON column,
      * allowing users to review, fix, and re-import through the same tool.
      *
      * @param array $headers The header row including ERROR_REASON.
      * @param array $failedRows The failed row data.
-     * @return string The storage path of the failed CSV file.
+     * @return string The storage path of the failed file.
      */
     private function generateFailedCsv(array $headers, array $failedRows): string
     {

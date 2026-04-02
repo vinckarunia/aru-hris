@@ -18,7 +18,7 @@ use App\Models\Client;
 /**
  * Class ImportController
  *
- * Handles the CSV Import Supertool wizard workflow: file upload, column mapping
+ * Handles the Import Supertool wizard workflow: file upload, column mapping
  * with global settings, validation preview, background processing, and result
  * download. All import sessions are tracked via Redis for real-time progress.
  *
@@ -108,7 +108,7 @@ class ImportController extends Controller
     }
 
     /**
-     * Handle CSV file upload, parse it, cache metadata in Redis, and return
+     * Handle file upload, parse it, cache metadata in Redis, and return
      * headers, preview data, total row count, and auto-mapping suggestions.
      *
      * @param Request $request
@@ -117,10 +117,14 @@ class ImportController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'file' => ['required', 'file', 'max:10240', function ($attribute, $value, $fail) {
+                $ext = strtolower($value->getClientOriginalExtension());
+                if (!in_array($ext, ['csv', 'txt', 'xlsx', 'xls'])) {
+                    $fail('File harus berformat CSV (.csv) atau Excel (.xlsx, .xls).');
+                }
+            }],
         ], [
-            'file.required' => 'File CSV wajib diunggah.',
-            'file.mimes' => 'File harus berformat CSV (.csv).',
+            'file.required' => 'File wajib diunggah.',
             'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
@@ -137,20 +141,18 @@ class ImportController extends Controller
             return response()->json([
                 'message' => 'File berhasil diunggah dan siap untuk mapping.',
                 'session_id' => $sessionId,
-                'headers' => $result['headers'],
-                'preview_data' => $result['preview_data'],
-                'total_rows' => $result['total_rows'],
+                'sheets' => $result['sheets'],
                 'auto_mapping' => $result['auto_mapping'],
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Gagal membaca file CSV. Pastikan format file valid.',
+                'message' => 'Gagal membaca file. Pastikan format file valid.',
             ], 500);
         }
     }
 
     /**
-     * Validate all rows in the uploaded CSV using the provided column mapping
+     * Validate all rows in the uploaded using the provided column mapping
      * and global settings. Returns per-row validation results with error details.
      *
      * @param Request $request
@@ -165,6 +167,7 @@ class ImportController extends Controller
             'global_settings.client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'global_settings.project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'global_settings.branch_id'    => ['nullable', 'integer', 'exists:branches,id'],
+            'header_row' => ['nullable', 'integer', 'min:1'],
         ], [
             'session_id.required' => 'Session ID tidak ditemukan.',
             'mapping.required' => 'Mapping kolom wajib diisi.',
@@ -182,12 +185,13 @@ class ImportController extends Controller
         $cached = $this->importService->getCachedSession($sessionId);
         if (!$cached) {
             return response()->json([
-                'message' => 'Sesi import telah kedaluwarsa. Silakan upload ulang file CSV.',
+                'message' => 'Sesi import telah kedaluwarsa. Silakan upload ulang file.',
             ], 404);
         }
 
         try {
-            $result = $this->importService->validateAllRows($sessionId, $mapping, $globalSettings);
+            $headerRow = (int) $request->input('header_row', 1);
+            $result = $this->importService->validateAllRows($sessionId, $mapping, $globalSettings, $headerRow);
 
             return response()->json([
                 'message' => 'Validasi selesai.',
@@ -205,7 +209,7 @@ class ImportController extends Controller
      * Dispatch the background import job to process all validated rows.
      *
      * The job processes rows using Redis queue, updates progress in real-time,
-     * and generates a failed rows CSV for re-import if needed.
+     * and generates a failed rows for re-import if needed.
      *
      * @param Request $request
      * @return JsonResponse
@@ -217,6 +221,7 @@ class ImportController extends Controller
             'mapping' => ['required', 'array'],
             'global_settings' => ['required', 'array'],
             'row_actions' => ['nullable', 'array'],
+            'header_row' => ['nullable', 'integer', 'min:1'],
         ]);
 
         if ($validator->fails()) {
@@ -232,15 +237,16 @@ class ImportController extends Controller
         $cached = $this->importService->getCachedSession($sessionId);
         if (!$cached) {
             return response()->json([
-                'message' => 'Sesi import telah kedaluwarsa. Silakan upload ulang file CSV.',
+                'message' => 'Sesi import telah kedaluwarsa. Silakan upload ulang file.',
             ], 404);
         }
 
         // Initialize progress
         $this->importService->updateProgress($sessionId, 0, $cached['total_rows'], 0, 'processing');
 
-        // Dispatch job to Redis queue
-        ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions);
+        // Dispatch job to queue
+        $headerRow = (int) $request->input('header_row', 1);
+        ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions, $headerRow);
 
         return response()->json([
             'message' => 'Proses import telah dimulai di background.',
@@ -268,9 +274,9 @@ class ImportController extends Controller
     }
 
     /**
-     * Download the CSV file containing rows that failed during import.
+     * Download the file containing rows that failed during import.
      *
-     * The failed CSV includes all original columns plus an ERROR_REASON column,
+     * The failed includes all original columns plus an ERROR_REASON column,
      * allowing users to fix the data and re-import through the same tool.
      *
      * @param string $sessionId The import session ID.
@@ -300,7 +306,7 @@ class ImportController extends Controller
     }
 
     /**
-     * Download the CSV import template with all recommended column headers.
+     * Download the import template with all recommended column headers.
      *
      * @return BinaryFileResponse
      */

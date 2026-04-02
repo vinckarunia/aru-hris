@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * Class ImportDataCleaner
  *
- * Provides static utility methods for cleaning and normalizing raw CSV data
+ * Provides static utility methods for cleaning and normalizing raw data
  * into formats suitable for database insertion. Handles Indonesian-specific
  * formats for dates, currencies, identity numbers, and various enum values.
  *
@@ -280,7 +280,7 @@ class ImportDataCleaner
     }
 
     /**
-     * Parse assignment status text from CSV into structured status and termination date.
+     * Parse assignment status text from into structured status and termination date.
      *
      * Handles formats like:
      * - "AKTIF" → {status: "active", date: null}
@@ -591,7 +591,7 @@ class ImportDataCleaner
     }
 
     /**
-     * Normalize a contract type string from CSV to the database enum value.
+     * Normalize a contract type string from to the database enum value.
      *
      * @param string|null $value The raw contract type (e.g., "Contract", "Harian").
      * @return string The normalized contract type: "Kontrak" or "Harian".
@@ -612,9 +612,9 @@ class ImportDataCleaner
     }
 
     /**
-     * Extract a value from a CSV row using the column mapping.
+     * Extract a value from a row using the column mapping.
      *
-     * @param array $row The CSV row data (indexed array).
+     * @param array $row The row data (indexed array).
      * @param array $mapping The column mapping (db_field => csv_column_index).
      * @param string $field The database field name to look up.
      * @return string|null The trimmed value, or null if empty/unmapped.

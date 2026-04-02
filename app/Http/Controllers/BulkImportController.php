@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Validator;
 class BulkImportController extends Controller
 {
     /**
-     * Upload the CSV file temporarily and return headers and sample data for mapping.
+     * Upload the file temporarily and return headers and sample data for mapping.
      *
      * @param Request $request
      * @return JsonResponse
@@ -24,7 +24,7 @@ class BulkImportController extends Controller
     public function preview(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'], // Max 10MB
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:10240'], // Max 10MB
         ]);
 
         if ($validator->fails()) {
