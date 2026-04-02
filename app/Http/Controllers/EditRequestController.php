@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EditRequest;
 use App\Models\Project;
+use App\Models\Worker;
 use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +19,7 @@ class EditRequestController extends Controller
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc');
 
-        $query = EditRequest::with(['worker:id,nik_aru,name', 'project:id,name', 'requester:id,name', 'reviewer:id,name']);
+        $query = EditRequest::with(['worker', 'project:id,name', 'requester:id,name', 'reviewer:id,name']);
 
         if ($user->isWorker()) {
             $query->where('worker_id', $user->worker_id);
@@ -59,11 +60,29 @@ class EditRequestController extends Controller
     public function create(Request $request): Response
     {
         $user = $request->user();
-        if (!$user->isWorker() || !$user->worker_id) {
-            abort(403, 'Only workers can access this page.');
+        
+        $workerId = $request->query('worker_id') ?? ($user->isWorker() ? $user->worker_id : null);
+        if (!$workerId) {
+            abort(403, 'Akses ditolak.');
         }
 
-        $worker = $user->worker()->with(['assignments.project'])->firstOrFail();
+        $worker = Worker::with(['assignments.project'])->findOrFail($workerId);
+
+        if ($user->isWorker() && $user->worker_id !== $worker->id) {
+            abort(403, 'Anda hanya dapat mengajukan perubahan untuk data Anda sendiri.');
+        }
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            $hasActiveAssignmentInPicProject = $worker->assignments()
+                ->whereIn('status', ['active', 'probation', 'extended'])
+                ->whereIn('project_id', $projectIds)
+                ->exists();
+                
+            if (!$hasActiveAssignmentInPicProject) {
+                abort(403, 'Akses ditolak. Karyawan ini tidak berada di project Anda.');
+            }
+        }
 
         return Inertia::render('EditRequest/Create', [
             'worker' => $worker
@@ -73,19 +92,36 @@ class EditRequestController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        if (!$user->isWorker() || !$user->worker_id) {
-            return back()->with('error', 'Only workers can submit edit requests.');
-        }
 
         $validated = $request->validate([
+            'worker_id' => 'required|exists:workers,id',
             'project_id' => 'nullable|exists:projects,id',
             'requested_fields' => 'required|array',
             'requested_data' => 'required|array', // Actual form payload (e.g., [ 'name' => 'John', 'bank_name' => 'BCA' ])
             'notes' => 'nullable|string',
         ]);
 
+        $workerId = $validated['worker_id'];
+
+        if ($user->isWorker() && $user->worker_id !== (int) $workerId) {
+            abort(403, 'Anda hanya dapat mengajukan pengeditan untuk diri sendiri.');
+        }
+
+        if ($user->isPic()) {
+            $worker = Worker::findOrFail($workerId);
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            $hasActiveAssignmentInPicProject = $worker->assignments()
+                ->whereIn('status', ['active', 'probation', 'extended'])
+                ->whereIn('project_id', $projectIds)
+                ->exists();
+                
+            if (!$hasActiveAssignmentInPicProject) {
+                abort(403, 'Akses ditolak. Karyawan ini tidak berada di project Anda.');
+            }
+        }
+
         EditRequest::create([
-            'worker_id' => $user->worker_id,
+            'worker_id' => $workerId,
             'project_id' => $validated['project_id'],
             'requested_by' => $user->id,
             'requested_fields' => $validated['requested_fields'],
@@ -101,16 +137,9 @@ class EditRequestController extends Controller
     {
         $user = $request->user();
 
-        // Access validation: PIC (only for their assigned projects), ADMIN_ARU, SUPER_ADMIN
-        if ($user->isWorker()) {
-            abort(403, 'Access denied.');
-        }
-
-        if ($user->isPic()) {
-            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
-            if (!in_array($editRequest->project_id, $projectIds)) {
-                abort(403, 'Access denied. You are not a PIC for this project.');
-            }
+        // Access validation: ADMIN_ARU, SUPER_ADMIN
+        if (!$user->isAdminOrAbove()) {
+            abort(403, 'Access denied. Only Admins can accept or review changes.');
         }
 
         $validated = $request->validate([

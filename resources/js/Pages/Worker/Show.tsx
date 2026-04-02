@@ -271,15 +271,15 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                     </div>
                 </div>
                 <div className="z-10 flex gap-3">
-                    {/* DISPLAY EDIT REQUEST BUTTON ONLY FOR WORKERS */}
-                    {isWorker && (
-                        <Link href={route('edit-requests.create')} className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white shadow-sm shadow-primary/30 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
+                    {/* DISPLAY EDIT REQUEST BISA DIAKSES WORKER & PIC */}
+                    {(isWorker || isPic) && (
+                        <Link href={route('edit-requests.create', { worker_id: worker.id })} className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white shadow-sm shadow-primary/30 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                             <iconify-icon icon="solar:pen-new-square-bold" width="18"></iconify-icon> Ajukan Perubahan Data
                         </Link>
                     )}
 
-                    {/* BUKAN WORKER TAMPILKAN TOMBOL EDIT BIASA */}
-                    {!isWorker && (
+                    {/* BUKAN WORKER ATAU PIC TAMPILKAN TOMBOL EDIT BIASA */}
+                    {(!isWorker && !isPic) && (
                         <Link href={route('workers.edit', worker.id)} className="px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                             <iconify-icon icon="solar:pen-bold" width="18"></iconify-icon> Edit Profil
                         </Link>

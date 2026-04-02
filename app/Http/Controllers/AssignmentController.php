@@ -26,13 +26,20 @@ class AssignmentController extends Controller
      */
     public function create(Request $request): Response
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
-        $workerId = $request->query('worker_id');
-        $request->validate(['worker_id' => 'required|exists:workers,id']); // Keep validation for worker_id
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
 
-        $worker = Worker::findOrFail($workerId); // Use $workerId
-        // Eager load branches for the dependent dropdown
-        $projects = Project::with('branches')->orderBy('name')->get();
+        $workerId = $request->query('worker_id');
+        $request->validate(['worker_id' => 'required|exists:workers,id']);
+
+        $worker = Worker::findOrFail($workerId);
+        
+        $projectsQuery = Project::with('branches')->orderBy('name');
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
+            $projectsQuery->whereIn('id', $projectIds);
+        }
+        $projects = $projectsQuery->get();
 
         return Inertia::render('Assignment/Create', [
             'worker'   => $worker,
@@ -45,7 +52,15 @@ class AssignmentController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+
+        if ($user->isPic() && $request->has('project_id')) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($request->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Anda tidak memiliki akses ke project ini.');
+            }
+        }
 
         try {
             $validated = $request->validate([

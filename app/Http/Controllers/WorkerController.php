@@ -35,11 +35,20 @@ class WorkerController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        // Process distinct clients for the filter dropdown
-        $clients = \App\Models\Client::select('id', 'full_name')
-            ->orderBy('full_name')
-            ->with('projects:id,client_id,name')
-            ->get();
+        $clientsQuery = \App\Models\Client::select('id', 'full_name')->orderBy('full_name');
+        
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
+            $clientsQuery->whereHas('projects', function($q) use ($projectIds) {
+                $q->whereIn('projects.id', $projectIds);
+            })->with(['projects' => function($q) use ($projectIds) {
+                $q->select('id', 'client_id', 'name')->whereIn('id', $projectIds);
+            }]);
+        } else {
+            $clientsQuery->with('projects:id,client_id,name');
+        }
+        
+        $clients = $clientsQuery->get();
 
         $query = Worker::with(['assignments' => function ($query) {
             $query->whereIn('status', ['active', 'probation', 'extended'])
@@ -88,9 +97,10 @@ class WorkerController extends Controller
         if ($request->user()->isWorker()) abort(403);
         $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
 
-        Worker::create($validated);
+        $worker = Worker::create($validated);
 
-        return redirect()->route('workers.index')->with('message', 'Karyawan berhasil ditambahkan.');
+        return redirect()->route('assignments.create', ['worker_id' => $worker->id])
+                         ->with('message', 'Karyawan berhasil ditambahkan. Silahkan lengkapi penempatan project.');
     }
 
     /**
@@ -154,7 +164,7 @@ class WorkerController extends Controller
      */
     public function edit(Request $request, Worker $worker): Response
     {
-        if ($request->user()->isWorker()) abort(403);
+        if ($request->user()->isWorker() || $request->user()->isPic()) abort(403, 'Akses ditolak. Silahkan gunakan fitur Ajukan Perubahan Data.');
         return Inertia::render('Worker/Edit', ['worker' => $worker]);
     }
 
@@ -167,7 +177,7 @@ class WorkerController extends Controller
      */
     public function update(Request $request, Worker $worker): RedirectResponse
     {
-        if ($request->user()->isWorker()) abort(403);
+        if ($request->user()->isWorker() || $request->user()->isPic()) abort(403, 'Akses ditolak. Silahkan gunakan fitur Ajukan Perubahan Data.');
         $validated = $request->validate($this->getValidationRules($worker->id), $this->getValidationMessages());
 
         $worker->update($validated);

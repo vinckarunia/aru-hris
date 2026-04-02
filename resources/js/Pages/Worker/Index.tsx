@@ -282,23 +282,23 @@ export default function Index({ workers, clients }: Props) {
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manajemen Karyawan</h2>
                     <p className="text-sm text-slate-500">Kelola karyawan yang terafiliasi dengan ARU</p>
                 </div>
-                {!isPic && (
-                    <div className="flex gap-3 w-full md:w-auto">
-                        <Link
-                            href={route('workers.import.index')}
-                            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
-                        >
-                            <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import CSV
-                        </Link>
-                        <Link
-                            href={route('workers.create')}
-                            className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
-                        >
-                            <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
-                            Tambah Karyawan
-                        </Link>
-                    </div>
-                )}
+                
+                <div className="flex gap-3 w-full md:w-auto">
+                    <Link
+                        href={route('workers.import.index')}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
+                    >
+                        <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import CSV
+                    </Link>
+                    <Link
+                        href={route('workers.create')}
+                        className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"
+                    >
+                        <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon>
+                        Tambah Karyawan
+                    </Link>
+                </div>
+            
             </div>
 
             {/* Search Bar & Filters */}

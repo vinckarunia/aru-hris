@@ -1,5 +1,6 @@
 import React, { useState, FormEventHandler } from 'react';
 import WorkerLayout from '@/Layouts/WorkerLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -28,9 +29,11 @@ interface Props {
     worker: Worker;
 }
 
-export default function Create({ worker }: Props) {
+export default function Create({ worker, auth }: PageProps<Props>) {
+    const Layout = auth.user.role === 'WORKER' ? WorkerLayout : AdminLayout;
+
     // Get project id logic
-    const activeAssignment = worker.assignments?.find(a => ['active', 'probation', 'extended'].includes(a.status));
+    const activeAssignment = worker.assignments?.find((a: any) => ['active', 'probation', 'extended'].includes(a.status));
     const defaultProjectId = activeAssignment?.project_id || worker.assignments?.[0]?.project_id || '';
 
     const initialBankDropdown = worker.bank_name
@@ -39,6 +42,7 @@ export default function Create({ worker }: Props) {
     const [bankDropdown, setBankDropdown] = useState<string>(initialBankDropdown);
 
     const { data: requestData, setData: setRequestData, post: postRequest, processing: requestProcessing } = useForm({
+        worker_id: worker.id,
         project_id: defaultProjectId,
         requested_fields: ['FULL_PROFILE_SUBMITTED'],
         requested_data: {
@@ -68,7 +72,7 @@ export default function Create({ worker }: Props) {
     };
 
     return (
-        <WorkerLayout title="Ajukan Perubahan Data" header="Form Pengajuan Perubahan Data">
+        <Layout title="Ajukan Perubahan Data" header="Form Pengajuan Perubahan Data">
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 md:p-8 mb-6">
                 <div className="mb-6 flex items-start gap-4 pb-6 border-b border-slate-100 dark:border-slate-700">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -271,6 +275,6 @@ export default function Create({ worker }: Props) {
                     </div>
                 </form>
             </div>
-        </WorkerLayout>
+        </Layout>
     );
 }

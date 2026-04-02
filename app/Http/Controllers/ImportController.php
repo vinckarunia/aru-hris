@@ -53,10 +53,23 @@ class ImportController extends Controller
      *
      * @return Response
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $clients = Client::orderBy('full_name')->get();
-        $projects = Project::with('branches')->orderBy('name')->get();
+        $user = $request->user();
+        
+        $clientsQuery = Client::orderBy('full_name');
+        $projectsQuery = Project::with('branches')->orderBy('name');
+        
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
+            $clientsQuery->whereHas('projects', function($q) use ($projectIds) {
+                $q->whereIn('projects.id', $projectIds);
+            });
+            $projectsQuery->whereIn('id', $projectIds);
+        }
+
+        $clients = $clientsQuery->get();
+        $projects = $projectsQuery->get();
 
         return Inertia::render('Worker/Import', [
             'clients' => $clients,
@@ -70,10 +83,23 @@ class ImportController extends Controller
      *
      * @return JsonResponse
      */
-    public function globalOptions(): JsonResponse
+    public function globalOptions(Request $request): JsonResponse
     {
-        $clients = Client::orderBy('full_name')->get();
-        $projects = Project::with('branches')->orderBy('name')->get();
+        $user = $request->user();
+        
+        $clientsQuery = Client::orderBy('full_name');
+        $projectsQuery = Project::with('branches')->orderBy('name');
+        
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
+            $clientsQuery->whereHas('projects', function($q) use ($projectIds) {
+                $q->whereIn('projects.id', $projectIds);
+            });
+            $projectsQuery->whereIn('id', $projectIds);
+        }
+
+        $clients = $clientsQuery->get();
+        $projects = $projectsQuery->get();
 
         return response()->json([
             'clients' => $clients,
