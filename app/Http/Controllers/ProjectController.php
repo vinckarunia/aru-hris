@@ -177,7 +177,15 @@ class ProjectController extends Controller
     public function destroy(Request $request, Project $project): RedirectResponse
     {
         if (!$request->user()->isAdminOrAbove()) abort(403);
+        
+        // Auto-close active assignments before soft-deleting the project
+        $project->assignments()->whereIn('status', ['active', 'probation', 'extended'])
+            ->update([
+                'status' => 'project closed',
+                'termination_date' => now(),
+            ]);
+
         $project->delete();
-        return redirect()->back()->with('message', 'Project berhasil dihapus.');
+        return redirect()->back()->with('message', 'Project berhasil dihapus dan seluruh penempatan aktif telah diubah menjadi Project Closed.');
     }
 }

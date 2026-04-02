@@ -31,6 +31,7 @@ interface Project {
     id: string;
     client_id?: string;
     name: string;
+    deleted_at?: string | null;
 }
 
 interface Assignment {
@@ -495,9 +496,19 @@ export default function Index({ workers, clients }: Props) {
                                                 {latestAssignment ? (
                                                     <div className="flex flex-col gap-1">
                                                         <div className="font-semibold text-slate-700 dark:text-slate-300">
-                                                            <Link href={route('projects.show', latestAssignment.project?.id)} className="hover:text-primary transition-colors">
-                                                                {latestAssignment.project?.name || '-'}
-                                                            </Link>
+                                                            {latestAssignment.project?.id ? (
+                                                                latestAssignment.project.deleted_at ? (
+                                                                    <span className="text-slate-500 italic" title="Project ini telah dihapus">
+                                                                        {latestAssignment.project.name} (Closed)
+                                                                    </span>
+                                                                ) : (
+                                                                    <Link href={route('projects.show', latestAssignment.project.id)} className="hover:text-primary transition-colors">
+                                                                        {latestAssignment.project.name}
+                                                                    </Link>
+                                                                )
+                                                            ) : (
+                                                                <span className="text-slate-500">-</span>
+                                                            )}
                                                         </div>
                                                         <div className="flex flex-wrap gap-1 items-center">
                                                             <StatusBadge status={latestAssignment.status} />

@@ -53,7 +53,7 @@ class WorkerController extends Controller
         $query = Worker::with(['assignments' => function ($query) {
             $query->orderBy('hire_date', 'desc')
                   ->with([
-                      'project:id,name',
+                      'project' => fn($q) => $q->withTrashed()->select('id', 'name', 'deleted_at'),
                       'branch:id,name',
                       'contracts' => fn ($q) => $q->orderBy('start_date', 'desc'),
                   ]);
