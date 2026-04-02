@@ -127,8 +127,11 @@ export default function Index({ workers, clients }: Props) {
         let matchesStatus = true;
         if (filterStatus !== 'all') {
             const currentStatus = latestAssignment?.status || 'none';
-            matchesStatus = currentStatus === filterStatus;
-            // e.g 'active', 'resign', 'end_contract', 'none'
+            if (filterStatus === 'non_active') {
+                matchesStatus = ['resign', 'contract expired', 'end_contract', 'project closed', 'fired', 'other'].includes(currentStatus);
+            } else {
+                matchesStatus = currentStatus === filterStatus;
+            }
         }
 
         // Filter Logic: Project & Client context
@@ -356,9 +359,14 @@ export default function Index({ workers, clients }: Props) {
                             >
                                 <option value="all">Semua Status</option>
                                 <option value="active">Aktif</option>
-                                <option value="resign">Resign</option>
-                                <option value="end_contract">Habis Kontrak</option>
-                                <option value="none">Non-Aktif</option>
+                                <optgroup label="Non-Aktif">
+                                    <option value="non_active">Semua Non-Aktif</option>
+                                    <option value="resign">Resign</option>
+                                    <option value="contract expired">Contract Expired</option>
+                                    <option value="project closed">Project Closed</option>
+                                    <option value="fired">Fraud</option>
+                                </optgroup>
+                                <option value="none">Tanpa Penempatan</option>
                             </select>
                         </div>
 
@@ -509,7 +517,7 @@ export default function Index({ workers, clients }: Props) {
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-slate-400 italic">- Non-Aktif -</span>
+                                                    <span className="text-xs text-slate-400 italic">- Tidak Ada Penempatan -</span>
                                                 )}
                                             </td>
                                             <td className="py-4 px-6">

@@ -122,7 +122,8 @@ export default function Create({ worker, projects }: Props) {
                             <InputLabel htmlFor="status" value="Status Penempatan" />
                             <select id="status" className="mt-1 block w-full md:w-1/2 border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" value={data.status} onChange={e => setData('status', e.target.value)}>
                                 <option value="active">Aktif</option>
-                                <option value="contract expired">Habis Kontrak</option>
+                                <option value="contract expired">Contract Expired</option>
+                                <option value="project closed">Project Closed</option>
                                 <option value="resign">Resign</option>
                                 <option value="fired">Fraud</option>
                                 <option value="other">Lainnya</option>

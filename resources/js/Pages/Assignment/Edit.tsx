@@ -105,7 +105,8 @@ export default function Edit({ assignment, projects }: Props) {
                             <InputLabel htmlFor="status" value="Status" />
                             <select id="status" className="mt-1 block w-full md:w-1/2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.status} onChange={e => setData('status', e.target.value)}>
                                 <option value="active">Aktif</option>
-                                <option value="contract expired">Kontrak Habis</option>
+                                <option value="contract expired">Contract Expired</option>
+                                <option value="project closed">Project Closed</option>
                                 <option value="resign">Resign</option>
                                 <option value="fired">Fraud</option>
                                 <option value="other">Lainnya</option>

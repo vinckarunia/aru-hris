@@ -45,13 +45,7 @@ const CATEGORY_ICONS: Record<string, string> = {
     compensation: 'solar:wallet-money-linear',
 };
 
-const STATUS_OPTIONS = [
-    { value: 'active', label: 'Aktif' },
-    { value: 'contract expired', label: 'Kontrak Habis' },
-    { value: 'resign', label: 'Resign' },
-    { value: 'fired', label: 'PHK' },
-    { value: 'other', label: 'Lainnya' },
-];
+
 
 /**
  * Report Index Page Component
@@ -462,11 +456,15 @@ export default function Index({ clients, columnOptions }: Props) {
                                         className="w-full rounded-xl border-slate-200 dark:border-slate-600 dark:bg-slate-700/50 text-sm focus:ring-primary focus:border-primary transition-colors"
                                     >
                                         <option value="">Semua Status</option>
-                                        {STATUS_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </option>
-                                        ))}
+                                        <option value="active">Aktif</option>
+                                        <optgroup label="Non-Aktif">
+                                            <option value="non_active">Semua Non-Aktif</option>
+                                            <option value="resign">Resign</option>
+                                            <option value="contract expired">Contract Expired</option>
+                                            <option value="project closed">Project Closed</option>
+                                            <option value="fired">Fraud</option>
+                                        </optgroup>
+                                        <option value="none">Tanpa Penempatan</option>
                                     </select>
                                 </div>
 

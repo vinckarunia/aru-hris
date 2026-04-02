@@ -699,7 +699,7 @@ class ImportService
         $statusRaw = $c::extractField($row, $mapping, 'status');
         if ($statusRaw) {
             $parsed = $c::parseAssignmentStatus($statusRaw);
-            if (!in_array($parsed['status'], ['active', 'contract expired', 'resign', 'fired', 'other'])) {
+            if (!in_array($parsed['status'], ['active', 'contract expired', 'resign', 'fired', 'project closed', 'other'])) {
                 $errors[] = "Status tidak valid: '{$statusRaw}'.";
             }
         }

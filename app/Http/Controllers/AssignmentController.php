@@ -73,7 +73,7 @@ class AssignmentController extends Controller
                 ],
                 'position'         => 'nullable|string|max:255',
                 'hire_date'        => 'required|date',
-                'status'           => 'nullable|in:active,contract expired,resign,fired,other',
+                'status'           => 'nullable|in:active,contract expired,resign,fired,project closed,other',
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
             ], [
                 'employee_id.unique' => 'ID Karyawan ini sudah digunakan di Project tersebut.',
@@ -169,7 +169,7 @@ class AssignmentController extends Controller
                 ],
                 'position'         => 'nullable|string|max:255',
                 'hire_date'        => 'required|date',
-                'status'           => 'nullable|in:active,contract expired,resign,fired,other',
+                'status'           => 'nullable|in:active,contract expired,resign,fired,project closed,other',
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
             ]);
 

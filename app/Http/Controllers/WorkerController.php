@@ -51,8 +51,7 @@ class WorkerController extends Controller
         $clients = $clientsQuery->get();
 
         $query = Worker::with(['assignments' => function ($query) {
-            $query->whereIn('status', ['active', 'probation', 'extended'])
-                  ->orderBy('hire_date', 'desc')
+            $query->orderBy('hire_date', 'desc')
                   ->with([
                       'project:id,name',
                       'branch:id,name',
@@ -64,8 +63,7 @@ class WorkerController extends Controller
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
             $query->whereHas('assignments', function ($q) use ($projectIds) {
-                $q->whereIn('status', ['active', 'probation', 'extended'])
-                  ->whereIn('project_id', $projectIds);
+                $q->whereIn('project_id', $projectIds);
             });
         }
 

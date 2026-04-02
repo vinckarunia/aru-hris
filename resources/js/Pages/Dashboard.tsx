@@ -192,7 +192,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                     <iconify-icon icon="solar:user-block-bold" width="24"></iconify-icon>
                                 </div>
                             </div>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">Karyawan tanpa penempatan</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">Karyawan dengan status non-aktif</p>
                         </Link>
                     )}
                 </div>

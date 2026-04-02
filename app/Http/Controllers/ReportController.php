@@ -264,7 +264,11 @@ class ReportController extends Controller
             $query->where('assignments.project_id', $filters['project_id']);
         }
         if (!empty($filters['status'])) {
-            $query->where('assignments.status', $filters['status']);
+            if ($filters['status'] === 'non_active') {
+                $query->whereIn('assignments.status', ['resign', 'contract expired', 'end_contract', 'project closed', 'fired', 'other']);
+            } else {
+                $query->where('assignments.status', $filters['status']);
+            }
         }
         if (!empty($filters['hire_date_from'])) {
             $query->where('assignments.hire_date', '>=', $filters['hire_date_from']);
@@ -319,7 +323,8 @@ class ReportController extends Controller
 
             // Assignment Status
             'active'           => 'Aktif',
-            'contract expired' => 'Kontrak Habis',
+            'contract expired' => 'Contract Expired',
+            'project closed'   => 'Project Closed',
             'resign'           => 'Resign',
             'fired'            => 'Diberhentikan',
 

@@ -287,8 +287,8 @@ class ImportDataCleaner
      * - "Resign" → {status: "resign", date: null}
      * - "Resign (30/10/2023)" → {status: "resign", date: "2023-10-30"}
      * - "Resign,30/10/2023" → {status: "resign", date: "2023-10-30"}
-     * - "Habis Kontrak" → {status: "contract expired", date: null}
-     * - "Habis Kontrak (25/02/2022)" → {status: "contract expired", date: "2022-02-25"}
+     * - "Contract Expired" → {status: "contract expired", date: null}
+     * - "Contract Expired (25/02/2022)" → {status: "contract expired", date: "2022-02-25"}
      * - "Fraud (29/10/2024)" → {status: "fired", date: "2024-10-29"}
      * - "Resign (22/08/2022)" embedded in status column
      *
@@ -310,10 +310,12 @@ class ImportDataCleaner
             $result['status'] = 'active';
         } elseif (str_contains($lower, 'resign')) {
             $result['status'] = 'resign';
-        } elseif (str_contains($lower, 'habis kontrak') || str_contains($lower, 'expired')) {
+        } elseif (str_contains($lower, 'contract expired') || str_contains($lower, 'expired')) {
             $result['status'] = 'contract expired';
         } elseif (str_contains($lower, 'diberhentikan') || str_contains($lower, 'fired')) {
             $result['status'] = 'fired';
+        } elseif (str_contains($lower, 'project closed')) {
+            $result['status'] = 'project closed';
         } else {
             $result['status'] = 'other';
         }
@@ -336,7 +338,7 @@ class ImportDataCleaner
      * Handles:
      * - "30/10/2023" → "2023-10-30"
      * - "Resign (30/9/2021)" → "2021-09-30"
-     * - "Habis Kontrak (25/02/2022)" → "2022-02-25"
+     * - "Contract Expired (25/02/2022)" → "2022-02-25"
      * - "(30/9/2021)" → "2021-09-30"
      * - Empty → null
      *

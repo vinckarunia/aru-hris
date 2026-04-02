@@ -77,11 +77,12 @@ class DashboardController extends Controller
             if (!$isPic) {
                 $totalIdleWorkers = Worker::whereDoesntHave('assignments', function ($query) {
                     $query->where('status', 'active');
-                })->count();
+                })->whereHas('assignments')->count();
 
                 $idleWorkersQuery = Worker::whereDoesntHave('assignments', function ($query) {
                     $query->where('status', 'active');
                 })
+                ->whereHas('assignments')
                 ->with(['assignments' => function ($query) {
                     $query->orderBy('termination_date', 'desc');
                 }])
