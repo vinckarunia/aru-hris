@@ -10,7 +10,12 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 
-export default function UserManagementIndex({ users, filters }: PageProps<{ users: User[], filters: { role: string, sort: string, direction: string } }>) {
+interface InternalEmployee {
+    id: string;
+    name: string;
+}
+
+export default function UserManagementIndex({ users, internalEmployees, filters }: PageProps<{ users: User[], internalEmployees: InternalEmployee[], filters: { role: string, sort: string, direction: string } }>) {
     const { auth } = usePage<PageProps>().props;
     const isSuperAdmin = auth.user.role === 'SUPER_ADMIN';
 
@@ -25,6 +30,7 @@ export default function UserManagementIndex({ users, filters }: PageProps<{ user
         password: '',
         password_confirmation: '',
         role: 'ADMIN_ARU',
+        internal_employee_id: '',
     });
 
     /** Opens modal for adding a new project. */
@@ -48,6 +54,7 @@ export default function UserManagementIndex({ users, filters }: PageProps<{ user
             role: user.role,
             password: '',
             password_confirmation: '',
+            internal_employee_id: user.internal_employee_id?.toString() || '',
         });
         clearErrors();
         setIsCreateModalOpen(true);
@@ -191,7 +198,7 @@ export default function UserManagementIndex({ users, filters }: PageProps<{ user
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">
                         {modalMode === 'add' ? 'Tambah User' : 'Edit User'}
                     </h2>
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2 -mr-2">
                         <div>
                             <InputLabel htmlFor="name" value="Nama Lengkap" />
                             <TextInput
@@ -226,6 +233,30 @@ export default function UserManagementIndex({ users, filters }: PageProps<{ user
                             </select>
                             <InputError message={errors.role} />
                         </div>
+                        {data.role === 'ADMIN_ARU' && (
+                            <div>
+                                <InputLabel htmlFor="internal_employee_id" value="Karyawan Internal" />
+                                <select
+                                    value={data.internal_employee_id}
+                                    onChange={e => setData('internal_employee_id', e.target.value)}
+                                    className="w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                >
+                                    <option value="">-- Pilih Karyawan Internal --</option>
+                                    {internalEmployees.map(emp => (
+                                        <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                    ))}
+                                    {modalMode === 'edit' && selectedUser?.internal_employee_id && (
+                                        !internalEmployees.find(e => e.id.toString() === selectedUser.internal_employee_id?.toString()) && (
+                                            <option value={selectedUser.internal_employee_id}>{selectedUser.name} (terhubung)</option>
+                                        )
+                                    )}
+                                </select>
+                                {internalEmployees.length === 0 && modalMode === 'add' && (
+                                    <p className="text-orange-500 text-xs mt-1">Belum ada data karyawan internal yang tersedia. Tambahkan data karyawan internal terlebih dahulu.</p>
+                                )}
+                                <InputError message={errors.internal_employee_id} />
+                            </div>
+                        )}
                         <div>
                             <InputLabel htmlFor="password" value="Password" />
                             <TextInput
@@ -273,6 +304,6 @@ export default function UserManagementIndex({ users, filters }: PageProps<{ user
                 </div>
             </Modal>
 
-        </AdminLayout>
+        </AdminLayout >
     );
 }

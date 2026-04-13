@@ -16,6 +16,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\PicController;
 use App\Http\Controllers\EditRequestController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\InternalEmployeeController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -86,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin & Super Admin Routes
     Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
         Route::resource('pics', PicController::class)->except(['create', 'show', 'edit']);
+        Route::resource('internal-employees', InternalEmployeeController::class);
         
         // System Settings
         Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');

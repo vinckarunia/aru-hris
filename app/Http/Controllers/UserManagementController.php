@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\InternalEmployee;
 use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,6 +27,10 @@ class UserManagementController extends Controller
 
         return Inertia::render('UserManagement/Index', [
             'users' => $users,
+            'internalEmployees' => InternalEmployee::select('id', 'name')
+                ->whereDoesntHave('user')
+                ->orderBy('name')
+                ->get(),
             'filters' => [
                 'role' => $role,
                 'sort' => $sort,
@@ -41,6 +46,7 @@ class UserManagementController extends Controller
             'email' => 'required|string|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', Rule::enum(UserRole::class)],
+            'internal_employee_id' => 'nullable|exists:internal_employees,id',
         ]);
 
         if ($validated['role'] === UserRole::SUPER_ADMIN->value && !auth()->user()->isSuperAdmin()) {
@@ -51,11 +57,16 @@ class UserManagementController extends Controller
             return back()->withErrors(['role' => 'Maksimal hanya 1 Super Admin di sistem.']);
         }
 
+        if ($validated['role'] === UserRole::ADMIN_ARU->value && empty($validated['internal_employee_id'])) {
+            return back()->withErrors(['internal_employee_id' => 'User dengan role ARU harus dihubungkan dengan data karyawan internal.']);
+        }
+
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
+            'internal_employee_id' => $validated['role'] === UserRole::ADMIN_ARU->value ? ($validated['internal_employee_id'] ?? null) : null,
         ]);
 
         return redirect()->back()->with('message', 'User berhasil ditambahkan.');
@@ -68,6 +79,7 @@ class UserManagementController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
             'role' => ['required', Rule::enum(UserRole::class)],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'internal_employee_id' => 'nullable|exists:internal_employees,id',
         ]);
         
         if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
@@ -78,10 +90,15 @@ class UserManagementController extends Controller
             return back()->withErrors(['role' => 'Tidak dapat mengubah role dari Super Admin.']);
         }
 
+        if ($validated['role'] === UserRole::ADMIN_ARU->value && empty($validated['internal_employee_id'])) {
+            return back()->withErrors(['internal_employee_id' => 'User dengan role ARU harus dihubungkan dengan data karyawan internal.']);
+        }
+
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'internal_employee_id' => $validated['role'] === UserRole::ADMIN_ARU->value ? ($validated['internal_employee_id'] ?? null) : null,
         ];
 
         if ($request->filled('password')) {

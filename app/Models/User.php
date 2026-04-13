@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Worker;
+use App\Models\InternalEmployee;
 use App\Enums\UserRole;
 use App\Models\Pic;
 
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'internal_employee_id',
     ];
 
     /**
@@ -59,6 +61,16 @@ class User extends Authenticatable
     public function worker()
     {
         return $this->belongsTo(Worker::class);
+    }
+
+    /**
+     * Get the internal employee profile associated with this user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function internalEmployee()
+    {
+        return $this->belongsTo(InternalEmployee::class);
     }
 
     public function isSuperAdmin(): bool

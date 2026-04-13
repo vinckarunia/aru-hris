@@ -193,7 +193,7 @@ class ImportService
      * @var array<string, string>
      */
     private const AUTO_MAP_HINTS = [
-        'nik aru' => 'nik_aru',
+        'nik ARU' => 'nik_aru',
         'employee name' => 'name',
         'nama' => 'name',
         'ktp' => 'ktp_number',

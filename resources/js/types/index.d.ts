@@ -7,6 +7,7 @@ export interface User {
     email_verified_at?: string;
     role: 'SUPER_ADMIN' | 'ADMIN_ARU' | 'PIC' | 'WORKER';
     worker_id?: string | null;
+    internal_employee_id?: string | null;
     pic?: any; // Profil PIC
 }
 

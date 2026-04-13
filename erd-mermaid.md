@@ -123,11 +123,39 @@ erDiagram
         string name "NN"
         string email "UK, NN"
         string password "NN"
-        enum role "SUPER_ADMIN|PIC|CLIENT|WORKER"
-        bigint client_id FK
+        enum role "SUPER_ADMIN|ADMIN_ARU|PIC|WORKER"
         bigint worker_id FK
-        note additional_note "CLIENT role must have client_id"
+        bigint internal_employee_id FK
+        note additional_note "ADMIN_ARU role must have internal_employee_id"
         note additional_note "WORKER role must have worker_id"
+    }
+
+    INTERNAL_EMPLOYEES {
+        bigint id PK
+        string nik_aru "UK"
+        string name "NN"
+        string ktp_number "UK, NN"
+        string kk_number
+        string birth_place
+        date birth_date
+        enum gender "male|female"
+        string phone
+        string education
+        string religion
+        string tax_status
+        text address_ktp
+        text address_domicile
+        string mother_name
+        string npwp
+        string bpjs_kesehatan
+        string bpjs_ketenagakerjaan
+        string bank_name
+        string bank_account_number
+        string position
+        string department
+        date join_date
+        enum status "active|inactive|resign"
+        timestamp created_at
     }
 
     REMINDERS {
@@ -161,3 +189,4 @@ erDiagram
     ASSIGNMENTS ||--o{ DOCUMENTS : has
     CLIENTS ||--o{ USERS : has
     WORKERS ||--o{ USERS : has
+    INTERNAL_EMPLOYEES ||--o{ USERS : has

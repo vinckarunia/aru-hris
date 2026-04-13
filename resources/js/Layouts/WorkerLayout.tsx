@@ -47,23 +47,23 @@ export default function WorkerLayout({ title, header, children }: PropsWithChild
     };
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
-            if (typeof window !== 'undefined') {
-                return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            }
-            return false;
-        });
-    
-        useEffect(() => {
-            if (isDarkMode) {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            }
-        }, [isDarkMode]);
-    
-        const toggleTheme = () => setIsDarkMode(!isDarkMode);
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDarkMode]);
+
+    const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
     return (
         <div className="bg-[#F8F9FF] text-slate-800 font-sans antialiased selection:bg-primary selection:text-white min-h-screen relative overflow-x-hidden dark:bg-[#0F172A] dark:text-[#F1F5F9] flex flex-col">
