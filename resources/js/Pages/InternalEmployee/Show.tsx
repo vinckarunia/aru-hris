@@ -109,9 +109,9 @@ export default function Show({ employee }: Props) {
                             </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-500 font-medium">
-                            <span className="flex items-center"><iconify-icon icon="solar:id-color-bold" className="mr-1"></iconify-icon> NIK ARU: {employee.nik_aru || 'Belum Ada'}</span>
+                            <span className="flex items-center gap-1.5">NIK ARU: {employee.nik_aru || 'Belum Ada'}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            <span className="flex items-center"><iconify-icon icon="solar:shield-user-bold" className="mr-1"></iconify-icon> {employee.department} {employee.position ? `— ${employee.position}` : ''}</span>
+                            <span className="flex items-center gap-1.5"><iconify-icon icon="solar:shield-user-bold"></iconify-icon> {employee.department} {employee.position ? `— ${employee.position}` : ''}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             <span className="flex items-center gap-1.5"><iconify-icon icon="solar:phone-bold"></iconify-icon> {employee.phone || '-'}</span>
                         </div>

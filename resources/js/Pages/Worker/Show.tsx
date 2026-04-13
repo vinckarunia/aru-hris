@@ -264,7 +264,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                             {worker.gender === 'male' ? <iconify-icon icon="ph:gender-male-bold" style={{ color: '#3b82f6' }} width="20"></iconify-icon> : worker.gender === 'female' ? <iconify-icon icon="ph:gender-female-bold" style={{ color: '#ec4899' }} width="20"></iconify-icon> : null}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-500 font-medium">
-                            <span className="flex items-center"><iconify-icon icon="solar:id-color-bold"></iconify-icon> NIK ARU: {worker.nik_aru || 'Belum Ada'}</span>
+                            <span className="flex items-center">NIK ARU: {worker.nik_aru || 'Belum Ada'}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             <span className="flex items-center gap-1.5"><iconify-icon icon="solar:phone-bold"></iconify-icon> {worker.phone || '-'}</span>
                         </div>

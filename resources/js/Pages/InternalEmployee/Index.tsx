@@ -141,6 +141,14 @@ export default function Index({ employees }: Props) {
         }
     };
 
+    /** Calculates the age of an employee based on their birth date. */
+    const calculateAge = (employee: InternalEmployee) => {
+        const today = new Date();
+        const birthDateObj = new Date(employee.birth_date);
+        const age = today.getFullYear() - birthDateObj.getFullYear();
+        return age;
+    };
+
     /** Helper to render the sort indicator icon based on sort status. */
     const renderSortIndicator = (key: string) => {
         const configIndex = sortConfigs.findIndex(c => c.key === key);
@@ -312,6 +320,7 @@ export default function Index({ employees }: Props) {
                                                 </Link>
                                             </div>
                                             <div className="text-xs text-slate-400 capitalize">{emp.gender === 'male' ? 'Laki-laki' : emp.gender === 'female' ? 'Perempuan' : '-'}</div>
+                                            <div className="text-xs text-slate-400 capitalize">{calculateAge(emp)}<span> Tahun</span></div>
                                         </td>
                                         <td className="px-6 py-4">
                                             {emp.nik_aru ? (
