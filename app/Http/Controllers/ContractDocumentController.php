@@ -101,7 +101,7 @@ class ContractDocumentController extends Controller
     {
         $setting = \App\Models\Setting::where('key', 'asset_' . $type)->value('value');
         if (!$setting) return null;
-        $path = storage_path('app/public/' . $setting);
+        $path = public_path('uploads/' . $setting);
         return file_exists($path) ? $path : null;
     }
 

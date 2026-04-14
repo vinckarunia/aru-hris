@@ -114,7 +114,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                         <Link href="/" className="flex items-center gap-3 group">
                             <div className="flex items-center justify-center bg-white dark:bg-white/95 p-1.5 rounded-xl transition-colors shadow-sm border border-slate-100 dark:border-slate-800">
                                 <img
-                                    src="/storage/assets/logo.png"
+                                    src="/uploads/assets/logo.png"
                                     alt="ARU HRIS Logo"
                                     className={`object-contain group-hover:scale-105 transition-transform drop-shadow-sm shrink-0 ${isSidebarCollapsed ? 'lg:h-9 lg:w-9' : 'h-10 w-auto'
                                         }`}
@@ -350,7 +350,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                 <Link href="/" className="flex items-center gap-3 group">
                                     <div className="flex items-center justify-center bg-white dark:bg-white/95 p-1.5 rounded-xl transition-colors shadow-sm border border-slate-100 dark:border-slate-800">
                                         <img
-                                            src="/storage/assets/logo.png"
+                                            src="/uploads/assets/logo.png"
                                             alt="ARU HRIS Logo"
                                             className="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm shrink-0"
                                         />

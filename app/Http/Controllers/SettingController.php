@@ -17,8 +17,8 @@ class SettingController extends Controller
         $settings = Setting::all()->keyBy('key')->map->value;
         
         $assetUrls = [
-            'logo'      => $settings->get('asset_logo')      ? asset('storage/' . $settings->get('asset_logo'))      : null,
-            'signature' => $settings->get('asset_signature') ? asset('storage/' . $settings->get('asset_signature')) : null,
+            'logo'      => $settings->get('asset_logo')      ? asset('uploads/' . $settings->get('asset_logo'))      : null,
+            'signature' => $settings->get('asset_signature') ? asset('uploads/' . $settings->get('asset_signature')) : null,
         ];
         
         return Inertia::render('Settings/Index', [
@@ -118,8 +118,8 @@ class SettingController extends Controller
         imagealphablending($dst, false);
         imagesavealpha($dst, true);
 
-        // Save to storage/app/public/assets/
-        $dir = storage_path('app/public/assets');
+        // Save to public/uploads/assets/
+        $dir = public_path('uploads/assets');
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
