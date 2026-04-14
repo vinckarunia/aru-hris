@@ -23,7 +23,7 @@ export default function Guest({ children, topRightAction }: PropsWithChildren<{ 
     const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8F9FF] py-6 sm:py-12 dark:bg-[#0F172A] text-slate-800 dark:text-[#F1F5F9] font-sans antialiased selection:bg-primary selection:text-white relative overflow-hidden">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#FDF8FF] py-6 sm:py-12 dark:bg-[#0F0A14] text-slate-800 dark:text-[#F5F0FF] font-sans antialiased selection:bg-primary selection:text-white relative overflow-hidden">
             <div className="absolute top-6 left-6 sm:top-8 sm:left-10 z-50">
                 <button onClick={toggleTheme} className="flex rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
                     <iconify-icon icon={isDarkMode ? "solar:sun-bold-duotone" : "solar:moon-bold-duotone"} width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
@@ -43,9 +43,13 @@ export default function Guest({ children, topRightAction }: PropsWithChildren<{ 
             </div>
 
             <div className="w-full flex justify-center mb-8">
-                <Link href="/" className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow shrink-0">
-                        <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
+                <Link href="/" className="flex items-center gap-3 group">
+                    <div className="flex items-center justify-center bg-white dark:bg-white/95 p-1.5 rounded-xl transition-colors shadow-sm border border-slate-100 dark:border-slate-800">
+                        <img
+                            src="/storage/assets/logo.png"
+                            alt="ARU HRIS Logo"
+                            className="h-12 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm"
+                        />
                     </div>
                     <span className="font-bold text-2xl tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
                         ARU<span className="text-primary font-extrabold">HRIS</span>

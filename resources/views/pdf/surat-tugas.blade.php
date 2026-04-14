@@ -63,12 +63,18 @@
     </style>
 </head>
 <body>
-    <!-- Assuming you have the base64 logo or path to logo if needed, but for PDF rendering, base64 is safer or an absolute path -->
+    @php
+        $logoBase64 = $logoPath && file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : null;
+        $signatureBase64 = $signaturePath && file_exists($signaturePath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath)) : null;
+    @endphp
     <table class="header-table">
         <tr>
             <td class="header-logo">
-                <!-- Placeholder for logo, in real app, replace with <img src="{{ public_path('images/logo.png') }}"> -->
-                <div style="font-size: 30px; font-weight: bold; color: #660033; font-style: italic;">A<span style="color: #000;">R</span></div>
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" style="max-height: 60px; max-width: 80px; object-fit: contain;" alt="Logo">
+                @else
+                    <div style="font-size: 30px; font-weight: bold; color: #660033; font-style: italic;">A<span style="color: #000;">R</span></div>
+                @endif
             </td>
             <td class="header-text">
                 <h1>PT. ALFA REKA USAHA</h1>
@@ -125,7 +131,7 @@
         <tr>
             <td class="label-col">No. Pegawai</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $worker->ktp_number ?? '-' }}</td>
+            <td class="value-col">{{ $contract->assignment->employee_id ?? '-' }}</td>
         </tr>
     </table>
 
@@ -154,7 +160,11 @@
 
     <div class="signature-section">
         <p>Hormat kami,</p>
-        <br><br><br><br>
+        @if($signatureBase64)
+            <img src="{{ $signatureBase64 }}" style="max-height: 80px; max-width: 160px; object-fit: contain; margin: 4px 0;" alt="Tanda Tangan">
+        @else
+            <br><br><br><br>
+        @endif
         <p><strong><u>{{ $pihakPertama->name ?? '-' }}</u></strong><br>
         {{ $pihakPertama->position ?? '-' }}</p>
     </div>

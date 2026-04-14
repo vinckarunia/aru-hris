@@ -84,7 +84,7 @@ interface Props {
     remindersSummary: Record<string, DashboardReminderGroup>;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FCA5A5', '#FCD34D'];
+const COLORS = ['#8B2E8B', '#C084C0', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FCA5A5', '#FCD34D'];
 
 /**
  * Format a date string into Indonesian locale.
@@ -142,7 +142,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                 </p>
                                 <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-1">{quick_stats.active_workers}</h3>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                                 <iconify-icon icon="solar:users-group-rounded-bold" width="24"></iconify-icon>
                             </div>
                         </div>
@@ -257,7 +257,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                                 <XAxis dataKey="status" tick={{ fill: '#64748b', fontSize: 12 }} />
                                                 <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
                                                 <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                                                <Bar dataKey="count" name="Jumlah" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={40}>
+                                                <Bar dataKey="count" name="Jumlah" fill="#8B2E8B" radius={[4, 4, 0, 0]} barSize={40}>
                                                     {charts.employment_demographics.map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                     ))}

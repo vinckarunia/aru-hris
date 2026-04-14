@@ -519,7 +519,7 @@ export default function Index({ workers, clients }: Props) {
                                                                 return (
                                                                     <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold border ${isPkwtt
                                                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400'
-                                                                        : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 uppercase'
+                                                                        : 'bg-primary/10 dark:bg-primary/20 border-primary/20 dark:border-primary/30 text-primary uppercase'
                                                                         }`}>
                                                                         {label}{!isPkwtt && c.pkwt_number ? `${c.pkwt_number}` : ''}
                                                                     </span>

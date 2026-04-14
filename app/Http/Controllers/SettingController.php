@@ -16,8 +16,14 @@ class SettingController extends Controller
     {
         $settings = Setting::all()->keyBy('key')->map->value;
         
+        $assetUrls = [
+            'logo'      => $settings->get('asset_logo')      ? asset('storage/' . $settings->get('asset_logo'))      : null,
+            'signature' => $settings->get('asset_signature') ? asset('storage/' . $settings->get('asset_signature')) : null,
+        ];
+        
         return Inertia::render('Settings/Index', [
-            'settings' => $settings,
+            'settings'  => $settings,
+            'assetUrls' => $assetUrls,
         ]);
     }
 
@@ -45,6 +51,91 @@ class SettingController extends Controller
         }
 
         return Redirect::route('settings.index')->with('success', 'Pengaturan sistem berhasil diperbarui.');
+    }
+
+    /**
+     * Upload a company asset (logo or signature/stamp) as PNG.
+     * Automatically removes the white background using GD, producing a transparent PNG.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function uploadAsset(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $request->validate([
+            'asset_type' => 'required|in:logo,signature',
+            'asset_file' => 'required|file|mimes:png,jpg,jpeg|max:2048',
+        ]);
+
+        $type = $request->input('asset_type');
+        $file = $request->file('asset_file');
+
+        // Load source image
+        $mime = $file->getMimeType();
+        if (str_contains($mime, 'jpeg') || str_contains($mime, 'jpg')) {
+            $src = imagecreatefromjpeg($file->getRealPath());
+        } else {
+            $src = imagecreatefrompng($file->getRealPath());
+        }
+
+        // Scale down to max 800px on either side BEFORE pixel processing
+        // This cuts the loop from millions to tens-of-thousands of iterations.
+        $maxDim = 800;
+        $origW = imagesx($src);
+        $origH = imagesy($src);
+        if ($origW > $maxDim || $origH > $maxDim) {
+            $scale = min($maxDim / $origW, $maxDim / $origH);
+            $src = imagescale($src, (int) ($origW * $scale), (int) ($origH * $scale));
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+
+        // Create output canvas with alpha channel support
+        $dst = imagecreatetruecolor($w, $h);
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefill($dst, 0, 0, $transparent);
+        imagealphablending($dst, true);
+
+        // Copy source onto canvas
+        imagecopy($dst, $src, 0, 0, 0, 0, $w, $h);
+
+        // Remove near-white pixels (threshold: each channel >= 230)
+        $threshold = 230;
+        for ($x = 0; $x < $w; $x++) {
+            for ($y = 0; $y < $h; $y++) {
+                $color = imagecolorat($dst, $x, $y);
+                $colors = imagecolorsforindex($dst, $color);
+                
+                if ($colors['red'] >= $threshold && $colors['green'] >= $threshold && $colors['blue'] >= $threshold) {
+                    imagesetpixel($dst, $x, $y, $transparent);
+                }
+            }
+        }
+
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+
+        // Save to storage/app/public/assets/
+        $dir = storage_path('app/public/assets');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $filename = $type . '.png';
+        imagepng($dst, $dir . '/' . $filename);
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        // Persist path in settings
+        Setting::updateOrCreate(
+            ['key' => 'asset_' . $type, 'role_specifier' => null],
+            ['value' => 'assets/' . $filename, 'group' => 'assets']
+        );
+
+        return Redirect::route('settings.index')->with('success', ucfirst($type) . ' berhasil diunggah dan background dihapus.');
     }
     public function resetData(Request $request)
     {

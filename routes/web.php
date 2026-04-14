@@ -94,6 +94,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // System Settings
         Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/upload-asset', [\App\Http\Controllers\SettingController::class, 'uploadAsset'])->name('settings.upload-asset');
         Route::post('/settings/reset-data', [\App\Http\Controllers\SettingController::class, 'resetData'])->name('settings.reset-data');
         Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
 

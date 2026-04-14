@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -10,7 +10,84 @@ import { Transition, Dialog } from '@headlessui/react';
 import InputError from '@/Components/InputError';
 import { PageProps } from '@/types';
 
-export default function Index({ settings }: { settings: Record<string, string | null> }) {
+/** Reusable upload card for company assets (logo / signature). */
+function AssetUploadCard({ label, type, currentUrl, icon }: {
+    label: string;
+    type: 'logo' | 'signature';
+    currentUrl: string | null;
+    icon: string;
+}) {
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = useState<string | null>(currentUrl);
+    const [uploading, setUploading] = useState(false);
+    const [success, setSuccess] = useState(false);
+
+    const handleFile = (file: File | null | undefined) => {
+        if (!file) return;
+        setPreview(URL.createObjectURL(file));
+        setUploading(true);
+        setSuccess(false);
+        const fd = new FormData();
+        fd.append('asset_type', type);
+        fd.append('asset_file', file);
+        router.post(route('settings.upload-asset'), fd, {
+            forceFormData: true,
+            onSuccess: () => { setUploading(false); setSuccess(true); },
+            onError: () => { setUploading(false); },
+            preserveScroll: true,
+        });
+    };
+
+    return (
+        <div className="flex flex-col gap-3 p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-1">
+                <iconify-icon icon={icon} width="18" className="text-primary"></iconify-icon>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</span>
+            </div>
+
+            {/* Preview */}
+            <div
+                className="w-full h-28 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-white dark:bg-slate-800 overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                onClick={() => fileRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
+            >
+                {preview
+                    ? <img src={preview} alt={label} className="max-h-24 max-w-full object-contain" />
+                    : <div className="flex flex-col items-center gap-1 text-slate-400">
+                        <iconify-icon icon="solar:upload-bold" width="28"></iconify-icon>
+                        <span className="text-xs">Klik atau seret file PNG/JPG ke sini</span>
+                    </div>
+                }
+            </div>
+
+            <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={e => handleFile(e.target.files?.[0])}
+            />
+
+            <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="w-full py-1.5 px-3 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+            >
+                {uploading
+                    ? <><iconify-icon icon="svg-spinners:ring-resize" width="14"></iconify-icon> Mengunggah...</>
+                    : success
+                        ? <><iconify-icon icon="solar:check-circle-bold" width="14"></iconify-icon> Berhasil!</>
+                        : <><iconify-icon icon="solar:upload-bold" width="14"></iconify-icon> {preview ? 'Ganti Gambar' : 'Pilih Gambar'}</>
+                }
+            </button>
+            <p className="text-[10px] text-slate-400 text-center">Background putih dihapus otomatis saat upload.</p>
+        </div>
+    );
+}
+
+export default function Index({ settings, assetUrls }: { settings: Record<string, string | null>; assetUrls: { logo: string | null; signature: string | null } }) {
     const user = usePage<PageProps>().props.auth.user;
 
     /** Document type entry stored in the document_types JSON setting. */
@@ -458,11 +535,11 @@ export default function Index({ settings }: { settings: Record<string, string | 
                             </div>
 
                             {/* Email Integration Note */}
-                            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30 flex gap-3">
-                                <iconify-icon icon="solar:info-circle-bold-duotone" width="24" className="text-indigo-500 shrink-0"></iconify-icon>
+                            <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-xl border border-primary/20 dark:border-primary/30 flex gap-3">
+                                <iconify-icon icon="solar:info-circle-bold-duotone" width="24" className="text-primary shrink-0"></iconify-icon>
                                 <div>
-                                    <h4 className="text-sm font-bold text-indigo-800 dark:text-indigo-300">Integrasi Email (SMTP)</h4>
-                                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                                    <h4 className="text-sm font-bold text-primary-dark dark:text-primary-light">Integrasi Email (SMTP)</h4>
+                                    <p className="text-xs text-primary dark:text-primary-light/80 mt-1">
                                         Saat ini reminder hanya dikirimkan ke Dashboard. Untuk mengaktifkan pengiriman notifikasi via email kepada Admin/PIC, silakan tim developer mengonfigurasi fitur <strong>EmailChannel</strong> dan kredensial SMTP di server.
                                     </p>
                                 </div>
@@ -476,6 +553,36 @@ export default function Index({ settings }: { settings: Record<string, string | 
                                     <p className="text-sm text-slate-600 dark:text-slate-400">Tersimpan.</p>
                                 </Transition>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Company Assets Section */}
+                    <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">
+                        <header className="mb-6">
+                            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                <iconify-icon icon="solar:gallery-bold" width="24" className="text-primary"></iconify-icon>
+                                Aset Perusahaan
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                Unggah logo dan tanda tangan + cap perusahaan. Background putih akan dihapus otomatis agar gambar dapat dipakai di berbagai latar.
+                            </p>
+                        </header>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Logo */}
+                            <AssetUploadCard
+                                label="Logo Perusahaan"
+                                type="logo"
+                                currentUrl={assetUrls.logo}
+                                icon="solar:buildings-bold"
+                            />
+                            {/* Signature */}
+                            <AssetUploadCard
+                                label="Tanda Tangan & Cap"
+                                type="signature"
+                                currentUrl={assetUrls.signature}
+                                icon="solar:pen-bold"
+                            />
                         </div>
                     </div>
 

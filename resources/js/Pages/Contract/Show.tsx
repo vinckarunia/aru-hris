@@ -59,7 +59,7 @@ export default function Show({ contract }: any) {
                 {/* Contract Info */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-slate-700 pb-3">
-                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
                             <iconify-icon icon="solar:document-text-bold" width="24"></iconify-icon>
                         </div>
                         <h3 className="text-lg font-bold text-slate-800 dark:text-white">Data Kontrak</h3>

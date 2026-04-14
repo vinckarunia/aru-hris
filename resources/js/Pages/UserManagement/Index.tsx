@@ -159,7 +159,7 @@ export default function UserManagementIndex({ users, internalEmployees, filters 
                                     <td className="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">{u.email}</td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize ${u.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-700' :
-                                            u.role === 'ADMIN_ARU' ? 'bg-blue-100 text-blue-700' :
+                                            u.role === 'ADMIN_ARU' ? 'bg-primary/10 text-primary' :
                                                 u.role === 'PIC' ? 'bg-yellow-100 text-yellow-700' :
                                                     u.role === 'WORKER' ? 'bg-slate-100 text-slate-700' : 'bg-slate-100 text-slate-700'
                                             }`}>

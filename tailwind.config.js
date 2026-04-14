@@ -18,21 +18,21 @@ export default {
             },
             colors: {
                 primary: {
-                    DEFAULT: '#364dff',
-                    light: '#5a6eff',
-                    dark: '#2b3ecc',
-                    gradient: '#667aff',
+                    DEFAULT: '#8B2E8B',
+                    light: '#A855A8',
+                    dark: '#6D1F6D',
+                    gradient: '#C06EC0',
                 },
-                secondary: '#798bff',
-                surface: '#F8F9FF',
+                secondary: '#C084C0',
+                surface: '#FDF8FF',
                 dark: {
-                    bg: '#0F172A',
-                    surface: '#1E293B',
-                    text: '#F1F5F9'
+                    bg: '#0F0A14',
+                    surface: '#1A0F1E',
+                    text: '#F5F0FF'
                 }
             },
             boxShadow: {
-                'glow': '0 0 20px rgba(54, 77, 255, 0.25)',
+                'glow': '0 0 20px rgba(139, 46, 139, 0.30)',
                 'card': '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)'
             }
         },

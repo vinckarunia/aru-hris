@@ -94,7 +94,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
     };
 
     return (
-        <div className="bg-[#F8F9FF] text-slate-800 font-sans antialiased selection:bg-primary selection:text-white min-h-screen relative overflow-hidden dark:bg-[#0F172A] dark:text-[#F1F5F9] flex">
+        <div className="bg-[#FDF8FF] text-slate-800 font-sans antialiased selection:bg-primary selection:text-white min-h-screen relative overflow-hidden dark:bg-[#0F0A14] dark:text-[#F5F0FF] flex">
             <Head title={title} />
 
             {/* Mobile Menu Overlay */}
@@ -112,8 +112,13 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                     {/* Logo Area */}
                     <div className={`h-20 flex items-center transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:justify-center px-8' : 'px-8'} border-b border-slate-100 dark:border-slate-800 shrink-0`}>
                         <Link href="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
-                                <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
+                            <div className="flex items-center justify-center bg-white dark:bg-white/95 p-1.5 rounded-xl transition-colors shadow-sm border border-slate-100 dark:border-slate-800">
+                                <img
+                                    src="/storage/assets/logo.png"
+                                    alt="ARU HRIS Logo"
+                                    className={`object-contain group-hover:scale-105 transition-transform drop-shadow-sm shrink-0 ${isSidebarCollapsed ? 'lg:h-9 lg:w-9' : 'h-10 w-auto'
+                                        }`}
+                                />
                             </div>
                             {!isSidebarCollapsed && (
                                 <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
@@ -343,8 +348,12 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                             {/* Logo Area */}
                             {user.worker_id && (
                                 <Link href="/" className="flex items-center gap-3 group">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-gradient flex items-center justify-center text-white shadow-glow group-hover:scale-105 transition-transform shrink-0">
-                                        <iconify-icon icon="solar:buildings-2-linear" width="22"></iconify-icon>
+                                    <div className="flex items-center justify-center bg-white dark:bg-white/95 p-1.5 rounded-xl transition-colors shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <img
+                                            src="/storage/assets/logo.png"
+                                            alt="ARU HRIS Logo"
+                                            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm shrink-0"
+                                        />
                                     </div>
                                     <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">
                                         ARU<span className="text-primary font-extrabold">HRIS</span>

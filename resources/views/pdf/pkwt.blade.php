@@ -73,9 +73,14 @@
             margin: 0;
             padding-left: 20px;
         }
-    </style>
+</style>
 </head>
 <body>
+    @php
+        // Embed assets as base64 for reliable dompdf rendering
+        $logoBase64 = $logoPath && file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : null;
+        $signatureBase64 = $signaturePath && file_exists($signaturePath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath)) : null;
+    @endphp
     @php
         $pkwtNo = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
         $clientPrefix = $contract->assignment->project->client->short_name ?? 'CLIENT';
@@ -216,7 +221,7 @@
         </tr>
     </table>
 
-    <div class="page-break"></div>
+    
 
     <div class="text-10" style="text-align: right;">2</div>
 
@@ -308,7 +313,7 @@
         </tr>
     </table>
 
-    <div class="page-break"></div>
+    
 
     <div class="text-10" style="text-align: right;">3</div>
 
@@ -392,7 +397,7 @@
         </tr>
     </table>
 
-    <div class="page-break"></div>
+    
 
     <div class="text-10" style="text-align: right;">4</div>
 
@@ -481,7 +486,7 @@
         </tr>
     </table>
 
-    <div class="page-break"></div>
+    
 
     <div class="text-10" style="text-align: right;">5</div>
 
@@ -552,7 +557,7 @@
         </tr>
     </table>
 
-    <div class="page-break"></div>
+    
     <div class="text-10" style="text-align: right;">6</div>
     <table style="width:100%;">
         <tr>
@@ -621,7 +626,7 @@
         </tr>
     </table>
 
-    <div class="page-break"></div>
+    
     <div class="text-10" style="text-align: right;">7</div>
 
     <table style="width:100%;">
@@ -647,7 +652,11 @@
             <td style="width: 50%;" class="text-13"><strong>PIHAK KEDUA</strong></td>
         </tr>
         <tr>
-            <td style="height: 100px;"></td>
+            <td style="height: 100px; text-align: center; vertical-align: bottom;">
+                @if($signatureBase64)
+                    <img src="{{ $signatureBase64 }}" style="max-height: 90px; max-width: 160px; object-fit: contain;" alt="Tanda Tangan">
+                @endif
+            </td>
             <td style="height: 100px; vertical-align: middle;">
                 <div class="text-10">
                     Materai<br>

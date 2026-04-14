@@ -621,11 +621,11 @@ export default function Index({ clients, columnOptions }: Props) {
                     <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
                                     <iconify-icon
                                         icon="solar:eye-linear"
                                         width="18"
-                                        className="text-blue-500"
+                                        className="text-primary"
                                     ></iconify-icon>
                                 </div>
                                 <div>

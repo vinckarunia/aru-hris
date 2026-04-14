@@ -32,9 +32,11 @@ class ContractDocumentController extends Controller
         $format = $request->query('format', 'pdf');
         
         $data = [
-            'contract' => $contract,
-            'worker' => $contract->assignment->worker,
-            'pihakPertama' => $pihakPertama,
+            'contract'      => $contract,
+            'worker'        => $contract->assignment->worker,
+            'pihakPertama'  => $pihakPertama,
+            'logoPath'      => $this->getAssetPath('logo'),
+            'signaturePath' => $this->getAssetPath('signature'),
         ];
         
         if ($format === 'docx') {
@@ -61,15 +63,32 @@ class ContractDocumentController extends Controller
             ?? InternalEmployee::first();
             
         $data = [
-            'contract' => $contract,
-            'worker' => $contract->assignment->worker,
-            'pihakPertama' => $pihakPertama,
+            'contract'      => $contract,
+            'worker'        => $contract->assignment->worker,
+            'pihakPertama'  => $pihakPertama,
+            'logoPath'      => $this->getAssetPath('logo'),
+            'signaturePath' => $this->getAssetPath('signature'),
         ];
         
         $pdf = Pdf::loadView('pdf.surat-tugas', $data)->setPaper('a4', 'portrait');
         $fileName = 'Surat Tugas - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
         
         return $pdf->download($fileName);
+    }
+
+    /**
+     * Get absolute filesystem path to a stored company asset.
+     * Returns null if not yet uploaded.
+     *
+     * @param string $type 'logo' or 'signature'
+     * @return string|null
+     */
+    private function getAssetPath(string $type): ?string
+    {
+        $setting = \App\Models\Setting::where('key', 'asset_' . $type)->value('value');
+        if (!$setting) return null;
+        $path = storage_path('app/public/' . $setting);
+        return file_exists($path) ? $path : null;
     }
 
     /**
