@@ -76,22 +76,33 @@
 </style>
 </head>
 <body>
+    {{-- dompdf automatic page number (top-right, font-size 10) --}}
+    <script type="text/php">
+        if (isset($pdf)) {
+            $pdf->page_text(545, 18, "{PAGE_NUM}", null, 10, [0, 0, 0]);
+        }
+    </script>
+
     @php
         // Embed assets as base64 for reliable dompdf rendering
         $logoBase64 = $logoPath && file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : null;
         $signatureBase64 = $signaturePath && file_exists($signaturePath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath)) : null;
     @endphp
     @php
-        $pkwtNo = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
-        $clientPrefix = $contract->assignment->project->client->short_name ?? 'CLIENT';
-        $romanMonths = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
-        $month = \Carbon\Carbon::parse($contract->start_date ?? now())->month;
-        $romanMonth = $romanMonths[$month] ?? 'I';
-        $year = \Carbon\Carbon::parse($contract->start_date ?? now())->year;
-        $pkwt_formatted = sprintf('%s/ARU-%s/PKWT/%s/%s', $pkwtNo, $clientPrefix, $romanMonth, $year);
+        /**
+         * Contract number format: {monthlySeq}/ARU/KKWT-{pkwtNumber}/{romanMonth}/{year}
+         * First segment = monthly letter sequence (passed from controller).
+         * Second segment = pkwt_number (which contract this is for the worker).
+         * Roman month & year = document issuance date (today), not contract start.
+         */
+        $seqFormatted     = str_pad($pkwtMonthlySeq ?? 1, 3, '0', STR_PAD_LEFT);
+        $pkwtNumFormatted = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
+        $romanMonths  = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
+        $issueDate    = now();
+        $romanMonth   = $romanMonths[$issueDate->month] ?? 'I';
+        $year         = $issueDate->year;
+        $pkwt_formatted = sprintf('%s/ARU/KKWT-%s/%s/%s', $seqFormatted, $pkwtNumFormatted, $romanMonth, $year);
     @endphp
-
-    <div class="text-10" style="text-align: right;">1</div>
     
     <div class="title">PERJANJIAN KERJA WAKTU TERTENTU (PKWT)</div>
     <div class="subtitle">NO. : {{ $pkwt_formatted }}</div>
@@ -223,8 +234,6 @@
 
     
 
-    <div class="text-10" style="text-align: right;">2</div>
-
     <table style="width:100%;">
         <tr>
             <td style="width: 5%;">3.</td>
@@ -315,8 +324,6 @@
 
     
 
-    <div class="text-10" style="text-align: right;">3</div>
-
     <table style="width:100%;">
         <tr>
             <td style="width: 5%;">2.</td>
@@ -398,8 +405,6 @@
     </table>
 
     
-
-    <div class="text-10" style="text-align: right;">4</div>
 
     <table style="width:100%;">
         <tr>
@@ -488,8 +493,6 @@
 
     
 
-    <div class="text-10" style="text-align: right;">5</div>
-
     <table style="width:100%;">
         <tr>
             <td style="width: 5%;">12.</td>
@@ -558,7 +561,6 @@
     </table>
 
     
-    <div class="text-10" style="text-align: right;">6</div>
     <table style="width:100%;">
         <tr>
             <td style="width: 5%;">12.</td>
@@ -627,7 +629,6 @@
     </table>
 
     
-    <div class="text-10" style="text-align: right;">7</div>
 
     <table style="width:100%;">
         <tr>

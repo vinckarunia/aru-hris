@@ -108,6 +108,7 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)
             ],
+            'pkwt_type' => 'required|string|in:vdi,cj,all',
             'prefix' => 'required|string|max:5',
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',
@@ -118,6 +119,7 @@ class ProjectController extends Controller
         $project = Project::create([
             'client_id' => $validated['client_id'],
             'name'      => $validated['name'],
+            'pkwt_type' => $validated['pkwt_type'],
             'prefix'    => $validated['prefix'],
         ]);
 
@@ -149,6 +151,7 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)->ignore($project->id)
             ],
+            'pkwt_type' => 'required|string|in:vdi,cj,all',
             'prefix' => 'required|string|max:5',
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',
@@ -159,6 +162,7 @@ class ProjectController extends Controller
         $project->update([
             'client_id' => $validated['client_id'],
             'name'      => $validated['name'],
+            'pkwt_type' => $validated['pkwt_type'],
             'prefix'    => $validated['prefix'],
         ]);
 

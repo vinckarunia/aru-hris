@@ -78,8 +78,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Assignment and Contract Routes
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);
     Route::resource('contracts', App\Http\Controllers\ContractController::class)->except(['index']);
-    Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
-    Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
 
     // Super Admin Only Routes
     Route::middleware(['role:SUPER_ADMIN'])->group(function () {
@@ -90,6 +88,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
         Route::resource('pics', PicController::class)->except(['create', 'show', 'edit']);
         Route::resource('internal-employees', InternalEmployeeController::class);
+        
+        // Document Generation
+        Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
+        Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
         
         // System Settings
         Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');

@@ -549,7 +549,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                         Lihat Detail & Kontrak
                                                     </Link>
 
-                                                    {assign.contracts && assign.contracts.length > 0 && (
+                                                    {!isPic && assign.contracts && assign.contracts.length > 0 && (
                                                         <div className="flex gap-2 w-full mt-2">
                                                             <a href={route('contracts.download-pkwt', { contract: assign.contracts[0].id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download PKWT (PDF)">
                                                                 <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> PKWT

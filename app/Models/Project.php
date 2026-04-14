@@ -35,6 +35,7 @@ class Project extends Model
     protected $fillable = [
         'client_id',
         'name',
+        'pkwt_type',
         'prefix',
         'id_running_number',
     ];

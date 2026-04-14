@@ -42,6 +42,7 @@ interface Project {
     id: string;
     client_id: string;
     name: string;
+    pkwt_type: 'vdi' | 'cj' | 'all';
     prefix: string;
     id_running_number: number;
     client?: Client;
@@ -110,6 +111,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
         branch_ids: [] as string[],
         pic_ids: [] as string[],
         name: '',
+        pkwt_type: 'all',
         prefix: '',
     });
 
@@ -225,6 +227,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
             branch_ids: project.branches?.map(d => d.id) || [],
             pic_ids: project.pics?.map((p: Pic) => p.id) || [],
             name: project.name,
+            pkwt_type: project.pkwt_type || 'all',
             prefix: project.prefix
         });
         clearErrors();
@@ -473,7 +476,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">
                         {modalMode === 'add' ? 'Tambah Project' : 'Edit Project'}
                     </h2>
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2 -mr-2">
                         <div>
                             <InputLabel htmlFor="client_id" value="Perusahaan Client" />
                             <select
@@ -544,6 +547,21 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                             <InputLabel htmlFor="name" value="Nama Project" />
                             <TextInput id="name" type="text" className="mt-1 block w-full" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="CONTOH: IT Support" />
                             <InputError message={errors.name} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="pkwt_type" value="Tipe Dokumen PKWT" />
+                            <select
+                                id="pkwt_type"
+                                value={data.pkwt_type}
+                                onChange={(e) => setData('pkwt_type', e.target.value)}
+                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                            >
+                                <option value="all">PKWT All (Default)</option>
+                                <option value="vdi">PKWT VDI</option>
+                                <option value="cj">PKWT CJ</option>
+                            </select>
+                            <InputError message={errors.pkwt_type as string} className="mt-2" />
                         </div>
 
                         <div>
