@@ -442,9 +442,10 @@ class ImportService
      * @param array<string, int> $mapping The column mapping (db_field => csv_index).
      * @param array $globalSettings Global settings (project_id, department_id, rates, etc.).
      * @param int $headerRow The 1-indexed row number containing headers (default: 1).
+     * @param string|null $activeSheetName When set, only rows from this sheet will be validated.
      * @return array{results: array, summary: array{total: int, valid: int, errors: int, conflicts: int}}
      */
-    public function validateAllRows(string $sessionId, array $mapping, array $globalSettings, int $headerRow = 1): array
+    public function validateAllRows(string $sessionId, array $mapping, array $globalSettings, int $headerRow = 1, ?string $activeSheetName = null): array
     {
         $cached = $this->getCachedSession($sessionId);
         if (!$cached) {
@@ -503,6 +504,11 @@ class ImportService
         } else {
             $spreadsheet = $this->loadSpreadsheetReadOnly($fullPath);
             foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                // Skip sheets that are not the active one (when filter is set)
+                if ($activeSheetName !== null && $worksheet->getTitle() !== $activeSheetName) {
+                    continue;
+                }
+
                 $rows = $worksheet->toArray();
                 if (empty($rows)) {
                     continue;

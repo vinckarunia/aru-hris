@@ -168,6 +168,7 @@ class ImportController extends Controller
             'global_settings.project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'global_settings.branch_id'    => ['nullable', 'integer', 'exists:branches,id'],
             'header_row' => ['nullable', 'integer', 'min:1'],
+            'active_sheet_name' => ['nullable', 'string'],
         ], [
             'session_id.required' => 'Session ID tidak ditemukan.',
             'mapping.required' => 'Mapping kolom wajib diisi.',
@@ -191,7 +192,8 @@ class ImportController extends Controller
 
         try {
             $headerRow = (int) $request->input('header_row', 1);
-            $result = $this->importService->validateAllRows($sessionId, $mapping, $globalSettings, $headerRow);
+            $activeSheetName = $request->input('active_sheet_name');
+            $result = $this->importService->validateAllRows($sessionId, $mapping, $globalSettings, $headerRow, $activeSheetName);
 
             return response()->json([
                 'message' => 'Validasi selesai.',
@@ -222,6 +224,7 @@ class ImportController extends Controller
             'global_settings' => ['required', 'array'],
             'row_actions' => ['nullable', 'array'],
             'header_row' => ['nullable', 'integer', 'min:1'],
+            'active_sheet_name' => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -246,7 +249,8 @@ class ImportController extends Controller
 
         // Dispatch job to queue
         $headerRow = (int) $request->input('header_row', 1);
-        ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions, $headerRow);
+        $activeSheetName = $request->input('active_sheet_name');
+        ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions, $headerRow, $activeSheetName);
 
         return response()->json([
             'message' => 'Proses import telah dimulai di background.',

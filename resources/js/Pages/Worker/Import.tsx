@@ -168,6 +168,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
     const [sheets, setSheets] = useState<SheetData[]>([]);
     const [activeSheetIndex, setActiveSheetIndex] = useState<number>(0);
     const [headerRow, setHeaderRow] = useState<number>(1);
+    const [activeSheetOnly, setActiveSheetOnly] = useState<boolean>(false);
 
     // Derived: compute headers and preview data from active sheet + header row
     const activeSheet = sheets[activeSheetIndex] || null;
@@ -232,6 +233,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
             setSheets(response.data.sheets || []);
             setActiveSheetIndex(0);
             setHeaderRow(1);
+            setActiveSheetOnly(false);
             setMapping(response.data.auto_mapping || {});
             setCurrentStep(2);
         } catch (error: any) {
@@ -332,6 +334,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                 mapping,
                 global_settings: globalSettings,
                 header_row: headerRow,
+                active_sheet_name: activeSheetOnly ? sheets[activeSheetIndex]?.name : undefined,
             });
             setValidationResults(response.data.results);
             setValidationSummary(response.data.summary);
@@ -372,6 +375,7 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                 global_settings: globalSettings,
                 row_actions: rowActions,
                 header_row: headerRow,
+                active_sheet_name: activeSheetOnly ? sheets[activeSheetIndex]?.name : undefined,
             });
             setCurrentStep(4);
             startProgressPolling();
@@ -576,6 +580,21 @@ export default function Import({ clients, projects, dbColumns }: Props) {
                             <span className="text-[10px] text-slate-400">
                                 (Data dimulai dari baris {headerRow + 1})
                             </span>
+
+                            {/* Active sheet only toggle — only shown when multi-sheet */}
+                            {sheets.length > 1 && (
+                                <label className="flex items-center gap-1.5 ml-3 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={activeSheetOnly}
+                                        onChange={(e) => setActiveSheetOnly(e.target.checked)}
+                                        className="w-3.5 h-3.5 accent-primary rounded"
+                                    />
+                                    <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                                        Sheet aktif saja
+                                    </span>
+                                </label>
+                            )}
                         </div>
                     </div>
 

@@ -173,6 +173,21 @@ class ImportDataCleaner
 
         $dateString = trim($dateString);
 
+        // Detect Excel date serial numbers (e.g. 44013 = 2020-07-01).
+        // PhpSpreadsheet returns raw integers when setReadDataOnly(true) is used.
+        // Valid Excel serials: 1 (1900-01-01) to 2958465 (9999-12-31).
+        if (is_numeric($dateString) && !str_contains($dateString, '.')) {
+            $serial = (int) $dateString;
+            if ($serial >= 1 && $serial <= 2958465) {
+                try {
+                    $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($serial);
+                    return $dt->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Not a valid Excel date serial — fall through to string parsing
+                }
+            }
+        }
+
         // Replace Indonesian month names with English equivalents
         $dateString = str_ireplace(
             array_keys(self::INDONESIAN_MONTHS),

@@ -83,6 +83,11 @@ class ProcessBulkImport implements ShouldQueue
     protected int $headerRow;
 
     /**
+     * @var string|null When set, only rows from this sheet will be processed.
+     */
+    protected ?string $activeSheetName;
+
+    /**
      * Create a new job instance.
      *
      * @param string $sessionId The unique import session ID.
@@ -91,8 +96,9 @@ class ProcessBulkImport implements ShouldQueue
      * @param int $userId The ID of the authenticated user.
      * @param array $rowActions Per-row conflict actions: [row_number => 'update'|'skip'].
      * @param int $headerRow The 1-indexed row number containing headers.
+     * @param string|null $activeSheetName When set, only rows from this sheet will be processed.
      */
-    public function __construct(string $sessionId, array $mapping, array $globalSettings, int $userId, array $rowActions = [], int $headerRow = 1)
+    public function __construct(string $sessionId, array $mapping, array $globalSettings, int $userId, array $rowActions = [], int $headerRow = 1, ?string $activeSheetName = null)
     {
         $this->sessionId = $sessionId;
         $this->mapping = $mapping;
@@ -100,6 +106,7 @@ class ProcessBulkImport implements ShouldQueue
         $this->userId = $userId;
         $this->rowActions = $rowActions;
         $this->headerRow = $headerRow;
+        $this->activeSheetName = $activeSheetName;
         $this->onQueue('default');
     }
 
@@ -156,6 +163,10 @@ class ProcessBulkImport implements ShouldQueue
             $reader->setReadDataOnly(true);
             $spreadsheet = $reader->load($fullPath);
             foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                // Skip sheets not matching the active sheet filter
+                if ($this->activeSheetName !== null && $worksheet->getTitle() !== $this->activeSheetName) {
+                    continue;
+                }
                 $rows = $worksheet->toArray();
                 if (empty($rows)) {
                     continue;
