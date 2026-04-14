@@ -544,9 +544,22 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                 </p>
                                             </div>
                                             {!isWorker && (
-                                                <Link href={route('assignments.show', assign.id)} className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors text-center whitespace-nowrap">
-                                                    Lihat Detail & Kontrak
-                                                </Link>
+                                                <div className="flex flex-col items-end gap-2 shrink-0">
+                                                    <Link href={route('assignments.show', assign.id)} className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors text-center whitespace-nowrap w-full">
+                                                        Lihat Detail & Kontrak
+                                                    </Link>
+
+                                                    {assign.contracts && assign.contracts.length > 0 && (
+                                                        <div className="flex gap-2 w-full mt-2">
+                                                            <a href={route('contracts.download-pkwt', { contract: assign.contracts[0].id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download PKWT (PDF)">
+                                                                <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> PKWT
+                                                            </a>
+                                                            <a href={route('contracts.download-st', { contract: assign.contracts[0].id })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Surat Tugas (PDF)">
+                                                                <iconify-icon icon="solar:file-check-bold" width="14"></iconify-icon> Surat Tugas
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     );

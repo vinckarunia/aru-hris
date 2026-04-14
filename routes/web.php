@@ -78,6 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Assignment and Contract Routes
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);
     Route::resource('contracts', App\Http\Controllers\ContractController::class)->except(['index']);
+    Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
+    Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
 
     // Super Admin Only Routes
     Route::middleware(['role:SUPER_ADMIN'])->group(function () {

@@ -8,8 +8,8 @@ interface Assignment {
     id: string; worker_id: string; employee_id: string | null; position: string | null;
     hire_date: string; termination_date: string | null; status: string;
     worker: { id: string; name: string; nik_aru: string; };
-    project: { id: string; name: string; prefix: string; };
-    branch: { id: string; name: string; };
+    project: { id: string; name: string; prefix: string; } | null;
+    branch: { id: string; name: string; } | null;
     contracts?: any[];
 }
 
@@ -25,12 +25,12 @@ export default function Show({ assignment }: Props) {
                 <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
                 <div className="z-10">
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-1">
-                        {assignment.position} di {assignment.project.name}
+                        {assignment.position} di {assignment.project?.name || 'Project Dihapus/Tidak Ditemukan'}
                     </h2>
                     <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
                         <span className="flex items-center gap-1"><iconify-icon icon="solar:user-bold"></iconify-icon> {assignment.worker.name}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span className="flex items-center gap-1"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Cabang: {assignment.branch.name}</span>
+                        <span className="flex items-center gap-1"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Cabang: {assignment.branch?.name || 'Unknown'}</span>
                     </div>
                 </div>
                 <div className="z-10 flex gap-3">
