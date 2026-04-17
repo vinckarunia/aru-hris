@@ -95,9 +95,13 @@ class ClientController extends Controller implements HasMiddleware
             }])
             ->get(['id', 'nik_aru', 'name']);
 
+        // Get pics for the project assignment form modal
+        $pics = \App\Models\Pic::with('user:id,name')->orderBy('name')->get(['id', 'user_id', 'name']);
+
         return Inertia::render('Client/Show', [
             'client'  => $client,
             'workers' => $workers,
+            'pics'    => $pics,
         ]);
     }
 

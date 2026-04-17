@@ -252,6 +252,10 @@ class ImportController extends Controller
         $activeSheetName = $request->input('active_sheet_name');
         ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions, $headerRow, $activeSheetName);
 
+        // Auto-start queue worker in background (stops when empty)
+        $artisan = base_path('artisan');
+        exec("php {$artisan} queue:work --stop-when-empty --timeout=300 > /dev/null 2>&1 &");
+
         return response()->json([
             'message' => 'Proses import telah dimulai di background.',
             'session_id' => $sessionId,

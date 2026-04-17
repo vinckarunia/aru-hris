@@ -108,7 +108,31 @@ class DocumentController extends Controller
             'file.max'      => 'Ukuran file melebihi batas maksimum (' . round($settings['maxKb'] / 1024, 1) . ' MB).',
         ]);
 
-        // Replace existing document of the same type (one document per type per worker)
+        $path = $request->file('file')->store(
+            "documents/worker_{$worker->id}",
+            config('filesystems.default')
+        );
+
+        if (!$request->user()->isAdminOrAbove()) {
+            $activeAssignment = $worker->assignments()->whereIn('status', ['active', 'probation', 'extended'])->first();
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $worker->id,
+                'project_id' => $activeAssignment ? $activeAssignment->project_id : null,
+                'requested_by' => $request->user()->id,
+                'request_type' => 'data_change',
+                'requested_fields' => [],
+                'status' => 'pending',
+                'requested_data' => [
+                    '_action' => 'upload_document',
+                    'type' => $validated['type'],
+                    'file_path' => $path
+                ],
+            ]);
+            return redirect()->back()->with('success', 'Dokumen berhasil diunggah dan sedang menunggu verifikasi Admin.');
+        }
+
+        // If Admin, directly replace existing document of the same type (one document per type per worker)
         $existing = Document::where('worker_id', $worker->id)
             ->where('type', $validated['type'])
             ->first();
@@ -118,18 +142,16 @@ class DocumentController extends Controller
             $existing->delete();
         }
 
-        $path = $request->file('file')->store(
-            "documents/worker_{$worker->id}",
-            config('filesystems.default')
-        );
-
         Document::create([
             'worker_id' => $worker->id,
             'type'      => $validated['type'],
             'file_path' => $path,
+            'is_verified' => true,
+            'verified_by' => $request->user()->id,
+            'verified_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Dokumen berhasil diunggah.');
+        return redirect()->back()->with('success', 'Dokumen berhasil diunggah dan diverifikasi secara native.');
     }
 
     /**
@@ -141,6 +163,27 @@ class DocumentController extends Controller
      */
     public function destroy(Request $request, Document $document): RedirectResponse
     {
+        if (!$request->user()->isAdminOrAbove()) {
+            $worker = \App\Models\Worker::find($document->worker_id);
+            $activeAssignment = $worker ? $worker->assignments()->whereIn('status', ['active', 'probation', 'extended'])->first() : null;
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $document->worker_id,
+                'project_id' => $activeAssignment ? $activeAssignment->project_id : null,
+                'requested_by' => $request->user()->id,
+                'request_type' => 'data_change',
+                'requested_fields' => [],
+                'status' => 'pending',
+                'requested_data' => [
+                    '_action' => 'delete_document',
+                    'document_id' => $document->id,
+                    'type' => $document->type,
+                    'file_path' => $document->file_path
+                ],
+            ]);
+            return redirect()->back()->with('success', 'Pengajuan hapus dokumen berhasil direkam dan menunggu persetujuan Admin.');
+        }
+
         $this->disk()->delete($document->file_path);
         $document->delete();
 
@@ -187,23 +230,8 @@ class DocumentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isWorker()) {
-            abort(403, 'Akses ditolak.');
-        }
-
-        if ($user->isPic()) {
-            $projectIds = $user->pic
-                ? $user->pic->projects()->pluck('projects.id')->toArray()
-                : [];
-
-            $workerInProject = $document->worker?->assignments()
-                ->whereIn('status', ['active', 'probation', 'extended'])
-                ->whereIn('project_id', $projectIds)
-                ->exists();
-
-            if (! $workerInProject) {
-                abort(403, 'Akses ditolak. Karyawan ini tidak berada di project Anda.');
-            }
+        if (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Wewenang verifikasi dokumen hanya ada pada Admin.');
         }
 
         // Toggle: if already verified → unverify; otherwise → verify now

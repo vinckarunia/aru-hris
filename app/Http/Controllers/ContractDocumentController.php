@@ -18,6 +18,8 @@ class ContractDocumentController extends Controller
      */
     public function downloadPkwt(Request $request, Contract $contract)
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin.');
+
         $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branch']);
         
         $user = $request->user();
@@ -65,6 +67,8 @@ class ContractDocumentController extends Controller
      */
     public function downloadSuratTugas(Request $request, Contract $contract)
     {
+        if (!$request->user()->isAdminOrAbove()) abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin.');
+
         $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branch']);
         
         $user = $request->user();

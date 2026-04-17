@@ -95,7 +95,14 @@ export default function Edit({ worker }: Props) {
 
                         <div>
                             <InputLabel htmlFor="ktp_number">Nomor KTP (NIK) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <TextInput id="ktp_number" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.ktp_number} onChange={e => setData('ktp_number', e.target.value.replace(/\D/g, ''))} required placeholder="16 digit angka" />
+                            <TextInput id="ktp_number" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.ktp_number} onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setData(prev => ({
+                                    ...prev,
+                                    ktp_number: val,
+                                    npwp: val,
+                                }));
+                            }} required placeholder="16 digit angka" />
                             <InputError message={errors.ktp_number} className="mt-1" />
                         </div>
                         <div>
@@ -192,8 +199,8 @@ export default function Edit({ worker }: Props) {
                             <InputError message={errors.tax_status} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="npwp" value="Nomor NPWP" />
-                            <TextInput id="npwp" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.npwp} onChange={e => setData('npwp', e.target.value.replace(/\D/g, ''))} placeholder="15 atau 16 digit" />
+                            <InputLabel htmlFor="npwp">Nomor NPWP <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400 ml-1">Sama dengan NIK</span></InputLabel>
+                            <TextInput id="npwp" type="text" maxLength={16} className="mt-1 block w-full font-mono bg-slate-50 dark:bg-slate-900/50" value={data.npwp} onChange={e => setData('npwp', e.target.value.replace(/\D/g, ''))} placeholder="Otomatis dari NIK" readOnly />
                             <InputError message={errors.npwp} className="mt-1" />
                         </div>
                         <div></div>

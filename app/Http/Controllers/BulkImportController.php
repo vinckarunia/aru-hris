@@ -84,6 +84,10 @@ class BulkImportController extends Controller
         // Dispatch job to queue (Redis)
         ProcessBulkImport::dispatch($filePath, $mapping, auth()->id());
 
+        // Auto-start queue worker in background (stops when empty)
+        $artisan = base_path('artisan');
+        exec("php {$artisan} queue:work --stop-when-empty --timeout=300 > /dev/null 2>&1 &");
+
         return response()->json([
             'message' => 'Import process has been added to the queue.',
         ]);

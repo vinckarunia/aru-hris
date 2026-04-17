@@ -59,7 +59,7 @@ export default function UpdateProfileInformation({
                     {user.role === 'WORKER' && (
                         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                             <iconify-icon icon="solar:info-circle-linear"></iconify-icon>
-                            Untuk mengubah nama, silakan ajukan melalui Edit Request.
+                            Untuk mengubah nama, silakan ajukan melalui Data Request.
                         </p>
                     )}
 

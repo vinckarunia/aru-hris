@@ -160,7 +160,7 @@ class SettingController extends Controller
             \App\Models\Branch::query()->delete();
             \App\Models\Client::query()->delete();
             \App\Models\FamilyMember::query()->delete();
-            \App\Models\EditRequest::query()->delete();
+            \App\Models\DataRequest::query()->delete();
             \App\Models\Document::query()->delete();
             \App\Models\Reminder::query()->delete();
             

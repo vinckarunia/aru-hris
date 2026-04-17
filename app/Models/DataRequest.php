@@ -7,7 +7,7 @@ use App\Models\Worker;
 use App\Models\Project;
 use App\Models\User;
 
-class EditRequest extends Model
+class DataRequest extends Model
 {
     use \App\Traits\HasHashid;
 
@@ -19,15 +19,20 @@ class EditRequest extends Model
         'requested_data',
         'notes',
         'status',
+        'pic_reviewed_by',
+        'pic_status',
+        'pic_reviewed_at',
         'reviewed_by',
         'review_notes',
         'reviewed_at',
+        'request_type',
     ];
 
     protected $casts = [
         'requested_fields' => 'json',
         'requested_data' => 'json',
         'reviewed_at' => 'datetime',
+        'pic_reviewed_at' => 'datetime',
     ];
 
     public function worker()
@@ -48,5 +53,10 @@ class EditRequest extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function picReviewer()
+    {
+        return $this->belongsTo(User::class, 'pic_reviewed_by');
     }
 }

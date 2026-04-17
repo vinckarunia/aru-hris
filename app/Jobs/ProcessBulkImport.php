@@ -222,7 +222,7 @@ class ProcessBulkImport implements ShouldQueue
             try {
                 DB::beginTransaction();
 
-                // 1. Create Worker
+                // 1. Build Worker data
                 $workerData = $importService->buildWorkerData($row, $this->mapping);
 
                 // Validate required fields
@@ -247,16 +247,6 @@ class ProcessBulkImport implements ShouldQueue
                         $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
                         continue;
                     }
-                }
-
-                if ($isUpdate) {
-                    // Update existing worker data (only non-null fields from CSV)
-                    $updateData = array_filter($workerData, fn($v) => $v !== null && $v !== '');
-                    unset($updateData['ktp_number']); // Don't update the KTP itself
-                    $existingWorker->update($updateData);
-                    $worker = $existingWorker;
-                } else {
-                    $worker = Worker::create($workerData);
                 }
 
                 // 1.5 Pre-process Project and Department Auto-Creation
@@ -300,6 +290,56 @@ class ProcessBulkImport implements ShouldQueue
                             $p->branches()->syncWithoutDetaching([$existingBranch->id]);
                         }
                     }
+                }
+
+                // --- PIC Interception: create DataRequest INSTEAD of writing to DB ---
+                $user = \App\Models\User::find($this->userId);
+                $isPic = $user && $user->isPic();
+
+                if ($isPic) {
+                    $assignmentData = $importService->buildAssignmentData($row, $this->mapping, $this->globalSettings);
+                    $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
+                    $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
+                    $familyData = $importService->buildFamilyMembersData($row, $this->mapping);
+
+                    $payload = array_merge($workerData, $assignmentData, [
+                        'contracts' => $contractsData,
+                        'compensation' => $compData,
+                        'family_members' => $familyData
+                    ]);
+
+                    if ($isUpdate) {
+                        $payload['_action'] = 'bulk_import_update_worker';
+                    }
+
+                    \App\Models\DataRequest::create([
+                        'worker_id' => $isUpdate ? $existingWorker->id : null,
+                        'project_id' => $assignmentData['project_id'] ?? $this->globalSettings['project_id'],
+                        'requested_by' => $this->userId,
+                        'request_type' => $isUpdate ? 'data_change' : 'new_data',
+                        'requested_fields' => array_keys($payload),
+                        'requested_data' => $payload,
+                        'notes' => $isUpdate ? 'Update Karyawan via Bulk Import' : 'Import Karyawan via Bulk Upload',
+                        'status' => 'pending',
+                        'pic_status' => 'approved',
+                        'pic_reviewed_by' => $this->userId,
+                        'pic_reviewed_at' => now(),
+                    ]);
+
+                    DB::commit();
+                    $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
+                    continue;
+                }
+
+                // --- Admin path: create records directly ---
+                if ($isUpdate) {
+                    // Update existing worker data (only non-null fields from CSV)
+                    $updateData = array_filter($workerData, fn($v) => $v !== null && $v !== '');
+                    unset($updateData['ktp_number']); // Don't update the KTP itself
+                    $existingWorker->update($updateData);
+                    $worker = $existingWorker;
+                } else {
+                    $worker = Worker::create($workerData);
                 }
 
                 // 2. Create or update Assignment
@@ -362,7 +402,7 @@ class ProcessBulkImport implements ShouldQueue
 
                 DB::commit();
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 DB::rollBack();
                 $failed++;
 

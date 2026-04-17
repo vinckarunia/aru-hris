@@ -27,7 +27,7 @@ class AssignmentController extends Controller
     public function create(Request $request): Response
     {
         $user = $request->user();
-        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove()) abort(403, 'Akses ditolak. Wewenang untuk manajemen teknis penempatan secara langsung hanya ada pada Admin.');
 
         $workerId = $request->query('worker_id');
         $request->validate(['worker_id' => 'required|exists:workers,id']);
@@ -53,14 +53,7 @@ class AssignmentController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        if ($user->isWorker()) abort(403);
-
-        if ($user->isPic() && $request->has('project_id')) {
-            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
-            if (!in_array($request->project_id, $projectIds)) {
-                abort(403, 'Akses ditolak. Anda tidak memiliki akses ke project ini.');
-            }
-        }
+        if (!$user->isAdminOrAbove()) abort(403, 'Akses ditolak. Wewenang untuk manajemen teknis penempatan secara langsung hanya ada pada Admin.');
 
         try {
             $validated = $request->validate([
@@ -115,36 +108,47 @@ class AssignmentController extends Controller
     public function show(Request $request, Assignment $assignment): Response
     {
         $user = $request->user();
-
-        if ($user->isWorker() && $user->worker_id !== $assignment->worker_id) {
-            abort(403, 'Akses ditolak.');
-        }
+        $picProjects = [];
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
             if (!in_array($assignment->project_id, $projectIds)) {
-                abort(403, 'Akses ditolak. Assignment ini di luar project Anda.');
+                abort(403, 'Akses ditolak. Penempatan ini di luar wewenang project Anda.');
             }
+            // Load projects with branches for the transfer form
+            $picProjects = $user->pic ? $user->pic->projects()->with('branches:id,client_id,name')->select('projects.id', 'name')->get() : [];
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Wewenang untuk melihat detail teknis penempatan dan kontrak hanya ada pada Admin.');
         }
 
         $assignment->load(['worker', 'project', 'branch', 'contracts']);
 
         return Inertia::render('Assignment/Show', [
             'assignment' => $assignment,
+            'picProjects' => $picProjects,
         ]);
     }
 
     /**
      * Show the form for editing the specified assignment.
      */
-    public function edit(Assignment $assignment): Response
+    public function edit(Request $request, Assignment $assignment): Response
     {
-        // Authorization for edit should be here, similar to create/update/destroy
-        // Assuming only Admin can edit based on the instruction
-        if (!request()->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Penempatan ini di luar wewenang project Anda.');
+            }
+            $projects = $user->pic ? $user->pic->projects()->with('branches')->orderBy('name')->get() : [];
+        } elseif ($user->isAdminOrAbove()) {
+            $projects = Project::with('branches')->orderBy('name')->get();
+        } else {
+            abort(403);
+        }
 
         $assignment->load('worker');
-        $projects = Project::with('branches')->orderBy('name')->get();
 
         return Inertia::render('Assignment/Edit', [
             'assignment' => $assignment,
@@ -157,10 +161,19 @@ class AssignmentController extends Controller
      */
     public function update(Request $request, Assignment $assignment): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Penempatan ini di luar wewenang project Anda.');
+            }
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403);
+        }
 
         try {
-            $validated = $request->validate([
+            $rules = [
                 'project_id'       => 'required|exists:projects,id',
                 'branch_id'        => 'required|exists:branches,id',
                 'employee_id'      => [
@@ -171,7 +184,35 @@ class AssignmentController extends Controller
                 'hire_date'        => 'required|date',
                 'status'           => 'nullable|in:active,contract expired,resign,fired,project closed,other',
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
-            ]);
+            ];
+
+            if ($user->isPic()) {
+                $rules['notes'] = 'required|string|max:1000';
+            }
+
+            $validated = $request->validate($rules);
+
+            if ($user->isPic()) {
+                $notes = $validated['notes'];
+                unset($validated['notes']);
+                
+                \App\Models\DataRequest::create([
+                    'worker_id' => $assignment->worker_id,
+                    'project_id' => $assignment->project_id,
+                    'request_type' => 'status_change',
+                    'requested_by' => $user->id,
+                    'requested_fields' => array_keys($validated),
+                    'requested_data' => array_merge(['_action' => 'update_assignment', 'assignment_id' => $assignment->id], $validated),
+                    'notes' => $notes,
+                    'status' => 'pending',
+                    'pic_status' => 'approved',
+                    'pic_reviewed_by' => $user->id,
+                    'pic_reviewed_at' => now(),
+                ]);
+
+                return redirect()->route('assignments.show', $assignment)
+                    ->with('success', 'Pengajuan perubahan penempatan berhasil dikirim untuk direview Admin.');
+            }
 
             if (is_null($request->termination_date)) {
                 $hasActive = Assignment::where('worker_id', $assignment->worker_id)
@@ -237,7 +278,7 @@ class AssignmentController extends Controller
      * @param  Project $project   The project to generate the NIK for.
      * @return string             The generated NIK ARU string.
      */
-    private function generateNikForProject(Project $project): string
+    public function generateNikForProject(Project $project): string
     {
         $prefix = (string) $project->prefix;
 

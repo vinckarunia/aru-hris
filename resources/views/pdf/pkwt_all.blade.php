@@ -12,6 +12,7 @@
             margin: 0;
             padding: 0;
         }
+        @page { margin: 1.27cm; }
         /* ── Typography ── */
         .text-10 { font-size: 10px; }
         .text-12 { font-size: 12px; }
@@ -40,6 +41,7 @@
             text-align: center;
             margin-top: 18px;
             margin-bottom: 10px;
+            page-break-after: avoid;
         }
         /* ── Page number ── */
         .page-number {
@@ -77,6 +79,10 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+        tr {
+            page-break-inside: avoid;
         }
         td {
             vertical-align: top;
@@ -133,9 +139,10 @@
         $startDate    = $startDateObj ? $startDateObj->translatedFormat('d F Y') : '-';
         $endDate      = $endDateObj ? $endDateObj->translatedFormat('d F Y') : '-';
         
-        $durationMonths = ($startDateObj && $endDateObj)
-            ? $startDateObj->diffInMonths($endDateObj->copy()->addDay())
-            : null;
+        $durationMonths = $contract->duration_months ?: null;
+        if (!$durationMonths && $startDateObj && $endDateObj) {
+            $durationMonths = (int) $startDateObj->diffInMonths($endDateObj->copy()->addDay());
+        }
         $durationText = $durationMonths !== null ? $durationMonths . ' BULAN' : '-';
         $footerYear     = $year;
 

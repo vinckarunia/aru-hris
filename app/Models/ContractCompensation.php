@@ -17,6 +17,9 @@ use App\Models\Contract;
  * @property string $salary_rate
  * @property string $meal_allowance
  * @property string $transport_allowance
+ * @property string $allowance
+ * @property string $attendance_allowance
+ * @property string $performance_bonus
  * @property string $allowance_rate
  * @property string $overtime_weekday_rate
  * @property string $overtime_holiday_rate
@@ -28,12 +31,17 @@ class ContractCompensation extends Model
 
     public $timestamps = false;
 
+    protected $table = 'contract_compensation';
+
     protected $fillable = [
         'contract_id',
         'base_salary',
         'salary_rate',
         'meal_allowance',
         'transport_allowance',
+        'allowance',
+        'attendance_allowance',
+        'performance_bonus',
         'allowance_rate',
         'overtime_weekday_rate',
         'overtime_holiday_rate',

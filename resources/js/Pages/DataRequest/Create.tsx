@@ -45,6 +45,7 @@ export default function Create({ worker, auth }: PageProps<Props>) {
     interface FormState {
         worker_id: string;
         project_id: string;
+        request_type: string;
         requested_fields: string[];
         requested_data: Record<string, string>;
         notes: string;
@@ -53,6 +54,7 @@ export default function Create({ worker, auth }: PageProps<Props>) {
     const { data: requestData, setData: setRequestData, post: postRequest, processing: requestProcessing } = useForm<FormState>({
         worker_id: worker.id,
         project_id: defaultProjectId,
+        request_type: 'data_change',
         requested_fields: ['FULL_PROFILE_SUBMITTED'],
         requested_data: {
             name: worker.name || '', ktp_number: worker.ktp_number || '', kk_number: worker.kk_number || '',
@@ -72,12 +74,12 @@ export default function Create({ worker, auth }: PageProps<Props>) {
         });
     };
 
-    const submitEditRequest: FormEventHandler = (e) => {
+    const submitDataRequest: FormEventHandler = (e) => {
         e.preventDefault();
         // Since project_id is validated strictly by exists in DB, if worker has no project ever,
         // it may fail validation. But if required validation fails, Laravel returns with errors.
         // For project_id if it's strictly required but empty, it will throw validation error to UI.
-        postRequest(route('edit-requests.store'));
+        postRequest(route('data-requests.store'));
     };
 
     return (
@@ -104,7 +106,7 @@ export default function Create({ worker, auth }: PageProps<Props>) {
                     </div>
                 )}
 
-                <form onSubmit={submitEditRequest} className="space-y-6">
+                <form onSubmit={submitDataRequest} className="space-y-6">
                     <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700/50 p-5">
                         <h3 className="text-md font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">Informasi Pribadi</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

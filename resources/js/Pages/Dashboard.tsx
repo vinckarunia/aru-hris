@@ -41,7 +41,7 @@ interface DashboardData {
     };
     alerts: {
         idle_workers: IdleWorker[];
-        pending_edit_requests: number;
+        pending_data_requests: number;
         unverified_documents: Array<{
             id: number;
             type: string;
@@ -325,7 +325,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                     <div className="space-y-6">
 
                         {/* Operational Alerts */}
-                        {(alerts.pending_edit_requests > 0 || alerts.unverified_documents.length > 0) && (
+                        {(alerts.pending_data_requests > 0 || alerts.unverified_documents.length > 0) && (
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-rose-100 dark:border-rose-900/30">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                     <iconify-icon icon="solar:danger-triangle-bold" className="text-rose-500"></iconify-icon>
@@ -333,20 +333,20 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                 </h3>
                                 <div className="space-y-4">
                                     {/* Pending Edit Requests Alert */}
-                                    {alerts.pending_edit_requests > 0 && (
-                                        <Link href={route('edit-requests.index')} className="flex items-center justify-between p-3 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 rounded-xl transition-colors border border-amber-200 dark:border-amber-500/30 group">
+                                    {alerts.pending_data_requests > 0 && (
+                                        <Link href={route('data-requests.index')} className="flex items-center justify-between p-3 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 rounded-xl transition-colors border border-amber-200 dark:border-amber-500/30 group">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                                                     <iconify-icon icon="solar:document-text-bold" width="20"></iconify-icon>
                                                 </div>
                                                 <div>
                                                     <h4 className="font-semibold text-amber-900 dark:text-amber-100 text-sm">Pengajuan Perubahan Data</h4>
-                                                    <p className="text-xs text-amber-700 dark:text-amber-400/80">Menunggu review HR Admin</p>
+                                                    <p className="text-xs text-amber-700 dark:text-amber-400/80">{isPic ? 'Menunggu review Anda' : 'Menunggu review HR Admin'}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="bg-amber-500 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow-sm">
-                                                    {alerts.pending_edit_requests}
+                                                    {alerts.pending_data_requests}
                                                 </span>
                                                 <iconify-icon icon="solar:alt-arrow-right-line-duotone" className="text-amber-500" width="20"></iconify-icon>
                                             </div>

@@ -1,11 +1,15 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { PageProps } from '@/types';
 import Modal from '@/Components/Modal';
 import DangerButton from '@/Components/DangerButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function Show({ contract }: any) {
+    const { auth } = usePage<PageProps>().props;
+    const isPic = auth.user.role === 'PIC';
+    const isAdmin = !isPic;
     const { delete: destroy, processing } = useForm();
     const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
@@ -46,12 +50,16 @@ export default function Show({ contract }: any) {
                     <Link href={route('assignments.show', contract.assignment.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                         <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon> Kembali
                     </Link>
-                    <Link href={route('contracts.edit', contract.id)} className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-bold transition-colors flex items-center gap-2 text-sm">
-                        <iconify-icon icon="solar:pen-bold" width="18"></iconify-icon> Edit Kontrak
-                    </Link>
-                    <button onClick={() => setIsDeleteModalOpen(true)} className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl font-bold transition-colors flex items-center gap-2 text-sm">
-                        <iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon> Hapus
-                    </button>
+                    {isAdmin && (
+                        <>
+                            <Link href={route('contracts.edit', contract.id)} className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-bold transition-colors flex items-center gap-2 text-sm">
+                                <iconify-icon icon="solar:pen-bold" width="18"></iconify-icon> Edit Kontrak
+                            </Link>
+                            <button onClick={() => setIsDeleteModalOpen(true)} className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl font-bold transition-colors flex items-center gap-2 text-sm">
+                                <iconify-icon icon="solar:trash-bin-trash-bold" width="18"></iconify-icon> Hapus
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -101,10 +109,23 @@ export default function Show({ contract }: any) {
                             <span className="px-3 py-1 bg-white dark:bg-slate-800 text-emerald-600 rounded-lg text-xs font-bold shadow-sm uppercase">/ {translateRate(contract.compensation?.salary_rate)}</span>
                         </div>
 
-                        {(Number(contract.compensation?.meal_allowance) > 0 || Number(contract.compensation?.transport_allowance) > 0) && (
+                        {(Number(contract.compensation?.meal_allowance) > 0 || Number(contract.compensation?.transport_allowance) > 0 || Number(contract.compensation?.allowance) > 0 || Number(contract.compensation?.attendance_allowance) > 0 || Number(contract.compensation?.performance_bonus) > 0) && (
                             <div className="border-t border-slate-100 dark:border-slate-700 pt-4 grid grid-cols-2 gap-4">
-                                <div><p className="text-xs text-slate-500 mb-1">Uang Makan/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.meal_allowance)}</p></div>
-                                <div><p className="text-xs text-slate-500 mb-1">Uang Transport/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.transport_allowance)}</p></div>
+                                {Number(contract.compensation?.meal_allowance) > 0 && (
+                                    <div><p className="text-xs text-slate-500 mb-1">Uang Makan/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.meal_allowance)}</p></div>
+                                )}
+                                {Number(contract.compensation?.transport_allowance) > 0 && (
+                                    <div><p className="text-xs text-slate-500 mb-1">Uang Transport/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.transport_allowance)}</p></div>
+                                )}
+                                {Number(contract.compensation?.allowance) > 0 && (
+                                    <div><p className="text-xs text-slate-500 mb-1">Tunjangan</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.allowance)}</p></div>
+                                )}
+                                {Number(contract.compensation?.attendance_allowance) > 0 && (
+                                    <div><p className="text-xs text-slate-500 mb-1">Uang Kehadiran</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.attendance_allowance)}</p></div>
+                                )}
+                                {Number(contract.compensation?.performance_bonus) > 0 && (
+                                    <div><p className="text-xs text-slate-500 mb-1">Insentif Kinerja</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.performance_bonus)}</p></div>
+                                )}
                             </div>
                         )}
 
@@ -118,19 +139,21 @@ export default function Show({ contract }: any) {
                 </div>
             </div>
 
-            <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="sm">
-                <div className="p-6 text-center">
-                    <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <iconify-icon icon="solar:danger-triangle-bold" width="32"></iconify-icon>
+            {isAdmin && (
+                <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="sm">
+                    <div className="p-6 text-center">
+                        <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <iconify-icon icon="solar:danger-triangle-bold" width="32"></iconify-icon>
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Kontrak?</h2>
+                        <p className="text-sm text-slate-500 mb-6">Yakin menghapus kontrak beserta data rincian gajinya? Tindakan ini tidak dapat dibatalkan.</p>
+                        <div className="flex justify-center gap-3">
+                            <SecondaryButton onClick={() => setIsDeleteModalOpen(false)}>Batal</SecondaryButton>
+                            <DangerButton onClick={confirmDelete} disabled={processing}>Ya, Hapus</DangerButton>
+                        </div>
                     </div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hapus Kontrak?</h2>
-                    <p className="text-sm text-slate-500 mb-6">Yakin menghapus kontrak beserta data rincian gajinya? Tindakan ini tidak dapat dibatalkan.</p>
-                    <div className="flex justify-center gap-3">
-                        <SecondaryButton onClick={() => setIsDeleteModalOpen(false)}>Batal</SecondaryButton>
-                        <DangerButton onClick={confirmDelete} disabled={processing}>Ya, Hapus</DangerButton>
-                    </div>
-                </div>
-            </Modal>
+                </Modal>
+            )}
         </AdminLayout>
     );
 }

@@ -15,6 +15,7 @@ interface Contract {
     assignment: { id: string; worker: { name: string; }; project: { name: string; }; };
     compensation: {
         base_salary: string; salary_rate: string; meal_allowance: string | null; transport_allowance: string | null;
+        allowance: string | null; attendance_allowance: string | null; performance_bonus: string | null;
         allowance_rate: string; overtime_weekday_rate: string | null; overtime_holiday_rate: string | null; overtime_rate: string;
     };
 }
@@ -43,6 +44,9 @@ export default function Edit({ contract }: Props) {
         salary_rate: comp.salary_rate || 'monthly',
         meal_allowance: comp.meal_allowance?.toString() || '',
         transport_allowance: comp.transport_allowance?.toString() || '',
+        allowance: comp.allowance?.toString() || '',
+        attendance_allowance: comp.attendance_allowance?.toString() || '',
+        performance_bonus: comp.performance_bonus?.toString() || '',
         allowance_rate: comp.allowance_rate || 'monthly',
         overtime_weekday_rate: comp.overtime_weekday_rate?.toString() || '',
         overtime_holiday_rate: comp.overtime_holiday_rate?.toString() || '',
@@ -56,8 +60,12 @@ export default function Edit({ contract }: Props) {
             const end = new Date(data.end_date);
 
             if (end >= start) {
-                const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                const diffMonths = Math.round(diffDays / 30.437);
+                const e = new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1);
+                let months = (e.getFullYear() - start.getFullYear()) * 12 + (e.getMonth() - start.getMonth());
+                if (e.getDate() < start.getDate()) {
+                    months -= 1;
+                }
+                const diffMonths = Math.max(months, 0);
 
                 setData('duration_months', diffMonths.toString());
             } else {
@@ -215,22 +223,50 @@ export default function Edit({ contract }: Props) {
                         {/* Allowance */}
                         <div className="space-y-4">
                             <h4 className="font-bold text-slate-700 border-b pb-2">Tunjangan & Lembur</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <InputLabel htmlFor="meal_allowance" value="Uang Makan" />
-                                    <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                        <span className="text-slate-500 sm:text-sm">Rp</span>
-                                        <TextInput id="meal_allowance" type="text" className="block w-full font-mono" value={data.meal_allowance} onChange={e => handleNumberInput('meal_allowance', e.target.value)} placeholder="0" />
+                            <div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="meal_allowance" value="Uang Makan" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="meal_allowance" type="text" className="block w-full font-mono" value={data.meal_allowance} onChange={e => handleNumberInput('meal_allowance', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.meal_allowance} className="mt-1" />
                                     </div>
-                                    <InputError message={errors.meal_allowance} className="mt-1" />
+                                    <div>
+                                        <InputLabel htmlFor="transport_allowance" value="Uang Transport" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="transport_allowance" type="text" className="block w-full font-mono" value={data.transport_allowance} onChange={e => handleNumberInput('transport_allowance', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.transport_allowance} className="mt-1" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <InputLabel htmlFor="transport_allowance" value="Uang Transport" />
-                                    <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                        <span className="text-slate-500 sm:text-sm">Rp</span>
-                                        <TextInput id="transport_allowance" type="text" className="block w-full font-mono" value={data.transport_allowance} onChange={e => handleNumberInput('transport_allowance', e.target.value)} placeholder="0" />
+                                <div className="grid grid-cols-3 gap-4 pt-4">
+                                    <div>
+                                        <InputLabel htmlFor="allowance" value="Tunjangan" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="allowance" type="text" className="block w-full font-mono" value={data.allowance} onChange={e => handleNumberInput('allowance', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.allowance} className="mt-1" />
                                     </div>
-                                    <InputError message={errors.transport_allowance} className="mt-1" />
+                                    <div>
+                                        <InputLabel htmlFor="attendance_allowance" value="Uang Kehadiran" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="attendance_allowance" type="text" className="block w-full font-mono" value={data.attendance_allowance} onChange={e => handleNumberInput('attendance_allowance', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.attendance_allowance} className="mt-1" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="performance_bonus" value="Insentif Kinerja" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="performance_bonus" type="text" className="block w-full font-mono" value={data.performance_bonus} onChange={e => handleNumberInput('performance_bonus', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.performance_bonus} className="mt-1" />
+                                    </div>
                                 </div>
                             </div>
                             <div>

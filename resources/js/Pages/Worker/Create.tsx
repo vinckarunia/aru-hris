@@ -1,7 +1,8 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { PageProps } from '@/types';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
@@ -22,13 +23,37 @@ const BANK_OPTIONS = [
  *
  * Provides a comprehensive form to register a new worker in the HRIS.
  */
-export default function Create() {
+interface Branch {
+    id: string;
+    name: string;
+}
+
+interface Project {
+    id: string;
+    name: string;
+    branches?: Branch[];
+}
+
+interface CreateProps extends PageProps {
+    picProjects?: Project[];
+}
+
+export default function Create({ picProjects = [] }: CreateProps) {
+    const { auth } = usePage<PageProps>().props;
+    const isPic = auth.user.role === 'PIC';
+
     const { data, setData, post, processing, errors } = useForm({
         nik_aru: '', name: '', ktp_number: '', kk_number: '', birth_place: '',
         birth_date: '', gender: '', phone: '', education: '', religion: '',
         tax_status: '', address_ktp: '', address_domicile: '', mother_name: '',
         npwp: '', bpjs_kesehatan: '', bpjs_ketenagakerjaan: '', bank_name: '', bank_account_number: '',
+        project_id: '',
+        branch_id: '',
+        position: '',
     });
+
+    /** Get the branches belonging to the currently selected project. */
+    const selectedProjectBranches = picProjects.find(p => p.id.toString() === data.project_id)?.branches ?? [];
 
     const [bankDropdown, setBankDropdown] = useState<string>('');
 
@@ -55,6 +80,63 @@ export default function Create() {
             </div>
 
             <form onSubmit={submit} className="space-y-6">
+                {/* Section 0: Assignment Details (PIC Only) */}
+                {isPic && (
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2 flex items-center gap-2">
+                            Detail Penempatan
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div>
+                                <InputLabel htmlFor="project_id">Pilih Project <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                                <select
+                                    id="project_id"
+                                    className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    value={data.project_id}
+                                    onChange={e => {
+                                        setData(prev => ({ ...prev, project_id: e.target.value, branch_id: '' }));
+                                    }}
+                                    required
+                                >
+                                    <option value="">-- Pilih Project --</option>
+                                    {picProjects.map(p => (
+                                        <option key={p.id} value={p.id.toString()}>{p.name}</option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.project_id} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="branch_id">Cabang Penempatan</InputLabel>
+                                <select
+                                    id="branch_id"
+                                    className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    value={data.branch_id}
+                                    onChange={e => setData('branch_id', e.target.value)}
+                                    disabled={!data.project_id}
+                                >
+                                    <option value="">{data.project_id ? '-- Pilih Cabang --' : '-- Pilih project dulu --'}</option>
+                                    {selectedProjectBranches.map(b => (
+                                        <option key={b.id} value={b.id.toString()}>{b.name}</option>
+                                    ))}
+                                </select>
+                                <InputError message={(errors as any).branch_id} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="position">Jabatan</InputLabel>
+                                <TextInput
+                                    id="position"
+                                    type="text"
+                                    className="mt-1 block w-full"
+                                    value={data.position}
+                                    onChange={e => setData('position', e.target.value)}
+                                    placeholder="Contoh: Security"
+                                />
+                                <InputError message={(errors as any).position} className="mt-1" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Section 1: Personal Information */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Informasi Pribadi</h3>
@@ -72,7 +154,14 @@ export default function Create() {
 
                         <div>
                             <InputLabel htmlFor="ktp_number">Nomor KTP (NIK) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <TextInput id="ktp_number" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.ktp_number} onChange={e => setData('ktp_number', e.target.value.replace(/\D/g, ''))} required placeholder="16 digit angka" />
+                            <TextInput id="ktp_number" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.ktp_number} onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setData(prev => ({
+                                    ...prev,
+                                    ktp_number: val,
+                                    npwp: val,
+                                }));
+                            }} required placeholder="16 digit angka" />
                             <InputError message={errors.ktp_number} className="mt-1" />
                         </div>
                         <div>
@@ -169,8 +258,8 @@ export default function Create() {
                             <InputError message={errors.tax_status} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="npwp" value="Nomor NPWP" />
-                            <TextInput id="npwp" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={data.npwp} onChange={e => setData('npwp', e.target.value.replace(/\D/g, ''))} placeholder="15 atau 16 digit" />
+                            <InputLabel htmlFor="npwp">Nomor NPWP <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400 ml-1">Sama dengan NIK</span></InputLabel>
+                            <TextInput id="npwp" type="text" maxLength={16} className="mt-1 block w-full font-mono bg-slate-50 dark:bg-slate-900/50" value={data.npwp} onChange={e => setData('npwp', e.target.value.replace(/\D/g, ''))} placeholder="Otomatis dari NIK" readOnly />
                             <InputError message={errors.npwp} className="mt-1" />
                         </div>
                         <div></div> {/* Empty div for grid alignment */}

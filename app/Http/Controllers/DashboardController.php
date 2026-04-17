@@ -7,7 +7,7 @@ use App\Models\Client;
 use App\Models\Project;
 use App\Models\Contract;
 use App\Models\Assignment;
-use App\Models\EditRequest;
+use App\Models\DataRequest;
 use App\Models\Document;
 use App\Services\Reminder\ReminderService;
 use Illuminate\Http\Request;
@@ -137,26 +137,32 @@ class DashboardController extends Controller
                 ->take(10)
                 ->get();
             
-            // Pending Edit Requests Count - Admins only
-            $pendingEditRequestsCount = 0;
-            if (!$isPic) {
-                $pendingEditRequestsCount = EditRequest::where('status', 'pending')->count();
-            }
-
-            // Unverified Documents (For PIC: only workers within their active projects)
-            $unverifiedDocsQuery = Document::with('worker')->whereNull('verified_at');
-            
+            // Pending Edit Requests Count
+            $pendingDataRequestsCount = 0;
             if ($isPic) {
-                $unverifiedDocsQuery->whereHas('worker.assignments', function ($q) use ($picProjectIds) {
-                    $q->whereIn('status', ['active', 'probation', 'extended'])
-                      ->whereIn('project_id', $picProjectIds);
-                });
+                // PIC needs to review requests submitted by workers in their projects
+                $pendingDataRequestsCount = DataRequest::where('pic_status', 'pending')
+                    ->whereIn('project_id', $picProjectIds)
+                    ->count();
+            } else {
+                // Admins need to review requests that are either approved by PIC or bypass PIC
+                $pendingDataRequestsCount = DataRequest::where('status', 'pending')
+                    ->where(function ($q) {
+                        $q->where('pic_status', 'approved')
+                          ->orWhereNull('pic_status');
+                    })
+                    ->count();
             }
 
-            $unverifiedDocuments = $unverifiedDocsQuery
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
+            // Unverified Documents (Admins only)
+            $unverifiedDocuments = [];
+            if (!$isPic) {
+                $unverifiedDocuments = Document::with('worker')
+                    ->whereNull('verified_at')
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+            }
 
             return [
                 'quick_stats' => [
@@ -167,7 +173,7 @@ class DashboardController extends Controller
                 ],
                 'alerts' => [
                     'idle_workers' => $idleWorkers,
-                    'pending_edit_requests' => $pendingEditRequestsCount,
+                    'pending_data_requests' => $pendingDataRequestsCount,
                     'unverified_documents' => $unverifiedDocuments,
                 ],
                 'charts' => [

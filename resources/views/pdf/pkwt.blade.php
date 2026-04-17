@@ -12,6 +12,7 @@
             margin: 0;
             padding: 0;
         }
+        @page { margin: 1.27cm; }
         .page-break {
             page-break-after: always;
         }
@@ -34,6 +35,7 @@
             text-align: center;
             margin-top: 15px;
             margin-bottom: 10px;
+            page-break-after: avoid;
         }
         .text-10 {
             font-size: 10px;
@@ -50,6 +52,10 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+        tr {
+            page-break-inside: avoid;
         }
         td {
             vertical-align: top;

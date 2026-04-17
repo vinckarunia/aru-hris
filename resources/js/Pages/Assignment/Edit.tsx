@@ -1,6 +1,7 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { PageProps } from '@/types';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
@@ -16,6 +17,9 @@ interface Props { assignment: Assignment; projects: Project[]; }
  * Assignment Edit Component
  */
 export default function Edit({ assignment, projects }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const isPic = auth.user.role === 'PIC';
+
     const { data, setData, put, processing, errors } = useForm({
         project_id: assignment.project_id.toString(),
         branch_id: assignment.branch_id.toString(),
@@ -24,6 +28,7 @@ export default function Edit({ assignment, projects }: Props) {
         hire_date: assignment.hire_date || '',
         termination_date: assignment.termination_date || '',
         status: assignment.status || 'active',
+        notes: '',
     });
 
     const selectedProject = projects.find(p => p.id.toString() === data.project_id);
@@ -39,12 +44,24 @@ export default function Edit({ assignment, projects }: Props) {
         <AdminLayout title={`Edit Penempatan - ${assignment.worker.name}`} header="Edit Penempatan">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">Edit Penempatan: {assignment.worker.name}</h2>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                        {isPic ? 'Ajukan Perubahan Penempatan:' : 'Edit Penempatan:'} {assignment.worker.name}
+                    </h2>
                 </div>
                 <Link href={route('assignments.show', assignment.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                     <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon> Batal
                 </Link>
             </div>
+
+            {isPic && (
+                <div className="mb-4 p-4 bg-primary/10 rounded-xl border border-primary/20 flex items-start gap-3 text-primary dark:text-primary-light">
+                    <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
+                    <div className="text-sm font-medium space-y-1">
+                        <p>Sebagai PIC, perubahan yang Anda buat di sini akan dikirim sebagai <strong>Pengajuan Perubahan Data (Data Request)</strong> kepada Admin.</p>
+                        <p>Perubahan baru akan aktif setelah disetujui oleh Admin.</p>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={submit} className="space-y-6">
 
@@ -101,9 +118,9 @@ export default function Edit({ assignment, projects }: Props) {
                             <TextInput id="termination_date" type="date" className="mt-1 block w-full" value={data.termination_date} onChange={e => setData('termination_date', e.target.value)} />
                             <InputError message={errors.termination_date} className="mt-1" />
                         </div>
-                        <div className="md:col-span-2">
+                        <div className={`md:col-span-${isPic ? '1' : '2'}`}>
                             <InputLabel htmlFor="status" value="Status" />
-                            <select id="status" className="mt-1 block w-full md:w-1/2 border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.status} onChange={e => setData('status', e.target.value)}>
+                            <select id="status" className={`mt-1 block w-full ${!isPic && 'md:w-1/2'} border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md`} value={data.status} onChange={e => setData('status', e.target.value)}>
                                 <option value="active">Aktif</option>
                                 <option value="contract expired">Contract Expired</option>
                                 <option value="project closed">Project Closed</option>
@@ -113,12 +130,19 @@ export default function Edit({ assignment, projects }: Props) {
                             </select>
                             <InputError message={errors.status} className="mt-1" />
                         </div>
+                        {isPic && (
+                            <div className="md:col-span-2">
+                                <InputLabel htmlFor="notes" value="Catatan / Alasan Perubahan" />
+                                <textarea id="notes" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" rows={3} value={data.notes} onChange={e => setData('notes', e.target.value)} placeholder="Berikan alasan mengapa penempatan ini diubah..."></textarea>
+                                <InputError message={errors.notes} className="mt-1" />
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-4">
                     <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base bg-primary hover:bg-primary-dark">
-                        Simpan Perubahan
+                        {isPic ? 'Ajukan Perubahan' : 'Simpan Perubahan'}
                     </PrimaryButton>
                 </div>
             </form>

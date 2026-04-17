@@ -273,7 +273,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                 <div className="z-10 flex gap-3">
                     {/* DISPLAY EDIT REQUEST BISA DIAKSES WORKER & PIC */}
                     {(isWorker || isPic) && (
-                        <Link href={route('edit-requests.create', { worker_id: worker.id })} className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white shadow-sm shadow-primary/30 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
+                        <Link href={route('data-requests.create', { worker_id: worker.id })} className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white shadow-sm shadow-primary/30 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">
                             <iconify-icon icon="solar:pen-new-square-bold" width="18"></iconify-icon> Ajukan Perubahan Data
                         </Link>
                     )}
@@ -306,14 +306,40 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                     <button onClick={() => setActiveTab('documents')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'documents' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                         <iconify-icon icon="solar:folder-open-bold" width="18"></iconify-icon> Dokumen
                     </button>
-                    <button onClick={() => setActiveTab('assignments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                        <iconify-icon icon="solar:suitcase-bold" width="18"></iconify-icon> Penempatan & Kontrak
-                    </button>
+                    {!isWorker && (
+                        <button onClick={() => setActiveTab('assignments')} className={`px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all border-b-2 flex items-center gap-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                            <iconify-icon icon="solar:suitcase-bold" width="18"></iconify-icon> {isPic ? 'Penempatan' : 'Penempatan & Kontrak'}
+                        </button>
+                    )}
                 </div>
 
                 {/* Tab: Profile */}
                 {activeTab === 'profile' && (
                     <div className="p-6 md:p-8 grid grid-cols-1 gap-8">
+                        {/* Coretax Reminder Card */}
+                        {isWorker && (
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-2xl border border-primary/20 shadow-sm relative overflow-hidden">
+                                <div className="absolute -right-6 -top-6 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+                                <h3 className="font-bold text-primary flex items-center gap-2 mb-3 text-lg">
+                                    <iconify-icon icon="solar:info-square-bold" width="24"></iconify-icon>
+                                    Pemberitahuan Penting: Pemadanan NIK sebagai NPWP (Coretax)
+                                </h3>
+                                <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 leading-relaxed">
+                                    Sesuai dengan kebijakan Direktorat Jenderal Pajak (DJP), NIK saat ini difungsikan sebagai NPWP 16 digit. NPWP Anda di sistem kami telah otomatis disesuaikan dengan NIK. <strong>Anda diwajibkan untuk memastikan pemadanan ini di portal DJP Online.</strong>
+                                </p>
+                                <div className="bg-white/50 dark:bg-slate-900/50 rounded-xl p-4 border border-primary/10">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Instruksi Pengecekan & Validasi:</p>
+                                    <ol className="list-decimal list-outside ml-4 text-sm text-slate-700 dark:text-slate-300 space-y-2">
+                                        <li>Buka situs resmi DJP Online di <a href="https://djponline.pajak.go.id" target="_blank" rel="noreferrer" className="text-primary font-bold hover:underline">djponline.pajak.go.id</a></li>
+                                        <li>Coba login menggunakan <strong>16 digit NIK Anda</strong> sebagai Username dan masukkan password DJP Online Anda.</li>
+                                        <li>Masuk ke menu <strong>Profil</strong> dan pilih bagian <strong>Data Utama</strong>.</li>
+                                        <li>Pastikan status validasi NIK Anda menunjukkan label <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded">Valid</span>.</li>
+                                        <li>Jika status belum valid, klik tombol <strong>Validasi</strong> dan ikuti petunjuk sinkronisasi data yang muncul pada layar.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Profile Section */}
                         <div>
                             <div className="flex items-center gap-2 mb-4 text-primary">
@@ -489,8 +515,8 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                     <iconify-icon icon="solar:trash-bin-trash-bold" width="16"></iconify-icon>
                                                 </button>
                                             )}
-                                            {/* Verify / Unverify — only for Admin & PIC (non-workers) */}
-                                            {!isWorker && existing && (
+                                            {/* Verify / Unverify — only for Admin ARU */}
+                                            {!isWorker && !isPic && existing && (
                                                 <button
                                                     onClick={() => router.put(route('documents.verify', existing.id))}
                                                     title={existing.verified_at ? 'Batalkan Verifikasi' : 'Verifikasi Dokumen'}
@@ -516,7 +542,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                 {/* Tab: Assignments */}
                 {activeTab === 'assignments' && (
                     <div className="p-6">
-                        {!isWorker && (
+                        {!isWorker && !isPic && (
                             <div className="flex justify-end mb-4">
                                 <Link href={route('assignments.create', { worker_id: worker.id })} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
                                     <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Penempatan Baru
@@ -549,7 +575,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                         Lihat Detail & Kontrak
                                                     </Link>
 
-                                                    {!isPic && assign.contracts && assign.contracts.length > 0 && (
+                                                    {assign.contracts && assign.contracts.length > 0 && (
                                                         <div className="flex gap-2 w-full mt-2">
                                                             <a href={route('contracts.download-pkwt', { contract: assign.contracts[0].id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download PKWT (PDF)">
                                                                 <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> PKWT
@@ -731,6 +757,6 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                 </form>
             </Modal>
 
-        </Layout>
+        </Layout >
     );
 }

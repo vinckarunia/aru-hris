@@ -14,7 +14,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\PicController;
-use App\Http\Controllers\EditRequestController;
+use App\Http\Controllers\DataRequestController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\InternalEmployeeController;
 use Illuminate\Foundation\Application;
@@ -112,11 +112,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     });
 
-    // Edit Request Routes
-    Route::get('/edit-requests', [EditRequestController::class, 'index'])->name('edit-requests.index');
-    Route::get('/edit-requests/create', [EditRequestController::class, 'create'])->name('edit-requests.create');
-    Route::post('/edit-requests', [EditRequestController::class, 'store'])->name('edit-requests.store');
-    Route::put('/edit-requests/{editRequest}/review', [EditRequestController::class, 'review'])->name('edit-requests.review');
+    // Data Request Routes
+    Route::get('/data-requests', [DataRequestController::class, 'index'])->name('data-requests.index');
+    Route::get('/data-requests/create', [DataRequestController::class, 'create'])->name('data-requests.create');
+    Route::post('/data-requests', [DataRequestController::class, 'store'])->name('data-requests.store');
+    Route::put('/data-requests/{dataRequest}/review', [DataRequestController::class, 'review'])->name('data-requests.review');
+    Route::post('/data-requests/bulk-review', [DataRequestController::class, 'bulkReview'])->name('data-requests.bulk-review');
 });
 
 require __DIR__.'/auth.php';

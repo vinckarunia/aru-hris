@@ -82,7 +82,6 @@ function AssetUploadCard({ label, type, currentUrl, icon }: {
                         : <><iconify-icon icon="solar:upload-bold" width="14"></iconify-icon> {preview ? 'Ganti Gambar' : 'Pilih Gambar'}</>
                 }
             </button>
-            <p className="text-[10px] text-slate-400 text-center">Background putih dihapus otomatis saat upload.</p>
         </div>
     );
 }
@@ -564,7 +563,7 @@ export default function Index({ settings, assetUrls }: { settings: Record<string
                                 Aset Perusahaan
                             </h2>
                             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                                Unggah logo dan tanda tangan + cap perusahaan. Background putih akan dihapus otomatis agar gambar dapat dipakai di berbagai latar.
+                                Unggah logo dan tanda tangan + cap perusahaan.
                             </p>
                         </header>
 

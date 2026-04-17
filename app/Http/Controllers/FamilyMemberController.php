@@ -29,9 +29,25 @@ class FamilyMemberController extends Controller
             'name' => 'required|string|max:255',
             'birth_place' => 'nullable|string|max:255',
             'birth_date' => 'nullable|date',
-            'nik' => 'nullable|integer|digits:16',
-            'bpjs_number' => 'nullable|integer|digits:13',
+            'nik' => 'nullable|numeric|digits:16',
+            'bpjs_number' => 'nullable|numeric|digits:13',
         ]);
+
+        if (!$request->user()->isAdminOrAbove()) {
+            $worker = \App\Models\Worker::find($validated['worker_id']);
+            $activeAssignment = $worker ? $worker->assignments()->whereIn('status', ['active', 'probation', 'extended'])->first() : null;
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $validated['worker_id'],
+                'project_id' => $activeAssignment ? $activeAssignment->project_id : null,
+                'requested_by' => $request->user()->id,
+                'request_type' => 'data_change',
+                'requested_fields' => [],
+                'status' => 'pending',
+                'requested_data' => array_merge($validated, ['_action' => 'add_family']),
+            ]);
+            return redirect()->back()->with('success', 'Pengajuan tambah keluarga sukses direkam dan menunggu persetujuan Admin.');
+        }
 
         FamilyMember::create($validated);
 
@@ -52,9 +68,25 @@ class FamilyMemberController extends Controller
             'name' => 'required|string|max:255',
             'birth_place' => 'nullable|string|max:255',
             'birth_date' => 'nullable|date',
-            'nik' => 'nullable|integer|digits:16',
-            'bpjs_number' => 'nullable|integer|digits:13',
+            'nik' => 'nullable|numeric|digits:16',
+            'bpjs_number' => 'nullable|numeric|digits:13',
         ]);
+
+        if (!$request->user()->isAdminOrAbove()) {
+            $worker = \App\Models\Worker::find($familyMember->worker_id);
+            $activeAssignment = $worker ? $worker->assignments()->whereIn('status', ['active', 'probation', 'extended'])->first() : null;
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $familyMember->worker_id,
+                'project_id' => $activeAssignment ? $activeAssignment->project_id : null,
+                'requested_by' => $request->user()->id,
+                'request_type' => 'data_change',
+                'requested_fields' => [],
+                'status' => 'pending',
+                'requested_data' => array_merge($validated, ['_action' => 'update_family', 'family_id' => $familyMember->id]),
+            ]);
+            return redirect()->back()->with('success', 'Pengajuan ubah data keluarga sukses direkam dan menunggu persetujuan Admin.');
+        }
 
         $familyMember->update($validated);
 
@@ -69,6 +101,22 @@ class FamilyMemberController extends Controller
      */
     public function destroy(Request $request, FamilyMember $familyMember)
     {
+        if (!$request->user()->isAdminOrAbove()) {
+            $worker = \App\Models\Worker::find($familyMember->worker_id);
+            $activeAssignment = $worker ? $worker->assignments()->whereIn('status', ['active', 'probation', 'extended'])->first() : null;
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $familyMember->worker_id,
+                'project_id' => $activeAssignment ? $activeAssignment->project_id : null,
+                'requested_by' => $request->user()->id,
+                'request_type' => 'data_change',
+                'requested_fields' => [],
+                'status' => 'pending',
+                'requested_data' => ['_action' => 'delete_family', 'family_id' => $familyMember->id, 'name' => $familyMember->name],
+            ]);
+            return redirect()->back()->with('success', 'Pengajuan hapus data keluarga sukses direkam dan menunggu persetujuan Admin.');
+        }
+
         $familyMember->delete();
 
         return redirect()->back()->with('success', 'Family member removed successfully.');

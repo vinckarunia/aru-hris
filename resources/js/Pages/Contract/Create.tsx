@@ -44,6 +44,9 @@ export default function Create({ assignment }: Props) {
         salary_rate: 'monthly',
         meal_allowance: '',
         transport_allowance: '',
+        allowance: '',
+        attendance_allowance: '',
+        performance_bonus: '',
         allowance_rate: 'daily',
         overtime_weekday_rate: '',
         overtime_holiday_rate: '',
@@ -57,8 +60,12 @@ export default function Create({ assignment }: Props) {
             const end = new Date(data.end_date);
 
             if (end >= start) {
-                const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                const diffMonths = Math.round(diffDays / 30.437);
+                const e = new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1);
+                let months = (e.getFullYear() - start.getFullYear()) * 12 + (e.getMonth() - start.getMonth());
+                if (e.getDate() < start.getDate()) {
+                    months -= 1;
+                }
+                const diffMonths = Math.max(months, 0);
 
                 setData('duration_months', diffMonths.toString());
             } else {
@@ -237,6 +244,32 @@ export default function Create({ assignment }: Props) {
                                         <TextInput id="transport_allowance" type="text" className="mt-1 block w-full font-mono" value={data.transport_allowance} onChange={e => handleNumberInput('transport_allowance', e.target.value)} placeholder="0" />
                                     </div>
                                     <InputError message={errors.transport_allowance} className="mt-1" />
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="allowance" value="Tunjangan" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="allowance" type="text" className="mt-1 block w-full font-mono" value={data.allowance} onChange={e => handleNumberInput('allowance', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.allowance} className="mt-1" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="attendance_allowance" value="Uang Kehadiran" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="attendance_allowance" type="text" className="mt-1 block w-full font-mono" value={data.attendance_allowance} onChange={e => handleNumberInput('attendance_allowance', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.attendance_allowance} className="mt-1" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="performance_bonus" value="Insentif Kinerja" />
+                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                            <span className="text-slate-500 sm:text-sm">Rp</span>
+                                            <TextInput id="performance_bonus" type="text" className="mt-1 block w-full font-mono" value={data.performance_bonus} onChange={e => handleNumberInput('performance_bonus', e.target.value)} placeholder="0" />
+                                        </div>
+                                        <InputError message={errors.performance_bonus} className="mt-1" />
+                                    </div>
                                 </div>
                             </div>
                             <div>

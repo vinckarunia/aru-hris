@@ -62,6 +62,9 @@ class ContractController extends Controller
                 'salary_rate' => $validated['salary_rate'],
                 'meal_allowance' => $validated['meal_allowance'] ?? 0,
                 'transport_allowance' => $validated['transport_allowance'] ?? 0,
+                'allowance' => $validated['allowance'] ?? 0,
+                'attendance_allowance' => $validated['attendance_allowance'] ?? 0,
+                'performance_bonus' => $validated['performance_bonus'] ?? 0,
                 'allowance_rate' => $validated['allowance_rate'] ?? 'monthly',
                 'overtime_weekday_rate' => $validated['overtime_weekday_rate'] ?? 0,
                 'overtime_holiday_rate' => $validated['overtime_holiday_rate'] ?? 0,
@@ -82,18 +85,18 @@ class ContractController extends Controller
     public function show(Request $request, Contract $contract): Response
     {
         $user = $request->user();
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
-
-        if ($user->isWorker() && $user->worker_id !== $contract->assignment->worker_id) {
-            abort(403, 'Akses ditolak.');
-        }
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
-            if (!in_array($contract->assignment->project_id, $projectIds)) {
-                abort(403, 'Akses ditolak.');
+            $contract->load('assignment');
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Kontrak ini di luar wewenang project Anda.');
             }
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Detail kontrak dan kompensasi hanya dapat diakses oleh Admin.');
         }
+
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
 
         return Inertia::render('Contract/Show', [
             'contract' => $contract
@@ -144,6 +147,9 @@ class ContractController extends Controller
                     'salary_rate' => $validated['salary_rate'],
                     'meal_allowance' => $validated['meal_allowance'] ?? 0,
                     'transport_allowance' => $validated['transport_allowance'] ?? 0,
+                    'allowance' => $validated['allowance'] ?? 0,
+                    'attendance_allowance' => $validated['attendance_allowance'] ?? 0,
+                    'performance_bonus' => $validated['performance_bonus'] ?? 0,
                     'allowance_rate' => $validated['allowance_rate'] ?? 'monthly',
                     'overtime_weekday_rate' => $validated['overtime_weekday_rate'] ?? 0,
                     'overtime_holiday_rate' => $validated['overtime_holiday_rate'] ?? 0,
@@ -199,6 +205,9 @@ class ContractController extends Controller
             'salary_rate' => 'required|in:hourly,daily,monthly,yearly',
             'meal_allowance' => 'nullable|numeric|min:0',
             'transport_allowance' => 'nullable|numeric|min:0',
+            'allowance' => 'nullable|numeric|min:0',
+            'attendance_allowance' => 'nullable|numeric|min:0',
+            'performance_bonus' => 'nullable|numeric|min:0',
             'allowance_rate' => 'nullable|in:hourly,daily,monthly,yearly',
             'overtime_weekday_rate' => 'nullable|numeric|min:0',
             'overtime_holiday_rate' => 'nullable|numeric|min:0',

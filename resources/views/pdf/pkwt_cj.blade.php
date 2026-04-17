@@ -28,64 +28,60 @@
         }
         /* ── Contract number subtitle (font-size 14, bold, center) ── */
         .doc-subtitle {
-            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 13px;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
-        /* ── Article title (font-size 13, bold, center) ── */
         .article-title {
             font-size: 13px;
             font-weight: bold;
             text-align: center;
-            margin-top: 18px;
+            margin-top: 15px;
             margin-bottom: 10px;
+            page-break-after: avoid;
         }
-        /* ── Signature city/date (font-size 14, center) ── */
-        .sign-city-date {
+        .text-10 {
+            font-size: 10px;
+        }
+        .text-12 {
+            font-size: 12px;
+        }
+        .text-13 {
+            font-size: 13px;
+        }
+        .text-14 {
             font-size: 14px;
-            text-align: center;
-            margin-top: 30px;
-            margin-bottom: 20px;
         }
-        /* ── Party labels in signature block (font-size 13, bold) ── */
-        .sign-party-label {
-            font-size: 13px;
-            font-weight: bold;
-        }
-        /* ── Party names under signature (font-size 13, bold) ── */
-        .sign-party-name {
-            font-size: 13px;
-            font-weight: bold;
-        }
-        /* ── Materai label (font-size 10) ── */
-        .sign-materai {
-            font-size: 10px;
-        }
-        /* ── Footer stamp (font-size 10) ── */
-        .doc-footer {
-            font-size: 10px;
-            margin-top: 10px;
-        }
-
-        /* ── Layout helpers ── */
         table {
             width: 100%;
             border-collapse: collapse;
+            page-break-inside: auto;
+        }
+        tr {
+            page-break-inside: avoid;
         }
         td {
             vertical-align: top;
             padding: 2px 0;
         }
-        .label-col  { width: 38%; }
-        .colon-col  { width: 4%;  }
-        .value-col  { width: 58%; }
-        .num-col    { width: 5%;  }
-
+        .label-col {
+            width: 40%;
+        }
+        .colon-col {
+            width: 5%;
+        }
+        .value-col {
+            width: 55%;
+        }
         .signature-table {
-            margin-top: 5px;
+            margin-top: 30px;
             width: 100%;
             text-align: center;
+            page-break-inside: avoid;
         }
         .indent-list {
             margin: 0;
@@ -120,7 +116,7 @@
         $issueDate    = now();
         $romanMonth   = $romanMonths[$issueDate->month] ?? 'I';
         $year         = $issueDate->year;
-        $pkwt_formatted = sprintf('%s/ARU/KKWT-%s/%s/%s', $seqFormatted, $pkwtNumFormatted, $romanMonth, $year);
+        $pkwt_formatted = sprintf('%s/ARU/PKWT-%s/%s/%s', $seqFormatted, $pkwtNumFormatted, $romanMonth, $year);
 
         $startDateObj = $contract->start_date ? \Carbon\Carbon::parse($contract->start_date) : null;
         $endDateObj   = $contract->end_date   ? \Carbon\Carbon::parse($contract->end_date)   : null;
@@ -128,10 +124,11 @@
         $startDate    = $startDateObj ? $startDateObj->translatedFormat('d F Y') : '-';
         $endDate      = $endDateObj   ? $endDateObj->translatedFormat('d F Y')   : '-';
 
-        // Duration explicitly calculated here to override unrounded fractions. Adding 1 day ensures diffInMonths counts full months correctly.
-        $durationMonths = ($startDateObj && $endDateObj)
-            ? $startDateObj->diffInMonths($endDateObj->copy()->addDay())
-            : null;
+        // Use duration_months from DB if available, fallback to int casted diffInMonths
+        $durationMonths = $contract->duration_months ?: null;
+        if (!$durationMonths && $startDateObj && $endDateObj) {
+            $durationMonths = (int) $startDateObj->diffInMonths($endDateObj->copy()->addDay());
+        }
         $durationText   = $durationMonths !== null ? $durationMonths . ' BULAN' : '-';
 
         // Compensation
@@ -157,7 +154,7 @@
 
     {{-- NIK perusahaan (tempat penempatan) milik worker, top-right --}}
     <div style="text-align: right; font-size: 12px; margin-bottom: 10px;">
-        NIK : {{ $contract->assignment->employee_id ?? '-' }}
+        NIK : {{ $worker->nik_aru ?? '-' }}
     </div>
 
     <p style="margin-bottom: 12px;">Yang bertanda tangan dibawah ini :</p>
@@ -633,28 +630,32 @@
         </tr>
         <tr>
             <td>5.</td>
-            <td>Pihak kedua sanggup dan bersedia menjalankan pekerjaan lembur apabila perusahaan / atasan memerintahkan untuk kerja lembur.</td>
+            <td><strong>Pihak Kedua</strong> dilarang melakukan pekerjaan yang menyimpang dari tugas dan tanggungjawab yang melekat pada jabatan yang disebutkan sesuai Pasal II ayat 1 pada perjanjian ini.</td>
         </tr>
         <tr>
             <td>6.</td>
-            <td>Pihak kedua sanggup memahami segala prosedur dan standard kerja yang ditetapkan perusahaan, serta menjaga alat kerja dan aset milik perusahaan</td>
+            <td>Pihak kedua sanggup dan bersedia menjalankan pekerjaan lembur apabila perusahaan / atasan memerintahkan untuk kerja lembur.</td>
         </tr>
         <tr>
             <td>7.</td>
-            <td>Pihak kedua wajib memberitahukan setiap perubahan alamat, status keluarga, dengan menyerahkan bukti yang sah kepada pihak pertama</td>
+            <td>Pihak kedua sanggup memahami segala prosedur dan standard kerja yang ditetapkan perusahaan, serta menjaga alat kerja dan aset milik perusahaan</td>
         </tr>
         <tr>
             <td>8.</td>
-            <td>Pihak kedua bersedia dan sanggup menjalani mutasi dan / atau promosi, atau demosi dalam lingkungan PT. ALFA REKA USAHA bila di perlukan.</td>
+            <td>Pihak kedua wajib memberitahukan setiap perubahan alamat, status keluarga, dengan menyerahkan bukti yang sah kepada pihak pertama</td>
         </tr>
         <tr>
             <td>9.</td>
-            <td>Wajib memakai alat pelindung diri (APD), menggunakannya dengan cara yang benar sesuai yang di tentukan oleh pihak pertama.</td>
+            <td>Pihak kedua bersedia dan sanggup menjalani mutasi dan / atau promosi, atau demosi dalam lingkungan PT. ALFA REKA USAHA bila di perlukan.</td>
         </tr>
         <tr>
             <td>10.</td>
+            <td>Wajib memakai alat pelindung diri (APD), menggunakannya dengan cara yang benar sesuai yang di tentukan oleh pihak pertama.</td>
+        </tr>
+        <tr>
+            <td>11.</td>
             <td>
-                Apabila pihak kedua tidak menjalankan kewajiban sebagaimana dimaksud dalam ayat (1s/d 9) secara baik dan benar,
+                Apabila pihak kedua tidak menjalankan kewajiban sebagaimana dimaksud dalam ayat (1s/d 10) secara baik dan benar,
                 maka pihak kedua siap menerima sanksi pemutusan hubungan kerja secara sepihak dari pihak pertama, dengan
                 kehilangan hak guna untuk sesuata apapun atau pembayaran apapun, kecuali sisa gaji bulan berjalan
             </td>
@@ -874,14 +875,13 @@
 
     <table class="signature-table">
         <tr>
-            <td style="width: 50%;" class="sign-party-label">PIHAK I (PERTAMA)</td>
-            <td style="width: 50%;" class="sign-party-label">PIHAK II (KEDUA)</td>
+            <td style="width: 40%;" class="sign-party-label">PIHAK I (PERTAMA)</td>
+            <td style="width: 20%;">&nbsp;</td>
+            <td style="width: 40%;" class="sign-party-label">PIHAK II (KEDUA)</td>
         </tr>
         <tr>
             <td style="height: 90px; text-align: center; vertical-align: bottom;">
-                @if($signatureBase64)
-                    <img src="{{ $signatureBase64 }}" style="max-height: 80px; max-width: 150px; object-fit: contain;" alt="Tanda Tangan">
-                @endif
+                &nbsp;
             </td>
             <td style="height: 90px; text-align: center; vertical-align: middle;">
                 <div class="sign-materai" style="border: 1px solid #000; display: inline-block; padding: 8px 18px;">
@@ -889,18 +889,22 @@
                     Rp. 10.000
                 </div>
             </td>
+            <td style="height: 90px; text-align: center; vertical-align: bottom;">
+                &nbsp;
+            </td>
         </tr>
         <tr>
             <td class="sign-party-name">
                 <strong>({{ strtoupper($pihakPertama->name ?? '-') }})</strong>
             </td>
+            <td>&nbsp;</td>
             <td class="sign-party-name">
                 <strong>({{ strtoupper($worker->name ?? '-') }})</strong>
             </td>
         </tr>
     </table>
 
-    <div class="doc-footer">kkwt aru {{ $footerYear }}</div>
+    <div class="doc-footer">pkwt aru {{ $footerYear }}</div>
 
 </body>
 </html>

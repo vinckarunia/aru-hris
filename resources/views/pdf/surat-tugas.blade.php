@@ -76,11 +76,11 @@
                     <div style="font-size: 30px; font-weight: bold; color: #660033; font-style: italic;">A<span style="color: #000;">R</span></div>
                 @endif
             </td>
-            <td class="header-text">
+            <td class="header-text" style="text-align: center; padding-left: 20px;">
                 <h1>PT. ALFA REKA USAHA</h1>
                 <p><strong>Recruiting, Selecting, Placement and Employee Management</strong></p>
                 <p>Ruko Duta Permai Blok E No. 10 Jln. Raya Kalimalang, Jakasampurna, Bekasi 17145</p>
-                <p>Phone : (021) 88952278, Fax.(021) 88852466 E.mail : <span style="color: blue; text-decoration: underline;">admin@aru-pt.id</span></p>
+                <p>Phone : (021) 88952278, Fax.(021) 88852466 E-mail : <span style="color: blue; text-decoration: underline;">admin@alfarekausahapt.com</span></p>
             </td>
         </tr>
     </table>
@@ -89,9 +89,9 @@
         $pkwtNo = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
         $clientPrefix = $contract->assignment->project->client->short_name ?? 'CLIENT';
         $romanMonths = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
-        $month = \Carbon\Carbon::parse($contract->start_date ?? now())->month;
+        $month = now()->month;
         $romanMonth = $romanMonths[$month] ?? 'I';
-        $year = \Carbon\Carbon::parse($contract->start_date ?? now())->year;
+        $year = now()->year;
         $st_formatted = sprintf('%s/ARU-%s/ST/%s/%s', $pkwtNo, $clientPrefix, $romanMonth, $year);
     @endphp
 
@@ -131,7 +131,7 @@
         <tr>
             <td class="label-col">No. Pegawai</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $contract->assignment->employee_id ?? '-' }}</td>
+            <td class="value-col">{{ $worker->nik_aru ?? '-' }}</td>
         </tr>
     </table>
 

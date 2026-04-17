@@ -37,8 +37,19 @@ interface Project {
     client_id: string;
     name: string;
     prefix: string;
+    pkwt_type?: string;
     id_running_number: number;
     branches?: Branch[];
+    pics?: Pic[];
+}
+/**
+ * Represents a Pic that can be associated with projects.
+ */
+interface Pic {
+    id: string;
+    user_id: string;
+    name: string;
+    user: User;
 }
 /**
  * Represents an assignment connecting a worker to a project/branch.
@@ -83,6 +94,7 @@ interface Client {
 interface Props {
     client: Client;
     workers: AffiliatedWorker[];
+    pics: Pic[];
 }
 
 /**
@@ -97,7 +109,7 @@ interface Props {
 /** Number of items displayed per page in each tab table. */
 const PER_PAGE = 10;
 
-export default function Show({ client, workers }: Props) {
+export default function Show({ client, workers, pics }: Props) {
     const [activeTab, setActiveTab] = useState<'branches' | 'projects' | 'workers'>('branches');
 
     /** Resets all tab pages to 1 and switches the active tab. */
@@ -284,7 +296,9 @@ export default function Show({ client, workers }: Props) {
     const projForm = useForm({
         client_id: client.id.toString(),
         branch_ids: [] as string[],
+        pic_ids: [] as string[],
         name: '',
+        pkwt_type: 'all',
         prefix: ''
     });
     /**
@@ -300,11 +314,23 @@ export default function Show({ client, workers }: Props) {
             projForm.setData('branch_ids', [...currentIds, id]);
         }
     };
+    /**
+     * Toggles a PIC ID in the project form's pic_ids state array.
+     */
+    const handleProjPicToggle = (id: string) => {
+        const currentIds = projForm.data.pic_ids;
+        if (currentIds.includes(id)) {
+            projForm.setData('pic_ids', currentIds.filter(picId => picId !== id));
+        } else {
+            projForm.setData('pic_ids', [...currentIds, id]);
+        }
+    };
+    /** Opens the modal to add a new project. */
     /** Opens the modal to add a new project. */
     const openAddProj = () => {
         setProjModalMode('add');
         setSelectedProj(null);
-        projForm.reset('branch_ids', 'name', 'prefix');
+        projForm.reset('branch_ids', 'pic_ids', 'name', 'pkwt_type', 'prefix');
         projForm.clearErrors();
         setIsProjModalOpen(true);
     };
@@ -315,7 +341,9 @@ export default function Show({ client, workers }: Props) {
         projForm.setData({
             client_id: client.id.toString(),
             branch_ids: proj.branches?.map(d => d.id) || [],
+            pic_ids: proj.pics?.map(p => p.id) || [],
             name: proj.name,
+            pkwt_type: proj.pkwt_type || 'all',
             prefix: proj.prefix
         });
         projForm.clearErrors();
@@ -324,7 +352,7 @@ export default function Show({ client, workers }: Props) {
     /** Closes the project modal. */
     const closeProjModal = () => {
         setIsProjModalOpen(false);
-        projForm.reset('branch_ids', 'name', 'prefix');
+        projForm.reset('branch_ids', 'pic_ids', 'name', 'pkwt_type', 'prefix');
         projForm.clearErrors();
     };
     /** Submits the project form (Create/Update). */
@@ -710,10 +738,45 @@ export default function Show({ client, workers }: Props) {
                                 <p key={key} className="text-sm text-red-600 mt-1">{projForm.errors[key as keyof typeof projForm.errors]}</p>
                             ))}
                         </div>
+                        {/* Checkbox Group for Multiple PICs */}
+                        <div>
+                            <InputLabel value="PIC Project" />
+                            <div className="mt-2 grid grid-cols-2 gap-3 max-h-40 overflow-y-auto pr-1">
+                                {pics && pics.length === 0 ? (
+                                    <p className="text-xs text-slate-500 col-span-2 italic">Belum ada profil PIC terdaftar.</p>
+                                ) : (
+                                    pics && pics.map((pic: Pic) => (
+                                        <label key={pic.id} className="flex items-center gap-2 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                checked={projForm.data.pic_ids && projForm.data.pic_ids.includes(pic.id)}
+                                                onChange={() => handleProjPicToggle(pic.id)}
+                                                className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                                            />
+                                            <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{pic.name}</span>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                         <div>
                             <InputLabel htmlFor="proj_name" value="Nama Project" />
                             <TextInput id="proj_name" type="text" className="mt-1 block w-full" value={projForm.data.name} onChange={(e) => projForm.setData('name', e.target.value)} placeholder="Contoh: IT Support" />
                             <InputError message={projForm.errors.name} className="mt-2" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="pkwt_type" value="Tipe Dokumen PKWT" />
+                            <select
+                                id="pkwt_type"
+                                value={projForm.data.pkwt_type}
+                                onChange={(e) => projForm.setData('pkwt_type', e.target.value)}
+                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                            >
+                                <option value="all">PKWT All (Default)</option>
+                                <option value="vdi">PKWT VDI</option>
+                                <option value="cj">PKWT CJ</option>
+                            </select>
+                            <InputError message={projForm.errors.pkwt_type as string} className="mt-2" />
                         </div>
                         <div>
                             <InputLabel htmlFor="proj_prefix" value="Prefix" />

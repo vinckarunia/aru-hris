@@ -84,7 +84,14 @@ class WorkerController extends Controller
     {
         if ($request->user()->isWorker()) abort(403);
 
-        return Inertia::render('Worker/Create');
+        $picProjects = [];
+        if ($request->user()->isPic()) {
+            $picProjects = $request->user()->pic ? $request->user()->pic->projects()->with('branches:id,client_id,name')->select('projects.id', 'name')->get() : [];
+        }
+
+        return Inertia::render('Worker/Create', [
+            'picProjects' => $picProjects
+        ]);
     }
 
     /**
@@ -92,8 +99,42 @@ class WorkerController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if ($request->user()->isWorker()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+
         $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
+
+        if ($user->isPic()) {
+            $request->validate(['project_id' => 'required|exists:projects,id']);
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($request->project_id, $projectIds)) abort(403);
+
+            // Merge assignment detail fields into the payload
+            $payload = $validated;
+            if ($request->filled('position')) {
+                $payload['position'] = $request->position;
+            }
+            if ($request->filled('branch_id')) {
+                $payload['branch_id'] = $request->branch_id;
+            }
+
+            \App\Models\DataRequest::create([
+                'worker_id' => null,
+                'project_id' => $request->project_id,
+                'requested_by' => $user->id,
+                'request_type' => 'new_data',
+                'requested_fields' => array_keys($payload),
+                'requested_data' => $payload,
+                'notes' => 'Registrasi Karyawan Baru oleh PIC',
+                'status' => 'pending',
+                'pic_status' => 'approved', // Auto-approve for the PIC tier
+                'pic_reviewed_by' => $user->id,
+                'pic_reviewed_at' => now(),
+            ]);
+
+            return redirect()->route('data-requests.index')
+                             ->with('message', 'Pengajuan penambahan karyawan berhasil dikirim ke Admin untuk direview.');
+        }
 
         $worker = Worker::create($validated);
 
@@ -223,7 +264,7 @@ class WorkerController extends Controller
             'address_ktp' => 'nullable|string',
             'address_domicile' => 'nullable|string',
             'mother_name' => 'nullable|string|max:255',
-            'npwp' => 'nullable|regex:/^[0-9]{15,16}$/',
+            'npwp' => 'nullable|digits:16',
             'bpjs_kesehatan' => 'nullable|digits:13',
             'bpjs_ketenagakerjaan' => 'nullable|digits:11',
             'bank_name' => 'nullable|string|max:100',
@@ -241,7 +282,7 @@ class WorkerController extends Controller
         return [
             'ktp_number.digits' => 'Nomor KTP (NIK) harus terdiri dari tepat 16 digit angka.',
             'kk_number.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari tepat 16 digit angka.',
-            'npwp.regex' => 'Nomor NPWP harus terdiri dari 15 atau 16 digit angka.',
+            'npwp.digits' => 'Nomor NPWP harus terdiri dari tepat 16 digit angka (sama dengan NIK).',
             'bpjs_kesehatan.digits' => 'Nomor BPJS Kesehatan harus terdiri dari tepat 13 digit angka.',
             'bpjs_ketenagakerjaan.digits' => 'Nomor BPJS Ketenagakerjaan harus terdiri dari tepat 11 digit angka.',
         ];
