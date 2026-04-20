@@ -253,8 +253,13 @@ class ImportController extends Controller
         ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions, $headerRow, $activeSheetName);
 
         // Auto-start queue worker in background (stops when empty)
-        $artisan = base_path('artisan');
-        exec("php {$artisan} queue:work --stop-when-empty --timeout=300 > /dev/null 2>&1 &");
+        // Using terminating callback avoids exec() function which is typically disabled on shared hosting
+        app()->terminating(function () {
+            \Illuminate\Support\Facades\Artisan::call('queue:work', [
+                '--stop-when-empty' => true,
+                '--timeout' => 300
+            ]);
+        });
 
         return response()->json([
             'message' => 'Proses import telah dimulai di background.',
