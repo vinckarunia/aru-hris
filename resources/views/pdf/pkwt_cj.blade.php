@@ -5,13 +5,14 @@
     <title>PKWT Document</title>
     <style>
         body {
-            font-family: Tahoma, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 12px;
             text-align: justify;
             line-height: 1.5;
             margin: 0;
             padding: 0;
         }
+        @page { margin: 1.27cm; }
         /* ── Typography ── */
         .text-10 { font-size: 10px; }
         .text-12 { font-size: 12px; }
@@ -28,7 +29,10 @@
         }
         /* ── Contract number subtitle (font-size 14, bold, center) ── */
         .doc-subtitle {
-            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 4px;
         }
         .subtitle {
             font-size: 13px;
@@ -44,18 +48,6 @@
             margin-bottom: 10px;
             page-break-after: avoid;
         }
-        .text-10 {
-            font-size: 10px;
-        }
-        .text-12 {
-            font-size: 12px;
-        }
-        .text-13 {
-            font-size: 13px;
-        }
-        .text-14 {
-            font-size: 14px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -69,7 +61,7 @@
             padding: 2px 0;
         }
         .label-col {
-            width: 40%;
+            width: 35%;
         }
         .colon-col {
             width: 5%;
@@ -87,15 +79,35 @@
             margin: 0;
             padding-left: 20px;
         }
+        .page-number {
+            font-size: 10px;
+            text-align: right;
+        }
+        .page-header {
+            position: fixed;
+            top: -15px;
+            right: 0px;
+            height: 20px;
+            font-size: 10px;
+            text-align: right;
+        }
+        .pagenum:after {
+            content: counter(page);
+        }
+        .sign-city-date {
+            text-align:center;
+            margin-top: 50px;
+            margin-bottom: none;
+        }
+        .doc-footer {
+            margin-top: 50px;
+        }
     </style>
 </head>
 <body>
-    {{-- dompdf automatic page number (top-right, font-size 10) --}}
-    <script type="text/php">
-        if (isset($pdf)) {
-            $pdf->page_text(545, 18, "{PAGE_NUM}", null, 10, [0, 0, 0]);
-        }
-    </script>
+    <div class="page-header">
+        <span class="pagenum"></span>
+    </div>
 
     @php
         // Base64-encode assets for reliable dompdf rendering
@@ -104,7 +116,7 @@
     @endphp
     @php
         /**
-         * Contract number: {monthlySeq}/ARU/KKWT-{pkwtNumber}/{romanMonth}/{year}
+         * Contract number: {monthlySeq}/ARU/PKWT-{pkwtNumber}/{romanMonth}/{year}
          * First segment = monthly letter sequence (from controller).
          * Second segment = pkwt_number (which PKWT this is for the worker).
          * Roman month & year = document issuance date (today), not contract start.
@@ -137,13 +149,7 @@
         $uangMakan       = $contract->compensation?->meal_allowance      ?? 0;
         $uangTransport   = $contract->compensation?->transport_allowance  ?? 0;
         $uangKehadiran   = $contract->compensation?->attendance_allowance ?? 0;
-        $incentifKinerja = $contract->compensation?->performance_bonus   ?? 0;
-
-        // Worker tax status → marital display
-        $taxStatus = $worker->tax_status ?? '-';
-        if      (str_starts_with($taxStatus, 'TK')) $statusPernikahan = 'Belum Menikah';
-        else if (str_starts_with($taxStatus, 'K'))  $statusPernikahan = 'Menikah';
-        else                                         $statusPernikahan = $taxStatus;
+        $insentifKinerja = $contract->compensation?->performance_bonus   ?? 0;
 
         // Dynamic footer year
         $footerYear = $year;
@@ -162,7 +168,7 @@
     {{-- PIHAK PERTAMA (internal employee) --}}
     <table>
         <tr>
-            <td class="num-col">1</td>
+            <td class="num-col">1.</td>
             <td class="label-col">Nama</td>
             <td class="colon-col">:</td>
             <td class="value-col"><strong>{{ strtoupper($pihakPertama->name ?? '-') }}</strong></td>
@@ -171,7 +177,7 @@
             <td></td>
             <td class="label-col">Alamat</td>
             <td class="colon-col">:</td>
-            <td class="value-col">Kompleks Ruko Duta Permai Blok E/10 Rt.09 Rw.01 Kel. Jakasampurna, Bekasi</td>
+            <td class="value-col">Kompleks Ruko Duta Permai Blok E/10 <br> RT.09 RW.01 Kel. Jakasampurna, Bekasi</td>
         </tr>
         <tr>
             <td></td>
@@ -183,7 +189,7 @@
 
     <p style="margin-top: 12px; margin-bottom: 12px;">
         Yang dalam perjanjian ini karena jabatannya mewakili pengusaha sah bertindak untuk dan atas nama PT. Alfa Reka Usaha,
-        yang selanjutnya disebut <strong>Pihak Pertama (I)</strong>
+        yang selanjutnya disebut <strong>Pihak Pertama (I)</strong>.
     </p>
 
     {{-- PIHAK KEDUA (worker) --}}
@@ -192,7 +198,7 @@
             <td class="num-col">2.</td>
             <td class="label-col">Nama</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $worker->name ?? '-' }}</td>
+            <td class="value-col">{{ strtoupper($worker->name ?? '-') }}</td>
         </tr>
         <tr>
             <td></td>
@@ -224,7 +230,7 @@
             <td></td>
             <td class="label-col">Status Pernikahan</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $statusPernikahan }}</td>
+            <td class="value-col">{{ strtoupper($worker->tax_status ?? '-') }}</td>
         </tr>
         <tr>
             <td></td>
@@ -239,16 +245,15 @@
     </p>
 
     <p style="margin-bottom: 12px;">
-        Pada hari ini, tanggal {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}, masing – masing
-        <strong>Pihak Pertama</strong> dan <strong>Pihak Kedua</strong> saat membuat dan
-        menandatangani perjanjian kerja ini menyatakan dirinya dalam keadaan kondisi sehat jasmani dan rohani,
-        serta tidak dalam keadaan terpaksa atau dibawah tekanan oleh siapapun juga, sehingga patut secara hukum
-        membuat kesepakatan serta mengikatkan diri dalam bentuk
-        <strong>Perjanjian Kerja Waktu Tertentu (PKWT)</strong> yang diatur dalam pasal – pasal sebagai berikut:
+        Pada hari ini, tanggal {{ $startDate }}, masing – masing
+        Pihak Pertama dan Pihak Kedua saat membuat dan menandatangani perjanjian kerja ini menyatakan dirinya 
+        dalam keadaan kondisi sehat jasmani dan rohani, serta tidak dalam keadaan terpaksa atau dibawah tekanan 
+        oleh siapapun juga, sehingga patut secara hukum membuat kesepakatan serta mengikatkan diri dalam bentuk
+        Perjanjian Kerja Waktu Tertentu (PKWT) yang diatur dalam pasal – pasal sebagai berikut:
     </p>
 
     <div class="article-title">
-        PASAL  I<br>
+        PASAL I<br>
         NAMA PERJANJIAN
     </div>
 
@@ -258,23 +263,21 @@
             <td>Perjanjian kerja ini disebut <strong>Perjanjian Kerja Waktu Tertentu</strong>, dan disingkat : <strong>PKWT</strong></td>
         </tr>
         <tr>
-            <td>2.</td>
-            <td><strong>Pihak Pertama</strong> dan <strong>Pihak Kedua</strong> sepakat perjanjian kerja ini di dasarkan pada jangka waktu tertentu.</td>
+            <td class="num-col">2.</td>
+            <td>Pihak pertama dan pihak kedua sepakat perjanjian kerja ini di dasarkan pada jangka waktu tertentu.</td>
         </tr>
     </table>
 
     <div class="article-title">
-        PASAL  II<br>
+        PASAL II<br>
         PENEMPATAN KERJA
     </div>
 
     <table>
         <tr>
-            <td class="num-col">1.</td>
+            <td class="num-col">1.&nbsp;</td>
             <td>
-                Dalam perjanjian kerja ini pihak pertama setuju untuk mempekerjakan pihak kedua pada
-                <strong>{{ strtoupper($contract->assignment->project->client->full_name ?? '-') }}</strong>
-                untuk jangka waktu tertentu dengan menjalankan pekerjaan ini di dasarkan pada jangka waktu tertentu yang ditempatkan awal pada :
+                Dalam perjanjian kerja ini pihak pertama setuju untuk mempekerjakan pihak kedua pada PT. Alfa Reka Usaha untuk jangka waktu tertentu dengan maksud menjalankan pekerjaan dengan penempatan awal pada :
                 <table style="margin-top: 5px;">
                     <tr>
                         <td style="width: 32%;">A. Jabatan Awal</td>
@@ -284,13 +287,13 @@
                     <tr>
                         <td>B. Status Hubungan Kerja</td>
                         <td>:</td>
-                        <td>{{ $contract->contract_type ?? 'PKWT' }}</td>
+                        <td>{{ $contract->pkwt_type ?? $contract->contract_type ?? '-' }}</td>
                     </tr>
                 </table>
             </td>
         </tr>
         <tr>
-            <td>2.</td>
+            <td class="num-col">2.&nbsp;</td>
             <td>
                 Atas dasar pemenuhan kebutuhan kerja dan keseimbangan kebutuhan sumber daya manusia pada unit kerja tertentu,
                 maka pihak pertama berhak melakukan mutasi kerja terhadap pihak kedua dalam lingkungan PT. Alfa Reka Usaha
@@ -298,11 +301,11 @@
             </td>
         </tr>
         <tr>
-            <td>3.</td>
-            <td><strong>Pihak Kedua</strong> menyatakan sanggup dan bersedia melaksanakan mutasi sebagaimana dimaksud dalam ayat (2) pasal ini.</td>
+            <td class="num-col">3.&nbsp;</td>
+            <td>Pihak Kedua menyatakan sanggup dan bersedia melaksanakan mutasi sebagaimana dimaksud dalam ayat (2) pasal ini.</td>
         </tr>
         <tr>
-            <td>4.</td>
+            <td class="num-col">4.&nbsp;</td>
             <td>
                 Apabila dikemudian hari pihak kedua menolak mutasi ke unit kerja tertentu sebagaimana dimaksud dalam ayat (2) pasal
                 ini, maka pihak pertama dapat memutuskan hubungan kerja dengan pihak kedua dengan cara mengakhiri perjanjian kerja
@@ -310,7 +313,7 @@
             </td>
         </tr>
         <tr>
-            <td>5.</td>
+            <td class="num-col">5.&nbsp;</td>
             <td>
                 Yang dimaksud sebagai Tenaga Kerja Jasa dalam kesepakatan kerja ini adalah Tenaga Kerja dalam waktu tertentu yang
                 dipekerjakan dan ditempatkan oleh Pihak I di
@@ -319,23 +322,23 @@
             </td>
         </tr>
         <tr>
-            <td>6.</td>
-            <td><strong>Pihak II</strong> berkewajiban melaksanakan pekerjaan yang ditetapkan dengan sebaik – baiknya.</td>
+            <td class="num-col">6.&nbsp;</td>
+            <td>Pihak II berkewajiban melaksanakan tugas pekerjaan yang ditetapkan dengan sebaik – baiknya.</td>
         </tr>
         <tr>
-            <td>7.</td>
-            <td><strong>Pihak II</strong> saat memasuki lokasi kerja, dan pada saat bekerja harus memakai tanda pengenal yang disediakan Pihak I.</td>
+            <td class="num-col">7.&nbsp;</td>
+            <td>Pihak II saat memasuki lokasi kerja, dan pada saat bekerja harus memakai tanda pengenal yang disediakan Pihak I.</td>
         </tr>
     </table>
 
     <div class="article-title">
-        PASAL  III<br>
+        PASAL III<br>
         MASA BERLAKUNYA PERJANJIAN
     </div>
 
     <table>
         <tr>
-            <td class="num-col">1.</td>
+            <td class="num-col">1.&nbsp;</td>
             <td>
                 Kesepakatan kerja ini dibuat untuk jangka waktu <strong>{{ $durationText }}</strong>,
                 terhitung mulai dari tanggal <strong>{{ $startDate }}</strong> sampai
@@ -343,50 +346,50 @@
             </td>
         </tr>
         <tr>
-            <td>2.</td>
+            <td class="num-col">2.&nbsp;</td>
             <td>Apabila dipandang perlu oleh pihak pertama, perjanjian kerja ini dapat diperpanjang sesuai dengan kesepakatan.</td>
         </tr>
         <tr>
-            <td>3.</td>
+            <td class="num-col">3.&nbsp;</td>
             <td>
                 Salah satu pihak dilarang memaksakan kehendak terhadap pihak lainnya untuk memperpanjang perjanjian kerja ini
                 setelah berakhirnya masa berlaku sebagaimana dimaksud dalam ayat satu (1) pasal ini.
             </td>
         </tr>
         <tr>
-            <td>4.</td>
+            <td class="num-col">4.&nbsp;</td>
             <td>
                 Dengan alasan apapun selama perjanjian kerja ini berlangsung, pihak kedua dilarang keras memaksakan kehendak
                 untuk menuntut agar diangkat menjadi pekerja tetap.
             </td>
         </tr>
         <tr>
-            <td>5.</td>
+            <td class="num-col">5.&nbsp;</td>
             <td>
                 Pemberitahuan akan berakhirnya masa berlaku perjanjian kerja ini dilakukan paling lambat 7 hari sebelumnya oleh salah
                 satu pihak kepada pihak lainnya dalam perjanjian ini.
             </td>
         </tr>
         <tr>
-            <td>6.</td>
+            <td class="num-col">6.&nbsp;</td>
             <td>
                 Apabila Perjanjian  kerja ini berakhir masa berlakunya sebagaimana dimaksud dalam ayat (1) pasal ini dan tidak
                 diadakan perpanjangan, Maka hubungan kerja antara pihak pertama dan pihak kedua dinyatakan berakhir demi hukum.
             </td>
         </tr>
         <tr>
-            <td>7.</td>
+            <td class="num-col">7.&nbsp;</td>
             <td>
                 Apabila pihak kedua mengakhiri hubungan kerja sebelum habis masa berlaku perjanjian kerja ini sebagaimana dimaksud
                 dalam ayat (1) pasal ini, maka pihak kedua wajib memberikan ganti rugi sisa masa kontrak yang masih berlaku.
             </td>
         </tr>
         <tr>
-            <td>8.</td>
+            <td class="num-col">8.&nbsp;</td>
             <td>Apabila pihak kedua berhenti bekerja sebelum masa PKWT berakhir maka pihak pertama tidak berkewajiban membayar sisa kontrak sesuai PP 35 tahun 2021</td>
         </tr>
         <tr>
-            <td>9.</td>
+            <td class="num-col">9.&nbsp;</td>
             <td>
                 Apabila putusnya hubungan kerja karena berakhirnya masa berlaku perjanjian kerja ini sebagaimana dimaksud dalam
                 ayat (1) pasal ini, pihak kedua berhak atas uang kompensasi sesuai PP 35 tahun 2021.
@@ -501,7 +504,7 @@
                     <tr>
                         <td>c.&nbsp; Uang Makan</td>
                         <td>:</td>
-                        <td>Rp. {{ $uangMakan > 0 ? number_format($uangMakan, 0, ',', '.') : '0' }}</td>
+                        <td>Rp. {{ $uangMakan > 0 ? number_format($uangMakan, 0, ',', '.') : '' }}</td>
                     </tr>
                     <tr>
                         <td>d.&nbsp; Uang Transport</td>
@@ -511,12 +514,12 @@
                     <tr>
                         <td>e.&nbsp; Uang Kehadiran</td>
                         <td>:</td>
-                        <td>Rp. {{ $uangKehadiran > 0 ? number_format($uangKehadiran, 0, ',', '.') : '8.000' }}</td>
+                        <td>Rp. {{ $uangKehadiran > 0 ? number_format($uangKehadiran, 0, ',', '.') : '' }}</td>
                     </tr>
                     <tr>
-                        <td>f.&nbsp;&nbsp; Incentif Kinerja</td>
+                        <td>f.&nbsp;&nbsp; Insentif Kinerja</td>
                         <td>:</td>
-                        <td>Rp. {{ $incentifKinerja > 0 ? number_format($incentifKinerja, 0, ',', '.') : '' }}</td>
+                        <td>Rp. {{ $insentifKinerja > 0 ? number_format($insentifKinerja, 0, ',', '.') : '' }}</td>
                     </tr>
                 </table>
                 Apabila Pihak II tidak masuk kerja, upah dipotong dengan perhitungan pemotongan upah per-hari yaitu 1 (satu) bulan
@@ -630,7 +633,7 @@
         </tr>
         <tr>
             <td>5.</td>
-            <td><strong>Pihak Kedua</strong> dilarang melakukan pekerjaan yang menyimpang dari tugas dan tanggungjawab yang melekat pada jabatan yang disebutkan sesuai Pasal II ayat 1 pada perjanjian ini.</td>
+            <td>Pihak kedua dilarang melakukan pekerjaan yang menyimpang dari tugas dan tanggungjawab yang melekat pada jabatan yang disebutkan sesuai Pasal II ayat 1 pada perjanjian ini.</td>
         </tr>
         <tr>
             <td>6.</td>
@@ -820,7 +823,7 @@
             <td>5.</td>
             <td>
                 Apabila pihak kedua sudah mendapatkan surat peringatan III dan ternyata masih melakukan pelanggaran lagi terhadap
-                perjanjian kerja bersama, dan / atauPerjanjian Kerja Waktu Tertentu ini dan / atau peraturan tata tertib lainnya, yang
+                perjanjian kerja bersama, dan / atau Perjanjian Kerja Waktu Tertentu ini dan / atau peraturan tata tertib lainnya, yang
                 berlaku di PT. ALFA REKA USAHA atau melakukan pelanggaran berat berdasarkan perjanjian kerja bersama, maka
                 perjanjian kerja ini dicabut kesepakatan kerjanya secara sepihak oleh pihak pertama dan pihak kedua kehilangan hak guna
                 menuntut sesuatu pembayaran apapun, termasuk jika masih ada sisa kontrak kerja yang masih berlaku, kecuali hak atas
@@ -870,14 +873,14 @@
     </p>
 
     <div class="sign-city-date">
-        Bekasi, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+        Bekasi, {{ $startDate }}
     </div>
 
     <table class="signature-table">
         <tr>
-            <td style="width: 40%;" class="sign-party-label">PIHAK I (PERTAMA)</td>
+            <td style="width: 40%;" class="sign-party-label"><strong>PIHAK I (PERTAMA)</strong></td>
             <td style="width: 20%;">&nbsp;</td>
-            <td style="width: 40%;" class="sign-party-label">PIHAK II (KEDUA)</td>
+            <td style="width: 40%;" class="sign-party-label"><strong>PIHAK II (KEDUA)</strong></td>
         </tr>
         <tr>
             <td style="height: 90px; text-align: center; vertical-align: bottom;">
@@ -905,6 +908,5 @@
     </table>
 
     <div class="doc-footer">pkwt aru {{ $footerYear }}</div>
-
 </body>
 </html>

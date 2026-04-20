@@ -111,20 +111,21 @@ export default function Show({ contract }: any) {
 
                         {(Number(contract.compensation?.meal_allowance) > 0 || Number(contract.compensation?.transport_allowance) > 0 || Number(contract.compensation?.allowance) > 0 || Number(contract.compensation?.attendance_allowance) > 0 || Number(contract.compensation?.performance_bonus) > 0) && (
                             <div className="border-t border-slate-100 dark:border-slate-700 pt-4 grid grid-cols-2 gap-4">
+                                {Number(contract.compensation?.allowance) > 0 && (
+                                    <div><p className="text-xs text-slate-500 mb-1">Tunjangan/{translateRate(contract.compensation?.salary_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.allowance)}</p></div>
+                                )}
+                                <div></div>
                                 {Number(contract.compensation?.meal_allowance) > 0 && (
                                     <div><p className="text-xs text-slate-500 mb-1">Uang Makan/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.meal_allowance)}</p></div>
                                 )}
                                 {Number(contract.compensation?.transport_allowance) > 0 && (
                                     <div><p className="text-xs text-slate-500 mb-1">Uang Transport/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.transport_allowance)}</p></div>
                                 )}
-                                {Number(contract.compensation?.allowance) > 0 && (
-                                    <div><p className="text-xs text-slate-500 mb-1">Tunjangan</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.allowance)}</p></div>
-                                )}
                                 {Number(contract.compensation?.attendance_allowance) > 0 && (
-                                    <div><p className="text-xs text-slate-500 mb-1">Uang Kehadiran</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.attendance_allowance)}</p></div>
+                                    <div><p className="text-xs text-slate-500 mb-1">Uang Kehadiran/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.attendance_allowance)}</p></div>
                                 )}
                                 {Number(contract.compensation?.performance_bonus) > 0 && (
-                                    <div><p className="text-xs text-slate-500 mb-1">Insentif Kinerja</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.performance_bonus)}</p></div>
+                                    <div><p className="text-xs text-slate-500 mb-1">Insentif Kinerja/{translateRate(contract.compensation?.allowance_rate)}</p><p className="font-semibold text-slate-800 dark:text-white font-mono">{formatRp(contract.compensation?.performance_bonus)}</p></div>
                                 )}
                             </div>
                         )}

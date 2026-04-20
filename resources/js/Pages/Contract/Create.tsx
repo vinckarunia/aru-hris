@@ -203,7 +203,7 @@ export default function Create({ assignment }: Props) {
 
                         {/* Salary */}
                         <div className="space-y-4 mb-10">
-                            <h4 className="font-bold text-slate-700 border-b pb-2">Gaji Pokok</h4>
+                            <h4 className="font-bold text-slate-700 border-b pb-2 dark:text-slate-300">Gaji Pokok</h4>
                             <div>
                                 <div className="flex flex-row items-center gap-1">
                                     <InputLabel htmlFor="base_salary" value="Nominal Gaji Pokok" /><span className="text-red-500">*</span>
@@ -227,8 +227,16 @@ export default function Create({ assignment }: Props) {
 
                         {/* Allowance */}
                         <div className="space-y-4">
-                            <h4 className="font-bold text-slate-700 border-b pb-2">Tunjangan & Lembur</h4>
-                            <div className="grid grid-cols-2 gap-4">
+                            <h4 className="font-bold text-slate-700 border-b pb-2 dark:text-slate-300">Tunjangan & Lembur</h4>
+                            <div>
+                                <InputLabel htmlFor="allowance" value="Tunjangan" />
+                                <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
+                                    <span className="text-slate-500 sm:text-sm">Rp</span>
+                                    <TextInput id="allowance" type="text" className="mt-1 block w-full font-mono" value={data.allowance} onChange={e => handleNumberInput('allowance', e.target.value)} placeholder="0" />
+                                </div>
+                                <InputError message={errors.allowance} className="mt-1" />
+                                    </div>
+                            <div className="grid grid-cols-2 gap-4 pt-4">
                                 <div>
                                     <InputLabel htmlFor="meal_allowance" value="Uang Makan" />
                                     <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
@@ -245,15 +253,7 @@ export default function Create({ assignment }: Props) {
                                     </div>
                                     <InputError message={errors.transport_allowance} className="mt-1" />
                                 </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <InputLabel htmlFor="allowance" value="Tunjangan" />
-                                        <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">
-                                            <span className="text-slate-500 sm:text-sm">Rp</span>
-                                            <TextInput id="allowance" type="text" className="mt-1 block w-full font-mono" value={data.allowance} onChange={e => handleNumberInput('allowance', e.target.value)} placeholder="0" />
-                                        </div>
-                                        <InputError message={errors.allowance} className="mt-1" />
-                                    </div>
+                                <div className="grid grid-cols-2 gap-4 pt-4">
                                     <div>
                                         <InputLabel htmlFor="attendance_allowance" value="Uang Kehadiran" />
                                         <div className="flex flex-row items-center gap-2 mt-1 relative rounded-md shadow-sm">

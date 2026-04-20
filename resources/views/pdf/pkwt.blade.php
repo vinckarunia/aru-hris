@@ -4,8 +4,20 @@
     <meta charset="utf-8">
     <title>PKWT Document</title>
     <style>
+        @font-face {
+            font-family: 'Tahoma';
+            src: url('{{ public_path("uploads/assets/fonts/tahoma.ttf") }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Tahoma';
+            src: url('{{ public_path("uploads/assets/fonts/tahomabd.ttf") }}') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
         body {
-            font-family: Tahoma, sans-serif;
+            font-family: 'Tahoma', sans-serif;
             font-size: 12px;
             text-align: justify;
             line-height: 1.5;
@@ -39,6 +51,17 @@
         }
         .text-10 {
             font-size: 10px;
+        }
+        .page-header {
+            position: fixed;
+            top: -15px;
+            right: 0px;
+            height: 20px;
+            font-size: 10px;
+            text-align: right;
+        }
+        .pagenum:after {
+            content: counter(page);
         }
         .text-12 {
             font-size: 12px;
@@ -82,12 +105,9 @@
 </style>
 </head>
 <body>
-    {{-- dompdf automatic page number (top-right, font-size 10) --}}
-    <script type="text/php">
-        if (isset($pdf)) {
-            $pdf->page_text(545, 18, "{PAGE_NUM}", null, 10, [0, 0, 0]);
-        }
-    </script>
+    <div class="page-header">
+        <span class="pagenum"></span>
+    </div>
 
     @php
         // Embed assets as base64 for reliable dompdf rendering
@@ -96,7 +116,7 @@
     @endphp
     @php
         /**
-         * Contract number format: {monthlySeq}/ARU/KKWT-{pkwtNumber}/{romanMonth}/{year}
+         * Contract number format: {monthlySeq}/ARU/PKWT-{pkwtNumber}/{romanMonth}/{year}
          * First segment = monthly letter sequence (passed from controller).
          * Second segment = pkwt_number (which contract this is for the worker).
          * Roman month & year = document issuance date (today), not contract start.
@@ -107,7 +127,7 @@
         $issueDate    = now();
         $romanMonth   = $romanMonths[$issueDate->month] ?? 'I';
         $year         = $issueDate->year;
-        $pkwt_formatted = sprintf('%s/ARU/KKWT-%s/%s/%s', $seqFormatted, $pkwtNumFormatted, $romanMonth, $year);
+        $pkwt_formatted = sprintf('%s/ARU/PKWT-%s/%s/%s', $seqFormatted, $pkwtNumFormatted, $romanMonth, $year);
     @endphp
     
     <div class="title">PERJANJIAN KERJA WAKTU TERTENTU (PKWT)</div>
@@ -120,13 +140,13 @@
             <td style="width: 5%;">1.</td>
             <td class="label-col">Nama</td>
             <td class="colon-col">:</td>
-            <td class="value-col capitalize">{{ $pihakPertama->name ?? '-' }}</td>
+            <td class="value-col capitalize">{{ strtoupper($pihakPertama->name ?? '-') }}</td>
         </tr>
         <tr>
             <td></td>
             <td class="label-col">Alamat</td>
             <td class="colon-col">:</td>
-            <td class="value-col">Kompleks Ruko Duta Permai Blok E/10 Rt.09 Rw.01 Kel. Jakasampurna, Bekasi</td>
+            <td class="value-col">Kompleks Ruko Duta Permai Blok E/10 <br> RT.09 RW.01 Kel. Jakasampurna, Bekasi</td>
         </tr>
         <tr>
             <td></td>
@@ -227,20 +247,21 @@
                     <tr>
                         <td>C. Status Hubungan Kerja</td>
                         <td>:</td>
-                        <td>{{ $contract->contract_type ?? 'KONTRAK' }}</td>
+                        <td>{{ strtoupper($contract->contract_type ?? 'Kontrak') }}</td>
                     </tr>
                 </table>
             </td>
         </tr>
         <tr>
-            <td>2.</td>
-            <td>Atas dasar pemenuhan kebutuhan kerja dan keseimbangan kebutuhan sumber daya manusia pada unit kerja tertentu, maka <strong>Pihak Pertama</strong> berhak melakukan <strong>mutasi kerja</strong> terhadap <strong>Pihak Kedua</strong> dalam lingkungan <strong>Pihak Pertama</strong> di lokasi yang lain selama perjanjian kerja ini masih berlaku.</td>
-        </tr>
     </table>
 
     
 
     <table style="width:100%;">
+        <tr>
+            <td style="width: 5%;">2.</td>
+            <td>Atas dasar pemenuhan kebutuhan kerja dan keseimbangan kebutuhan sumber daya manusia pada unit kerja tertentu, maka <strong>Pihak Pertama</strong> berhak melakukan <strong>mutasi kerja</strong> terhadap <strong>Pihak Kedua</strong> dalam lingkungan <strong>Pihak Pertama</strong> di lokasi yang lain selama perjanjian kerja ini masih berlaku.</td>
+        </tr>
         <tr>
             <td style="width: 5%;">3.</td>
             <td><strong>Pihak Kedua</strong> menyatakan sanggup dan bersedia melaksanakan <strong>mutasi kerja</strong> sebagaimana dimaksud dalam ayat (2) pasal ini.</td>
@@ -326,11 +347,6 @@
             <td style="width: 5%;">1.</td>
             <td>Perjanjian ini sewaktu – waktu dapat diakhiri karena terjadinya force majeur / over macht (Keadaan Memaksa / Keadaan Mendesak) seperti faktor bencana alam, kebakaran, kerusuhan sosial politik, peperangan, <strong>wabah penyakit</strong> dan kebijakan pemerintah di bidang moneter dan bidang lain yang berdampak buruk pada finansial (kondisi keuangan) <strong>Pihak Pertama</strong>.</td>
         </tr>
-    </table>
-
-    
-
-    <table style="width:100%;">
         <tr>
             <td style="width: 5%;">2.</td>
             <td>Perjanjian kerja ini sewaktu – waktu dapat diakhiri oleh <strong>Pihak Pertama</strong> karena berdasarkan penilaian bahwa <strong>Pihak Kedua</strong> tidak dapat memenuhi target kerja yang ditentukan <strong>Pihak Pertama</strong> dan pengakhiran kerja seperti ini <strong>Pihak Pertama</strong> tidak berkewajiban membayarkan kompensasi apapun kepada <strong>Pihak Kedua</strong></td>
@@ -386,7 +402,7 @@
                     </tr>
                     <tr>
                         <td>b. Tunjangan Pengganti Fasilitas</td>
-                        <td>: Rp. {{ number_format($tunjangan, 0, ',', '.') }}</td>
+                        <td>: Rp. {{ $tunjangan > 0 ? number_format($tunjangan, 0, ',', '.') : '' }}</td>
                     </tr>
                     <tr>
                         <td>c. BPJS Tenaga Kerja</td>
@@ -469,30 +485,36 @@
         </tr>
         <tr>
             <td>5.</td>
+            <td>Pihak kedua dilarang melakukan pekerjaan yang menyimpang dari tugas dan tanggungjawab yang melekat pada jabatan yang disebutkan sesuai Pasal II ayat 1 pada perjanjian ini.</td>
+        </tr>
+    </table>
+    <table style="width:100%;">
+        <tr>
+            <td style="width: 5%;">6.</td>
             <td><strong>Pihak Kedua</strong> bersedia mematuhi segala perintah yang layak dari atasan / Pimpinan perusahaan <strong>Pihak Pertama</strong></td>
         </tr>
         <tr>
-            <td>6.</td>
+            <td>7.</td>
             <td><strong>Pihak Kedua</strong> bertanggung jawab terhadap tugas dan pekerjaan yang di berikan oleh <strong>Pihak Pertama</strong> dan / atau atasannya.</td>
         </tr>
         <tr>
-            <td>7.</td>
+            <td>8.</td>
             <td><strong>Pihak Kedua</strong> sanggup dan bersedia menjalankan pekerjaan lembur apabila <strong>Pihak Pertama</strong> / atasan memerintahkan untuk kerja lembur.</td>
         </tr>
         <tr>
-            <td>8.</td>
+            <td>9.</td>
             <td><strong>Pihak Kedua</strong> wajib menyelesaikan tugas dan tangung jawabnya tepat waktu. Apabila tugas tanggung jawabnya belum dapat diselesaikan maka <strong>Pihak Kedua</strong> wajib menyelesaikannya dan kelebihan jam kerjanya tidak dihitung sebagai kerja lembur.</td>
         </tr>
         <tr>
-            <td>9.</td>
+            <td>10.</td>
             <td><strong>Pihak Kedua</strong> sanggup memahami segala prosedur dan standard kerja yang ditetapkan <strong>Pihak Pertama</strong>, serta menjaga alat kerja dan aset milik <strong>Pihak Pertama</strong></td>
         </tr>
         <tr>
-            <td>10.</td>
+            <td>11.</td>
             <td><strong>Pihak Kedua</strong> wajib memberitahukan setiap perubahan alamat, status keluarga, dengan menyerahkan bukti yang sah kepada <strong>Pihak Pertama.</strong></td>
         </tr>
         <tr>
-            <td>11.</td>
+            <td>12.</td>
             <td><strong>Pihak Kedua</strong> bersedia dan sanggup menjalani mutasi, rotasi dan / atau promosi, atau demosi dalam lingkungan <strong>Pihak Pertama</strong> bila di perlukan.</td>
         </tr>
     </table>
@@ -501,15 +523,15 @@
 
     <table style="width:100%;">
         <tr>
-            <td style="width: 5%;">12.</td>
+            <td style="width: 5%;">13.</td>
             <td>Wajib memakai alat pelindung diri (APD), menggunakannya dengan cara yang benar sesuai yang di tentukan oleh <strong>Pihak Pertama.</strong></td>
         </tr>
         <tr>
-            <td>13.</td>
+            <td>14.</td>
             <td><strong>Pihak Kedua</strong> wajib menjaga kerahasiaan semua informasi yang berhubungan dengan pekerjaan yang diberikan oleh <strong>Pihak Pertama.</strong></td>
         </tr>
         <tr>
-            <td>14.</td>
+            <td>15.</td>
             <td>Terhadap semua pengajuan di depan <em>(advance request)</em> atas biaya-biaya yang diperbolehkan diajukan kepada perusahaan, karyawan wajib memberikan laporan pertanggungjawaban dengan dilengkapi bukti-bukti yang valid tepat pada waktu yang ditentukan. Jika belum diberikan laporan pertanggungjawaban sebagaimana mestinya, maka <strong>Pihak Kedua</strong> mengijinkan perusahaan untuk melakukan pemotongan sejumlah biaya tersebut dari upah bulanan terdekat, untuk diperhitungkan sebagai pengganti biaya dimaksud karena belum adanya laporan pertanggungjawaban yang diberikan kepada perusahaan.</td>
         </tr>
     </table>
@@ -540,8 +562,10 @@
             <td>5.</td>
             <td>Dilarang merokok, main judi, membawa senjata tajam dan/atau senjata api, membawa minuman keras serta obat terlarang di area kerja, dan dilarang melakukan perbuatan yang melanggar ketentuan dalam peraturan perusahaan <strong>Pihak Pertama</strong>, melanggar norma kesusilaan serta perbuatan yang melanggar peraturan perundang-undangan yang berlaku.</td>
         </tr>
+    </table>
+    <table style="width:100%;">
         <tr>
-            <td>6.</td>
+            <td style="width: 5%;">6.</td>
             <td>Dilarang tidur saat jam kerja berlangsung, makan di dalam area kerja, tidak melaksanakan kerja lembur yang sudah disepakati sebelumnya, atau pelanggaran berat lainnya berdasarkan peraturan perusahaan.</td>
         </tr>
         <tr>
@@ -608,8 +632,10 @@
             <td>2.</td>
             <td>Apabila terjadi pemalsuan dokumen apapun terkait diri <strong>Pihak Kedua</strong>, maka <strong>Pihak Kedua</strong> setuju apabila <strong>Pihak Pertama</strong> menyerahkan proses penanganannya kepada pihak yang berwajib (Kepolisian) karena dianggap telah terjadi tindak pidana pemalsuan data yang dilakukan <strong>Pihak Kedua</strong></td>
         </tr>
+    </table>
+    <table style="width:100%;">
         <tr>
-            <td>3.</td>
+            <td style="width: 5%;">3.</td>
             <td>Pelanggaran terhadap ketentuan pasal VII (Tujuh) dan pasal VIII (Delapan) diatas dapat mengakibatkan diakhirinya perjanjian ini secara sepihak oleh <strong>Pihak Pertama</strong>, dan <strong>Pihak Pertama</strong> tidak berkewajiban untuk membayar sisa kontrak.</td>
         </tr>
         <tr>
@@ -650,30 +676,33 @@
     <p style="margin-top: 20px;">Demikian kesepakatan hubungan kerja ini dibuat dengan sebenarnya tanpa paksaan dari pihak manapun dan tidak akan menuntut sesuatu apapun bila Perjanjian Kerja Waktu Tertentu ini berakhir dan masing masing pihak dalam keadaaan sehat jasmani dan rohani dan sah sejak ditandatangani oleh <strong>Pihak Pertama</strong> dan <strong>Pihak Kedua</strong>.</p>
 
     <div class="text-14" style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
-        Bekasi, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+        Bekasi, {{ $startDate }}
     </div>
 
-    <table class="signature-table">
+    <table class="signature-table" style="width: 100%;">
         <tr>
-            <td style="width: 50%;" class="text-13"><strong>PIHAK PERTAMA</strong></td>
-            <td style="width: 50%;" class="text-13"><strong>PIHAK KEDUA</strong></td>
+            <td style="width: 40%; text-align: center;" class="text-13"><strong>PIHAK PERTAMA</strong></td>
+            <td style="width: 20%;">&nbsp;</td>
+            <td style="width: 40%; text-align: center;" class="text-13"><strong>PIHAK KEDUA</strong></td>
         </tr>
         <tr>
             <td style="height: 100px; text-align: center; vertical-align: bottom;">
-                @if($signatureBase64)
-                    <img src="{{ $signatureBase64 }}" style="max-height: 90px; max-width: 160px; object-fit: contain;" alt="Tanda Tangan">
-                @endif
+                &nbsp;
             </td>
-            <td style="height: 100px; vertical-align: middle;">
+            <td style="height: 100px; vertical-align: middle; text-align: center;">
                 <div class="text-10">
                     Materai<br>
                     Rp.10.000
                 </div>
             </td>
+            <td style="height: 100px; text-align: center; vertical-align: bottom;">
+                &nbsp;
+            </td>
         </tr>
         <tr>
-            <td class="text-13"><strong>({{ $pihakPertama->name ?? '-' }})</strong></td>
-            <td class="text-13"><strong>({{ $worker->name ?? '-' }})</strong></td>
+            <td style="text-align: center;" class="text-13"><strong>({{ strtoupper($pihakPertama->name ?? '-') }})</strong></td>
+            <td style="text-align: center;">&nbsp;</td>
+            <td style="text-align: center;" class="text-13"><strong>({{ strtoupper($worker->name ?? '-') }})</strong></td>
         </tr>
     </table>
 </body>

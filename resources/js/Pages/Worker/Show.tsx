@@ -576,14 +576,21 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                     </Link>
 
                                                     {assign.contracts && assign.contracts.length > 0 && (
-                                                        <div className="flex gap-2 w-full mt-2">
-                                                            <a href={route('contracts.download-pkwt', { contract: assign.contracts[0].id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download PKWT (PDF)">
-                                                                <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> PKWT
-                                                            </a>
-                                                            <a href={route('contracts.download-st', { contract: assign.contracts[0].id })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Surat Tugas (PDF)">
-                                                                <iconify-icon icon="solar:file-check-bold" width="14"></iconify-icon> Surat Tugas
-                                                            </a>
-                                                        </div>
+                                                        (() => {
+                                                            const latestContract = assign.contracts.reduce((latest: any, current: any) =>
+                                                                new Date(current.start_date) > new Date(latest.start_date) ? current : latest
+                                                            );
+                                                            return (
+                                                                <div className="flex gap-2 w-full mt-2">
+                                                                    <a href={route('contracts.download-pkwt', { contract: latestContract.id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download PKWT (PDF)">
+                                                                        <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> PKWT
+                                                                    </a>
+                                                                    <a href={route('contracts.download-st', { contract: latestContract.id })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Surat Tugas (PDF)">
+                                                                        <iconify-icon icon="solar:file-check-bold" width="14"></iconify-icon> Surat Tugas
+                                                                    </a>
+                                                                </div>
+                                                            );
+                                                        })()
                                                     )}
                                                 </div>
                                             )}

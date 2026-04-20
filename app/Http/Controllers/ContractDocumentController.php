@@ -88,7 +88,9 @@ class ContractDocumentController extends Controller
             'signaturePath' => $this->getAssetPath('signature'),
         ];
         
-        $pdf = Pdf::loadView('pdf.surat-tugas', $data)->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('pdf.surat-tugas', $data)
+                  ->setPaper('a4', 'portrait')
+                  ->setOptions(['isPhpEnabled' => true]);
         $fileName = 'Surat Tugas - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
         
         return $pdf->download($fileName);
@@ -115,7 +117,13 @@ class ContractDocumentController extends Controller
     private function generatePkwtPdf(array $data, string $viewName)
     {
         $pdf = Pdf::loadView($viewName, $data)
-                  ->setPaper('a4', 'portrait');
+                  ->setPaper('a4', 'portrait')
+                  ->setOptions([
+                      'isPhpEnabled' => true,
+                      'isRemoteEnabled' => true,
+                      'isFontSubsettingEnabled' => true,
+                      'chroot' => public_path()
+                  ]);
 
         $fileName = 'PKWT - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
         
