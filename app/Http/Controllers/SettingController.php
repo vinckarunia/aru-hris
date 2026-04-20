@@ -124,10 +124,17 @@ class SettingController extends Controller
             mkdir($dir, 0755, true);
         }
         $filename = $type . '.png';
-        imagepng($dst, $dir . '/' . $filename);
+        $fullPath = $dir . '/' . $filename;
+        imagepng($dst, $fullPath);
 
         imagedestroy($src);
         imagedestroy($dst);
+
+        // If the uploaded asset is the logo, also generate the favicon
+        if ($type === 'logo') {
+            $faviconPath = public_path('favicon.ico');
+            exec('convert ' . escapeshellarg($fullPath) . ' -define icon:auto-resize=64,48,32,16 ' . escapeshellarg($faviconPath));
+        }
 
         // Persist path in settings
         Setting::updateOrCreate(

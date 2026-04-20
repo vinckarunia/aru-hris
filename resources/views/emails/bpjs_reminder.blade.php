@@ -14,5 +14,6 @@ Berikut adalah informasi kepesertaan Anda:
 @endif
 
 Terima kasih,
-**{{ config('app.name') }}**
+**PT. Alfa Reka Usaha**
+**Kompleks Ruko Duta Permai Blok E/10, RT.09 RW.01, Kel. Jakasampurna, Bekasi**
 </x-mail::message>

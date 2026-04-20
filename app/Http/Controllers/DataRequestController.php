@@ -237,13 +237,7 @@ class DataRequestController extends Controller
                     $message = 'Request disetujui. MOHON INGATKAN KARYAWAN UNTUK SEGERA MENDAFTARKAN BPJS.';
                 }
 
-                // If BPJS fields are newly added in this request, email the worker...
-                $reqData = $dataRequest->requested_data;
-                if (!empty($reqData['bpjs_kesehatan']) || !empty($reqData['bpjs_ketenagakerjaan'])) {
-                    if ($worker->user && $worker->user->email) {
-                        \Illuminate\Support\Facades\Mail::to($worker->user->email)->send(new \App\Mail\BpjsReminderMail($worker));
-                    }
-                }
+                // BPJS Email sending is now handled globally via Worker::updated event in the Worker model.
             }
         } else if ($validated['status'] === 'rejected' && is_array($dataRequest->requested_data)) {
             // Cleanup orphaned unverified files if an upload request is rejected

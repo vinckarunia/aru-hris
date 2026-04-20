@@ -69,6 +69,28 @@ class Worker extends Model
     ];
 
     /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::updated(function ($worker) {
+            $bpjsKesehatanChanged = $worker->wasChanged('bpjs_kesehatan') && !empty($worker->bpjs_kesehatan);
+            $bpjsKetenagakerjaanChanged = $worker->wasChanged('bpjs_ketenagakerjaan') && !empty($worker->bpjs_ketenagakerjaan);
+
+            $kosongSblmKesehatan = empty($worker->getOriginal('bpjs_kesehatan'));
+            $kosongSblmKetenagakerjaan = empty($worker->getOriginal('bpjs_ketenagakerjaan'));
+
+            if (($bpjsKesehatanChanged && $kosongSblmKesehatan) || ($bpjsKetenagakerjaanChanged && $kosongSblmKetenagakerjaan)) {
+                if ($worker->user && $worker->user->email) {
+                    \Illuminate\Support\Facades\Mail::to($worker->user->email)->send(new \App\Mail\BpjsReminderMail($worker));
+                }
+            }
+        });
+    }
+
+    /**
      * Get the assignments associated with the worker.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
