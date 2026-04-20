@@ -740,12 +740,12 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
             {/* Floating Action Bar for Bulk Selection */}
             {
                 selectedIds.length > 0 && (
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl shadow-2xl shadow-slate-900/50 px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-slate-800 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
                         <span className="text-sm font-medium">
-                            <span className="bg-primary px-2 py-0.5 rounded-full text-xs font-bold mr-1.5">{selectedIds.length}</span>
+                            <span className="bg-primary text-white px-2 py-0.5 rounded-full text-xs font-bold mr-1.5">{selectedIds.length}</span>
                             dipilih
                         </span>
-                        <div className="w-px h-6 bg-slate-700"></div>
+                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
                         <button
                             onClick={() => openBulkConfirm('approved')}
                             className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
@@ -760,7 +760,7 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
                         </button>
                         <button
                             onClick={() => setSelectedIds([])}
-                            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm transition-colors"
                         >
                             Batal
                         </button>
