@@ -813,7 +813,11 @@ class ImportService
         // Try column first
         $projectName = ImportDataCleaner::extractField($row, $mapping, 'project_name');
         if ($projectName) {
-            $project = Project::where('name', 'ilike', trim($projectName))->first();
+            $query = Project::where('name', 'ilike', trim($projectName));
+            if (!empty($globalSettings['client_id'])) {
+                $query->where('client_id', $globalSettings['client_id']);
+            }
+            $project = $query->first();
             if ($project) {
                 return $project->id;
             }
@@ -850,8 +854,12 @@ class ImportService
             if ($branch) {
                 return $branch->id;
             }
-            // Try without client scope as fallback
-            $branch = Branch::where('name', 'ilike', trim($branchName))->first();
+            // Try without client scope as fallback, but boundary restricted to global settings if available
+            $queryFallback = Branch::where('name', 'ilike', trim($branchName));
+            if (!empty($globalSettings['client_id'])) {
+                $queryFallback->where('client_id', $globalSettings['client_id']);
+            }
+            $branch = $queryFallback->first();
             if ($branch) {
                 return $branch->id;
             }
