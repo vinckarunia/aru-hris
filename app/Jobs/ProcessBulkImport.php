@@ -253,7 +253,7 @@ class ProcessBulkImport implements ShouldQueue
                 $projectName = ImportDataCleaner::extractField($row, $this->mapping, 'project_name');
                 $projectToBind = null;
                 if ($projectName && !empty($this->globalSettings['client_id'])) {
-                    $existingProject = Project::where('name', 'ilike', trim($projectName))
+                    $existingProject = Project::where('name', 'like', trim($projectName))
                         ->where('client_id', $this->globalSettings['client_id'])
                         ->first();
                     if (!$existingProject) {
@@ -270,7 +270,7 @@ class ProcessBulkImport implements ShouldQueue
 
                 $branchName = ImportDataCleaner::extractField($row, $this->mapping, 'branch_name');
                 if ($branchName && !empty($this->globalSettings['client_id'])) {
-                    $query = Branch::where('name', 'ilike', trim($branchName));
+                    $query = Branch::where('name', 'like', trim($branchName));
                     if ($projectToBind) {
                         $query->where('client_id', $projectToBind->client_id);
                     } else {
