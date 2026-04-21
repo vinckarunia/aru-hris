@@ -111,8 +111,8 @@ export default function Edit({ worker }: Props) {
                             <InputError message={errors.kk_number} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="mother_name" value="Nama Ibu Kandung" />
-                            <TextInput id="mother_name" type="text" className="mt-1 block w-full" value={data.mother_name} onChange={e => setData('mother_name', e.target.value)} />
+                            <InputLabel htmlFor="mother_name">Nama Ibu Kandung <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                            <TextInput id="mother_name" type="text" className="mt-1 block w-full" value={data.mother_name} onChange={e => setData('mother_name', e.target.value)} required />
                             <InputError message={errors.mother_name} className="mt-1" />
                         </div>
 

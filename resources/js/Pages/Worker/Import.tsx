@@ -104,6 +104,7 @@ interface Props {
     clients: Client[];
     projects: Project[];
     dbColumns: DbColumnGroup[];
+    autoMapHints: Record<string, string>;
 }
 
 /** Represents data for a single sheet from the uploaded file. */
@@ -148,7 +149,7 @@ const CONTRACT_TYPE_OPTIONS = [
  * @param {Props} props - Projects and DB columns from the backend.
  * @returns {JSX.Element} The rendered import wizard page.
  */
-export default function Import({ clients, projects, dbColumns }: Props) {
+export default function Import({ clients, projects, dbColumns, autoMapHints }: Props) {
     // ---- Step Management ----
     const [currentStep, setCurrentStep] = useState<number>(1);
     const steps = [
@@ -178,6 +179,45 @@ export default function Import({ clients, projects, dbColumns }: Props) {
 
     // ---- Mapping & Global Settings State ----
     const [mapping, setMapping] = useState<Record<string, number>>({});
+
+    // Dynamic auto-detect when header row or active sheet changes
+    useEffect(() => {
+        if (!csvHeaders || csvHeaders.length === 0 || !autoMapHints) return;
+
+        setMapping(prev => {
+            const newMapping = { ...prev };
+            // Build array of currently mapped indices
+            const usedIndices = Object.values(newMapping);
+
+            // Sort hints by length desc so more specific matches take priority
+            const sortedHints = Object.entries(autoMapHints).sort((a, b) => b[0].length - a[0].length);
+
+            sortedHints.forEach(([hint, dbKey]) => {
+                // Skip if this DB field is already mapped
+                if (Object.keys(newMapping).includes(dbKey)) return;
+
+                // Find a column header that matches
+                for (let i = 0; i < csvHeaders.length; i++) {
+                    // Skip if this column is already mapped
+                    if (usedIndices.includes(i)) continue;
+
+                    const headerStr = String(csvHeaders[i] || '').toLowerCase().trim();
+                    if (headerStr && headerStr.includes(hint.toLowerCase())) {
+                        newMapping[dbKey] = i;
+                        usedIndices.push(i);
+                        break;
+                    }
+                }
+            });
+
+            // Prevent unnecessary state updates if nothing changed
+            if (JSON.stringify(newMapping) !== JSON.stringify(prev)) {
+                return newMapping;
+            }
+            return prev;
+        });
+    }, [csvHeaders, autoMapHints]);
+
     const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
         client_id: null,
         project_id: null,

@@ -15,8 +15,9 @@ use Illuminate\Support\Facades\Cache;
  * Evaluates active contracts nearing their end date and creates/updates
  * corresponding Reminder records of type {@see ReminderType::ContractExpiry}.
  *
- * The threshold (number of days before expiry to trigger) is read from
- * the setting `reminder_contract_expiry_days` (default: 30).
+ * Uses two configurable thresholds:
+ * - `reminder_contract_expiry_pending_days` (default: 45) — outer window for 'pending' status.
+ * - `reminder_contract_expiry_critical_days` (default: 14) — inner window for 'critical' status.
  */
 class ContractExpiryEvaluator
 {
@@ -32,13 +33,17 @@ class ContractExpiryEvaluator
      */
     public function evaluate(): int
     {
-        $days = (int) Cache::remember('setting_reminder_contract_expiry_days', 3600, function () {
-            return Setting::where('key', 'reminder_contract_expiry_days')->value('value') ?? 30;
+        $pendingDays = (int) Cache::remember('setting_reminder_contract_expiry_pending_days', 3600, function () {
+            return Setting::where('key', 'reminder_contract_expiry_pending_days')->value('value') ?? 45;
+        });
+
+        $criticalDays = (int) Cache::remember('setting_reminder_contract_expiry_critical_days', 3600, function () {
+            return Setting::where('key', 'reminder_contract_expiry_critical_days')->value('value') ?? 14;
         });
 
         $contracts = Contract::with(['assignment.worker', 'assignment.project.client'])
             ->where('end_date', '>=', Carbon::now())
-            ->where('end_date', '<=', Carbon::now()->addDays($days))
+            ->where('end_date', '<=', Carbon::now()->addDays($pendingDays))
             ->whereHas('assignment', fn ($q) => $q->where('status', 'active'))
             ->get();
 
@@ -52,7 +57,7 @@ class ContractExpiryEvaluator
             if ($daysLeft < 0) {
                 $status = 'missed';
                 $title = "Kontrak {$worker->name} telah berakhir " . abs($daysLeft) . " hari lalu";
-            } elseif ($daysLeft <= 7) {
+            } elseif ($daysLeft <= $criticalDays) {
                 $status = 'critical';
                 $title = $daysLeft === 0 ? "Kontrak {$worker->name} berakhir hari ini" : "Kontrak {$worker->name} berakhir dalam {$daysLeft} hari";
             } else {

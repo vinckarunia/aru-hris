@@ -106,12 +106,10 @@ export default function Show({ assignment, picProjects = [] }: Props & { picProj
                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <iconify-icon icon="solar:document-text-bold" className="text-primary"></iconify-icon> Riwayat Kontrak
                             </h3>
-                            {/* Only Admin can add new contracts */}
-                            {isAdmin && (
-                                <Link href={route('contracts.create', { assignment_id: assignment.id })} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors">
-                                    <iconify-icon icon="solar:add-circle-bold" width="18"></iconify-icon> Buat Kontrak Baru
-                                </Link>
-                            )}
+                            {/* All users (Admin & PIC) can add new contracts. (PIC actions go through DataRequest) */}
+                            <Link href={route('contracts.create', { assignment_id: assignment.id })} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors">
+                                <iconify-icon icon="solar:add-circle-bold" width="18"></iconify-icon> Buat Kontrak Baru
+                            </Link>
                         </div>
 
                         <div className="p-6 flex-1">

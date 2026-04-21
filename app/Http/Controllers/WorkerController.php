@@ -117,6 +117,36 @@ class WorkerController extends Controller
             if ($request->filled('branch_id')) {
                 $payload['branch_id'] = $request->branch_id;
             }
+            if ($request->filled('hire_date')) {
+                $payload['hire_date'] = $request->hire_date;
+            }
+            if ($request->filled('employee_id')) {
+                $payload['employee_id'] = $request->employee_id;
+            }
+
+            // Validate and bundle contract+compensation data
+            $contractData = $request->validate([
+                'contract_type'    => 'required|in:Kontrak,Harian',
+                'pkwt_type'        => 'nullable|in:PKWT,PKWTT',
+                'pkwt_number'      => 'nullable|integer|min:1',
+                'start_date'       => 'required|date',
+                'end_date'         => 'nullable|date|after_or_equal:start_date',
+                'duration_months'  => 'nullable|integer|min:1',
+                'evaluation_notes' => 'nullable|string',
+                'base_salary'      => 'required|numeric|min:0',
+                'salary_rate'      => 'required|in:hourly,daily,monthly,yearly',
+                'meal_allowance'   => 'nullable|numeric|min:0',
+                'transport_allowance' => 'nullable|numeric|min:0',
+                'allowance'        => 'nullable|numeric|min:0',
+                'attendance_allowance' => 'nullable|numeric|min:0',
+                'performance_bonus' => 'nullable|numeric|min:0',
+                'allowance_rate'   => 'nullable|in:hourly,daily,monthly,yearly',
+                'overtime_weekday_rate' => 'nullable|numeric|min:0',
+                'overtime_holiday_rate' => 'nullable|numeric|min:0',
+                'overtime_rate'    => 'nullable|in:hourly,daily,monthly,yearly',
+            ]);
+
+            $payload['_contract'] = $contractData;
 
             \App\Models\DataRequest::create([
                 'worker_id' => null,
@@ -125,7 +155,7 @@ class WorkerController extends Controller
                 'request_type' => 'new_data',
                 'requested_fields' => array_keys($payload),
                 'requested_data' => $payload,
-                'notes' => 'Registrasi Karyawan Baru oleh PIC',
+                'notes' => 'Registrasi Karyawan Baru + Penempatan + Kontrak oleh PIC',
                 'status' => 'pending',
                 'pic_status' => 'approved', // Auto-approve for the PIC tier
                 'pic_reviewed_by' => $user->id,
@@ -133,7 +163,7 @@ class WorkerController extends Controller
             ]);
 
             return redirect()->route('data-requests.index')
-                             ->with('message', 'Pengajuan penambahan karyawan berhasil dikirim ke Admin untuk direview.');
+                             ->with('message', 'Pengajuan karyawan baru beserta penempatan dan kontrak berhasil dikirim ke Admin.');
         }
 
         $worker = Worker::create($validated);
@@ -263,7 +293,7 @@ class WorkerController extends Controller
             'tax_status' => 'nullable|string|max:50',
             'address_ktp' => 'nullable|string',
             'address_domicile' => 'nullable|string',
-            'mother_name' => 'nullable|string|max:255',
+            'mother_name' => 'required|string|max:255',
             'npwp' => 'nullable|digits:16',
             'bpjs_kesehatan' => 'nullable|digits:13',
             'bpjs_ketenagakerjaan' => 'nullable|digits:11',

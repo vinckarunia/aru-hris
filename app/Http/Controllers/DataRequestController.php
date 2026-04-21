@@ -58,8 +58,44 @@ class DataRequestController extends Controller
             $query->where('data_requests.status', $status);
         }
 
+        $dataRequests = $query->get();
+
+        // Post-process: resolve FK IDs to human-readable names
+        $dataRequests->each(function ($dr) {
+            $data = $dr->requested_data;
+            if (!is_array($data)) return;
+
+            $resolved = [];
+
+            if (isset($data['project_id'])) {
+                $p = \App\Models\Project::find($data['project_id']);
+                if ($p) $resolved['project_id'] = $p->name;
+            }
+            if (isset($data['branch_id'])) {
+                $b = \App\Models\Branch::find($data['branch_id']);
+                if ($b) $resolved['branch_id'] = $b->name;
+            }
+            if (isset($data['worker_id'])) {
+                $w = \App\Models\Worker::find($data['worker_id']);
+                if ($w) $resolved['worker_id'] = $w->name;
+            }
+            if (isset($data['assignment_id'])) {
+                $a = \App\Models\Assignment::with(['project', 'worker'])->find($data['assignment_id']);
+                if ($a) $resolved['assignment_id'] = ($a->worker->name ?? '') . ' — ' . ($a->project->name ?? '');
+            }
+            if (isset($data['contract_id'])) {
+                $c = \App\Models\Contract::with(['assignment.project', 'assignment.worker'])->find($data['contract_id']);
+                if ($c) $resolved['contract_id'] = ($c->assignment->worker->name ?? '') . ' — ' . ($c->assignment->project->name ?? '') . ' (Kontrak #' . $c->id . ')';
+            }
+
+            if (!empty($resolved)) {
+                $data['_resolved_labels'] = $resolved;
+                $dr->requested_data = $data;
+            }
+        });
+
         return Inertia::render('DataRequest/Index', [
-            'dataRequests' => $query->get(),
+            'dataRequests' => $dataRequests,
             'filters' => [
                 'sort' => $sort,
                 'direction' => $direction,
@@ -231,6 +267,7 @@ class DataRequestController extends Controller
                     'bpjs_missing' => $bpjsMissing,
                     'assignment_id' => $latestAssignment?->getRouteKey(),
                     'request_type' => $dataRequest->request_type,
+                    'has_contract' => $latestAssignment ? $latestAssignment->contracts()->exists() : false,
                 ];
 
                 if ($bpjsMissing) {
@@ -325,6 +362,7 @@ class DataRequestController extends Controller
                             'bpjs_missing' => $bpjsMissing,
                             'assignment_id' => $latestAssignment?->getRouteKey(),
                             'request_type' => $dataRequest->request_type,
+                            'has_contract' => $latestAssignment ? $latestAssignment->contracts()->exists() : false,
                         ];
                     }
                 } elseif ($validated['status'] === 'rejected' && is_array($dataRequest->requested_data)) {
@@ -399,6 +437,18 @@ class DataRequestController extends Controller
                         \App\Models\ContractCompensation::create($compData);
                     }
 
+                    // Handle _contract sub-key from PIC bundled worker+contract form
+                    if (!empty($dataRequest->requested_data['_contract'])) {
+                        $cData = $dataRequest->requested_data['_contract'];
+                        $contractFillable = array_intersect_key($cData, array_flip((new \App\Models\Contract)->getFillable()));
+                        $contractFillable['assignment_id'] = $assignment->id;
+                        $contract = \App\Models\Contract::create($contractFillable);
+
+                        $compFillable = array_intersect_key($cData, array_flip((new \App\Models\ContractCompensation)->getFillable()));
+                        $compFillable['contract_id'] = $contract->id;
+                        \App\Models\ContractCompensation::create($compFillable);
+                    }
+
                     if (!empty($dataRequest->requested_data['family_members'])) {
                         foreach ($dataRequest->requested_data['family_members'] as $fm) {
                             $fm['worker_id'] = $worker->id;
@@ -448,6 +498,65 @@ class DataRequestController extends Controller
                             $updateFields = array_diff_key($dataRequest->requested_data, ['_action' => '', 'assignment_id' => '']);
                             $assignmentFillable = array_intersect_key($updateFields, array_flip((new \App\Models\Assignment)->getFillable()));
                             $assignment->update($assignmentFillable);
+                        }
+                    } else if ($action === 'create_assignment') {
+                        $createFields = array_diff_key($dataRequest->requested_data, ['_action' => '', '_contract' => '']);
+                        $assignmentFillable = array_intersect_key($createFields, array_flip((new \App\Models\Assignment)->getFillable()));
+                        $assignment = \App\Models\Assignment::create($assignmentFillable);
+
+                        if (is_null($assignmentFillable['termination_date'] ?? null)) {
+                            $project = \App\Models\Project::find($assignmentFillable['project_id']);
+                            if ($project) {
+                                $newNik = (new AssignmentController)->generateNikForProject($project);
+                                $worker->update(['nik_aru' => $newNik]);
+                            }
+                        }
+
+                        // Handle bundled contract creation
+                        if (isset($dataRequest->requested_data['_contract'])) {
+                            $contractData = $dataRequest->requested_data['_contract'];
+                            $contractFillable = array_intersect_key($contractData, array_flip((new \App\Models\Contract)->getFillable()));
+                            $contractFillable['assignment_id'] = $assignment->id;
+                            $contract = \App\Models\Contract::create($contractFillable);
+
+                            $compFillable = array_intersect_key($contractData, array_flip((new \App\Models\ContractCompensation)->getFillable()));
+                            $compFillable['contract_id'] = $contract->id;
+                            \App\Models\ContractCompensation::create($compFillable);
+                        }
+                    } else if ($action === 'delete_assignment') {
+                        $assignment = \App\Models\Assignment::find($dataRequest->requested_data['assignment_id']);
+                        if ($assignment) {
+                            $assignment->delete();
+                            $worker->update(['nik_aru' => null]);
+                        }
+                    } else if ($action === 'create_contract') {
+                        $createFields = array_diff_key($dataRequest->requested_data, ['_action' => '']);
+                        $contractFillable = array_intersect_key($createFields, array_flip((new \App\Models\Contract)->getFillable()));
+                        $contract = \App\Models\Contract::create($contractFillable);
+
+                        $compFillable = array_intersect_key($createFields, array_flip((new \App\Models\ContractCompensation)->getFillable()));
+                        $compFillable['contract_id'] = $contract->id;
+                        \App\Models\ContractCompensation::create($compFillable);
+                    } else if ($action === 'update_contract') {
+                        $contract = \App\Models\Contract::with('compensation')->find($dataRequest->requested_data['contract_id']);
+                        if ($contract) {
+                            $updateFields = array_diff_key($dataRequest->requested_data, ['_action' => '', 'contract_id' => '']);
+                            
+                            $contractFillable = array_intersect_key($updateFields, array_flip((new \App\Models\Contract)->getFillable()));
+                            $contract->update($contractFillable);
+
+                            $compFillable = array_intersect_key($updateFields, array_flip((new \App\Models\ContractCompensation)->getFillable()));
+                            if ($contract->compensation) {
+                                $contract->compensation->update($compFillable);
+                            } else if (!empty($compFillable)) {
+                                $compFillable['contract_id'] = $contract->id;
+                                \App\Models\ContractCompensation::create($compFillable);
+                            }
+                        }
+                    } else if ($action === 'delete_contract') {
+                        $contract = \App\Models\Contract::find($dataRequest->requested_data['contract_id']);
+                        if ($contract) {
+                            $contract->delete();
                         }
                     } else if ($action === 'bulk_import_update_worker') {
                         // 1. Update Worker (ignore nulls & ktp_number)

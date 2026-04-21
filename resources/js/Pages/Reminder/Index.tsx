@@ -1,7 +1,8 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Dialog, Transition } from '@headlessui/react';
+import { PageProps } from '@/types';
 
 /**
  * Interface representing a Reminder record.
@@ -56,6 +57,8 @@ interface Props {
  * Also provides an action to "Tandai Selesai" or "Restore" individual reminders.
  */
 export default function Index({ reminders, filters, typeOptions }: Props) {
+    const { auth } = usePage<PageProps>().props;
+
     const [searchTerm, setSearchTerm] = useState(filters.search);
     const [currentType, setCurrentType] = useState(filters.type);
     const [currentStatus, setCurrentStatus] = useState(filters.status);
@@ -184,7 +187,6 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                         ></iconify-icon>
                         <span className="font-medium">{isProcessing ? 'Memproses...' : 'Refresh'}</span>
                     </button>
-                    {/* Manual job trigger button could be added here if needed */}
                 </div>
             </div>
 

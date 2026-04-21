@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -50,12 +50,70 @@ export default function Create({ picProjects = [] }: CreateProps) {
         project_id: '',
         branch_id: '',
         position: '',
+        hire_date: '',
+        employee_id: '',
+        contract_type: 'Kontrak',
+        pkwt_type: 'PKWT',
+        pkwt_number: '',
+        start_date: '',
+        end_date: '',
+        duration_months: '',
+        evaluation_notes: '',
+        base_salary: '',
+        salary_rate: 'monthly',
+        meal_allowance: '',
+        transport_allowance: '',
+        allowance: '',
+        attendance_allowance: '',
+        performance_bonus: '',
+        allowance_rate: 'daily',
+        overtime_weekday_rate: '',
+        overtime_holiday_rate: '',
+        overtime_rate: 'hourly',
     });
 
     /** Get the branches belonging to the currently selected project. */
     const selectedProjectBranches = picProjects.find(p => p.id.toString() === data.project_id)?.branches ?? [];
 
     const [bankDropdown, setBankDropdown] = useState<string>('');
+
+    const lastEditedBy = useRef<'dates' | 'duration' | null>(null);
+
+    useEffect(() => {
+        if (!isPic) return;
+        if (lastEditedBy.current === 'duration') { lastEditedBy.current = null; return; }
+        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+            const start = new Date(data.start_date);
+            const end = new Date(data.end_date);
+            if (end >= start) {
+                const e = new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1);
+                let months = (e.getFullYear() - start.getFullYear()) * 12 + (e.getMonth() - start.getMonth());
+                if (e.getDate() < start.getDate()) months -= 1;
+                lastEditedBy.current = 'dates';
+                setData('duration_months', Math.max(months, 0).toString());
+            } else { lastEditedBy.current = 'dates'; setData('duration_months', '0'); }
+        } else if (!data.end_date) { lastEditedBy.current = 'dates'; setData('duration_months', ''); }
+    }, [data.start_date, data.end_date, data.pkwt_type, data.contract_type]);
+
+    useEffect(() => {
+        if (!isPic) return;
+        if (lastEditedBy.current === 'dates') { lastEditedBy.current = null; return; }
+        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+            const m = parseInt(data.duration_months, 10);
+            if (!isNaN(m) && m > 0) {
+                const s = new Date(data.start_date);
+                const ed = new Date(s.getFullYear(), s.getMonth() + m, s.getDate() - 1);
+                lastEditedBy.current = 'duration';
+                setData('end_date', `${ed.getFullYear()}-${String(ed.getMonth() + 1).padStart(2, '0')}-${String(ed.getDate()).padStart(2, '0')}`);
+            }
+        }
+    }, [data.duration_months, data.start_date, data.pkwt_type, data.contract_type]);
+
+    useEffect(() => {
+        if (isPic && data.hire_date && !data.start_date) setData('start_date', data.hire_date);
+    }, [data.hire_date]);
+
+    const handleNumberInput = (field: any, value: string) => setData(field, value.replace(/\D/g, ''));
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -133,6 +191,16 @@ export default function Create({ picProjects = [] }: CreateProps) {
                                 />
                                 <InputError message={(errors as any).position} className="mt-1" />
                             </div>
+                            <div>
+                                <InputLabel htmlFor="hire_date">Tanggal Bergabung <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                                <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required />
+                                <InputError message={(errors as any).hire_date} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="employee_id">ID Karyawan Client</InputLabel>
+                                <TextInput id="employee_id" type="text" className="mt-1 block w-full font-mono" value={data.employee_id} onChange={e => setData('employee_id', e.target.value)} placeholder="Opsional" />
+                                <InputError message={(errors as any).employee_id} className="mt-1" />
+                            </div>
                         </div>
                     </div>
                 )}
@@ -170,8 +238,8 @@ export default function Create({ picProjects = [] }: CreateProps) {
                             <InputError message={errors.kk_number} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="mother_name" value="Nama Ibu Kandung" />
-                            <TextInput id="mother_name" type="text" className="mt-1 block w-full" value={data.mother_name} onChange={e => setData('mother_name', e.target.value)} />
+                            <InputLabel htmlFor="mother_name">Nama Ibu Kandung <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                            <TextInput id="mother_name" type="text" className="mt-1 block w-full" value={data.mother_name} onChange={e => setData('mother_name', e.target.value)} required />
                             <InputError message={errors.mother_name} className="mt-1" />
                         </div>
 
@@ -324,12 +392,138 @@ export default function Create({ picProjects = [] }: CreateProps) {
                     </div>
                 </div>
 
+                {/* PIC: Contract + Compensation Section */}
+                {isPic && (<>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                            <iconify-icon icon="solar:document-text-bold" class="text-primary" width="20"></iconify-icon>
+                            <h3 className="font-bold text-slate-800 dark:text-white">Kontrak Pertama</h3>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div>
+                                <InputLabel htmlFor="contract_type" value="Jenis Kontrak" />
+                                <select id="contract_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700" value={data.contract_type} onChange={e => { const t = e.target.value; setData('contract_type', t); if (t === 'Harian') setData('pkwt_type', ''); else if (!data.pkwt_type) setData('pkwt_type', 'PKWT'); }}>
+                                    <option value="Kontrak">Contract</option><option value="Harian">Harian</option>
+                                </select>
+                                <InputError message={(errors as any).contract_type} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="pkwt_type" value="Status Ketenagakerjaan" />
+                                <select id="pkwt_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50" value={data.pkwt_type} onChange={e => setData('pkwt_type', e.target.value)} disabled={data.contract_type === 'Harian'}>
+                                    <option value="" disabled={data.contract_type !== 'Harian'}>Harian</option><option value="PKWT">PKWT</option><option value="PKWTT">PKWTT</option>
+                                </select>
+                                <InputError message={(errors as any).pkwt_type} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="pkwt_number" value="PKWT Ke-" />
+                                <TextInput id="pkwt_number" type="number" className="mt-1 block w-full disabled:opacity-50" value={data.pkwt_number} onChange={e => setData('pkwt_number', e.target.value)} placeholder="Opsional" />
+                                <InputError message={(errors as any).pkwt_number} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                                <TextInput id="start_date" type="date" className="mt-1 block w-full" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required />
+                                <InputError message={(errors as any).start_date} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
+                                <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
+                                <InputError message={(errors as any).end_date} className="mt-1" />
+                            </div>
+                            <div>
+                                <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
+                                <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} placeholder="Contoh: 3" min="1" />
+                                <p className="text-xs text-slate-500 mt-1">Isi bulan untuk auto-hitung tanggal berakhir</p>
+                                <InputError message={(errors as any).duration_months} className="mt-1" />
+                            </div>
+                            <div className="md:col-span-2 lg:col-span-3">
+                                <InputLabel htmlFor="evaluation_notes" value="Catatan Evaluasi" />
+                                <textarea id="evaluation_notes" rows={2} className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700" value={data.evaluation_notes} onChange={e => setData('evaluation_notes', e.target.value)} placeholder="Opsional..."></textarea>
+                                <InputError message={(errors as any).evaluation_notes} className="mt-1" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 border-b border-emerald-100 dark:border-emerald-800/30 flex items-center gap-2">
+                            <iconify-icon icon="solar:wad-of-money-bold" class="text-emerald-600" width="20"></iconify-icon>
+                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400">Rincian Gaji dan Tunjangan</h3>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-4 pb-10 border-b border-slate-100 dark:border-slate-700">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <div className="flex items-center gap-1"><InputLabel htmlFor="base_salary" value="Gaji Pokok" /><span className="text-red-500">*</span></div>
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="base_salary" type="text" className="block w-full font-mono" value={data.base_salary} onChange={e => handleNumberInput('base_salary', e.target.value)} required placeholder="0" /></div>
+                                        <InputError message={(errors as any).base_salary} className="mt-1" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="salary_rate" value="Hitungan Gaji" />
+                                        <select id="salary_rate" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900" value={data.salary_rate} onChange={e => setData('salary_rate', e.target.value)}>
+                                            <option value="monthly">Bulanan</option><option value="daily">Harian</option><option value="hourly">Per Jam</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-4 pb-10 border-b border-slate-100 dark:border-slate-700">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="allowance" value="Tunjangan" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="allowance" type="text" className="block w-full font-mono" value={data.allowance} onChange={e => handleNumberInput('allowance', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="meal_allowance" value="Uang Makan" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="meal_allowance" type="text" className="block w-full font-mono" value={data.meal_allowance} onChange={e => handleNumberInput('meal_allowance', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="transport_allowance" value="Transport" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="transport_allowance" type="text" className="block w-full font-mono" value={data.transport_allowance} onChange={e => handleNumberInput('transport_allowance', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="attendance_allowance" value="Kehadiran" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="attendance_allowance" type="text" className="block w-full font-mono" value={data.attendance_allowance} onChange={e => handleNumberInput('attendance_allowance', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="performance_bonus" value="Insentif" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="performance_bonus" type="text" className="block w-full font-mono" value={data.performance_bonus} onChange={e => handleNumberInput('performance_bonus', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="allowance_rate" value="Hitungan Tunjangan" />
+                                        <select id="allowance_rate" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900" value={data.allowance_rate} onChange={e => setData('allowance_rate', e.target.value)}><option value="daily">Harian</option><option value="monthly">Bulanan</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="overtime_weekday_rate" value="Lembur Weekday" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="overtime_weekday_rate" type="text" className="block w-full font-mono" value={data.overtime_weekday_rate} onChange={e => handleNumberInput('overtime_weekday_rate', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="overtime_holiday_rate" value="Lembur Weekend" />
+                                        <div className="flex items-center gap-2 mt-1"><span className="text-slate-500 text-sm">Rp</span><TextInput id="overtime_holiday_rate" type="text" className="block w-full font-mono" value={data.overtime_holiday_rate} onChange={e => handleNumberInput('overtime_holiday_rate', e.target.value)} placeholder="0" /></div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="overtime_rate" value="Hitungan Lembur" />
+                                        <select id="overtime_rate" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900" value={data.overtime_rate} onChange={e => setData('overtime_rate', e.target.value)}><option value="hourly">Per Jam</option><option value="daily">Harian</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>)}
+
                 <div className="flex justify-end gap-4 pb-10">
                     <Link href={route('workers.index')} className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-xl font-bold transition-colors">
                         Batal
                     </Link>
                     <PrimaryButton disabled={processing} className="px-8 py-2 rounded-xl text-base bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/30 transition-all">
-                        {processing ? 'Menyimpan...' : 'Simpan Data Karyawan'}
+                        {processing ? 'Menyimpan...' : (isPic ? 'Ajukan Data Karyawan + Kontrak' : 'Simpan Data Karyawan')}
                     </PrimaryButton>
                 </div>
             </form>

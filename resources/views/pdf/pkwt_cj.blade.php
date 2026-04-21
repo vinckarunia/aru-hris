@@ -171,7 +171,7 @@
             <td class="num-col">1.</td>
             <td class="label-col">Nama</td>
             <td class="colon-col">:</td>
-            <td class="value-col"><strong>{{ strtoupper($pihakPertama->name ?? '-') }}</strong></td>
+            <td class="value-col"><strong>{{ strtoupper($pihakPertama->name ?? 'Jumaga Tua Sinaga') }}</strong></td>
         </tr>
         <tr>
             <td></td>
@@ -183,7 +183,7 @@
             <td></td>
             <td class="label-col">Jabatan</td>
             <td class="colon-col">:</td>
-            <td class="value-col"><strong>{{ $pihakPertama->position . ' PT. Alfa Reka Usaha' }}</strong></td>
+            <td class="value-col"><strong>{{ $pihakPertama->position ?? 'Head of Operation' . ' PT. Alfa Reka Usaha' }}</strong></td>
         </tr>
     </table>
 

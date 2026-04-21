@@ -198,6 +198,87 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
         bank_account_number: 'Nomor Rekening',
     };
 
+    /** Action labels for _action field display */
+    const actionLabels: Record<string, string> = {
+        add_family: 'Tambah Keluarga',
+        update_family: 'Ubah Keluarga',
+        delete_family: 'Hapus Keluarga',
+        upload_document: 'Upload Dokumen',
+        delete_document: 'Hapus Dokumen',
+        create_assignment: 'Buat Penempatan Baru',
+        update_assignment: 'Ubah Penempatan',
+        delete_assignment: 'Hapus Penempatan',
+        create_contract: 'Buat Kontrak Baru',
+        update_contract: 'Ubah Kontrak',
+        delete_contract: 'Hapus Kontrak',
+        bulk_import_update_worker: 'Import Massal',
+    };
+
+    /** Labels for assignment/contract/compensation fields */
+    const allFieldLabels: Record<string, string> = {
+        ...fieldLabels,
+        project_id: 'Project',
+        branch_id: 'Cabang',
+        worker_id: 'Karyawan',
+        assignment_id: 'Penempatan',
+        contract_id: 'Kontrak',
+        position: 'Jabatan',
+        hire_date: 'Tanggal Bergabung',
+        termination_date: 'Tanggal Berakhir',
+        status: 'Status',
+        employee_id: 'ID Karyawan Client',
+        contract_type: 'Jenis Kontrak',
+        pkwt_type: 'Status Ketenagakerjaan',
+        pkwt_number: 'PKWT Ke-',
+        start_date: 'Tanggal Mulai',
+        end_date: 'Tanggal Berakhir',
+        duration_months: 'Durasi (Bulan)',
+        evaluation_notes: 'Catatan Evaluasi',
+        base_salary: 'Gaji Pokok',
+        salary_rate: 'Hitungan Gaji',
+        meal_allowance: 'Uang Makan',
+        transport_allowance: 'Uang Transport',
+        allowance: 'Tunjangan',
+        attendance_allowance: 'Uang Kehadiran',
+        performance_bonus: 'Insentif Kinerja',
+        allowance_rate: 'Hitungan Tunjangan',
+        overtime_weekday_rate: 'Rate Lembur Weekday',
+        overtime_holiday_rate: 'Rate Lembur Weekend',
+        overtime_rate: 'Hitungan Lembur',
+        type: 'Hubungan',
+        relationship: 'Hubungan',
+    };
+
+    /** Enum labels for known enum values */
+    const enumLabels: Record<string, Record<string, string>> = {
+        contract_type: { 'Kontrak': 'Contract', 'Harian': 'Harian' },
+        salary_rate: { hourly: 'Per Jam', daily: 'Harian', monthly: 'Bulanan', yearly: 'Tahunan' },
+        allowance_rate: { hourly: 'Per Jam', daily: 'Harian', monthly: 'Bulanan', yearly: 'Tahunan' },
+        overtime_rate: { hourly: 'Per Jam', daily: 'Harian', monthly: 'Bulanan', yearly: 'Tahunan' },
+        gender: { male: 'Laki-laki', female: 'Perempuan' },
+        status: { active: 'Aktif', 'contract expired': 'Contract Expired', resign: 'Resign', fired: 'Fraud', 'project closed': 'Project Closed', other: 'Lainnya' },
+    };
+
+    /** Keys to hide from the detail modal */
+    const hiddenKeys = new Set(['_action', '_resolved_labels', '_contract', 'worker_id', 'family_id', 'document_id']);
+
+    /** Render a value with label resolution and enum mapping */
+    const renderFieldValue = (key: string, value: any, resolvedLabels?: Record<string, string>) => {
+        if (value === null || value === undefined || value === '') return '-';
+        // Use resolved label for FK IDs
+        if (resolvedLabels && resolvedLabels[key]) return resolvedLabels[key];
+        // Use enum label if available
+        if (enumLabels[key] && enumLabels[key][String(value)]) return enumLabels[key][String(value)];
+        // Format currency fields
+        if (['base_salary', 'meal_allowance', 'transport_allowance', 'allowance', 'attendance_allowance', 'performance_bonus', 'overtime_weekday_rate', 'overtime_holiday_rate'].includes(key) && !isNaN(Number(value))) {
+            return 'Rp ' + Number(value).toLocaleString('id-ID');
+        }
+        if (typeof value === 'object') {
+            return <pre className="text-xs max-h-40 overflow-y-auto whitespace-pre-wrap mt-1 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 font-mono leading-relaxed">{JSON.stringify(value, null, 2)}</pre>;
+        }
+        return String(value);
+    };
+
     return (
         <Layout title="Data Request" header="Data Request">
             <div className="mb-6">
@@ -322,15 +403,11 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
                                         {req.requested_data?._action ? (
                                             <div className="max-w-xs truncate">
                                                 <span className="font-medium text-amber-600 dark:text-amber-400">
-                                                    {req.requested_data._action === 'add_family' && 'Tambah Keluarga:'}
-                                                    {req.requested_data._action === 'update_family' && 'Ubah Keluarga:'}
-                                                    {req.requested_data._action === 'delete_family' && 'Hapus Keluarga:'}
-                                                    {req.requested_data._action === 'upload_document' && 'Upload Dokumen:'}
-                                                    {req.requested_data._action === 'delete_document' && 'Hapus Dokumen:'}
+                                                    {actionLabels[req.requested_data._action as string] || req.requested_data._action}:
                                                 </span>
                                                 {' '}
                                                 <span className="text-slate-700 dark:text-slate-300">
-                                                    {req.requested_data.name || req.requested_data.type || req.requested_data._action}
+                                                    {req.requested_data.name || req.requested_data.type || ''}
                                                 </span>
                                             </div>
                                         ) : (
@@ -438,87 +515,147 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
                                 <h4 className="text-sm font-semibold mb-3 dark:text-slate-500 uppercase">Perubahan Data</h4>
                                 {reviewingRequest.requested_data?._action && reviewingRequest.requested_data._action !== 'bulk_import_update_worker' ? (
                                     <div className="mb-4 bg-white dark:bg-slate-900 rounded-lg p-4 border border-indigo-100 dark:border-indigo-900/30">
-                                        <div className="font-medium text-slate-800 dark:text-white mb-2">
-                                            {reviewingRequest.requested_data._action === 'add_family' && <span className="flex items-center gap-2"><iconify-icon icon="solar:users-group-rounded-bold" class="text-indigo-500"></iconify-icon> Menambahkan Anggota Keluarga Baru</span>}
-                                            {reviewingRequest.requested_data._action === 'update_family' && <span className="flex items-center gap-2"><iconify-icon icon="solar:user-rounded-bold" class="text-amber-500"></iconify-icon> Update Anggota Keluarga Terdaftar</span>}
-                                            {reviewingRequest.requested_data._action === 'delete_family' && <span className="flex items-center gap-2"><iconify-icon icon="solar:user-cross-bold" class="text-rose-500"></iconify-icon> Hapus Anggota Keluarga</span>}
-                                            {reviewingRequest.requested_data._action === 'upload_document' && <span className="flex items-center gap-2"><iconify-icon icon="solar:document-add-bold" class="text-emerald-500"></iconify-icon> Upload Dokumen Karyawan</span>}
-                                            {reviewingRequest.requested_data._action === 'delete_document' && <span className="flex items-center gap-2"><iconify-icon icon="solar:trash-bin-trash-bold" class="text-rose-500"></iconify-icon> Hapus Dokumen Karyawan</span>}
+                                        <div className="font-medium text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                            <iconify-icon icon="solar:document-text-bold" class="text-primary"></iconify-icon>
+                                            {actionLabels[reviewingRequest.requested_data._action as string] || reviewingRequest.requested_data._action}
                                         </div>
                                         <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-100 dark:border-slate-700 text-sm">
-                                            {Object.entries(reviewingRequest.requested_data).filter(([k]) => !['_action', 'worker_id', 'family_id', 'document_id'].includes(k)).map(([k, v]) => {
-                                                const renderValue = (val: any) => {
-                                                    if (val === null || val === undefined || val === '') return '-';
-                                                    if (typeof val === 'object') {
-                                                        return <pre className="text-xs max-h-40 overflow-y-auto whitespace-pre-wrap mt-1 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 font-mono leading-relaxed">{JSON.stringify(val, null, 2)}</pre>;
-                                                    }
-                                                    return String(val);
-                                                };
+                                            {Object.entries(reviewingRequest.requested_data)
+                                                .filter(([k]) => !hiddenKeys.has(k))
+                                                .map(([k, v]) => (
+                                                    <div key={k} className="grid grid-cols-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 items-start">
+                                                        <span className="text-slate-500">{allFieldLabels[k] || k.replace(/_/g, ' ')}</span>
+                                                        <span className="col-span-2 font-medium text-slate-800 dark:text-slate-200 break-words">
+                                                            {renderFieldValue(k, v, (reviewingRequest.requested_data as any)?._resolved_labels)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                        {/* Render bundled contract data if present */}
+                                        {(reviewingRequest.requested_data as any)?._contract && (
+                                            <div className="mt-4">
+                                                <div className="font-medium text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                                    <iconify-icon icon="solar:document-text-bold" class="text-emerald-500"></iconify-icon>
+                                                    Kontrak Pertama
+                                                </div>
+                                                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-100 dark:border-slate-700 text-sm">
+                                                    {Object.entries((reviewingRequest.requested_data as any)._contract).map(([k, v]: [string, any]) => (
+                                                        <div key={k} className="grid grid-cols-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 items-start">
+                                                            <span className="text-slate-500">{allFieldLabels[k] || k.replace(/_/g, ' ')}</span>
+                                                            <span className="col-span-2 font-medium text-slate-800 dark:text-slate-200 break-words">
+                                                                {renderFieldValue(k, v)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 mb-4">
+                                            {Object.keys(fieldLabels).map((key) => {
+                                                const oldVal = (reviewingRequest.worker as any)?.[key];
+                                                const submittedVal = reviewingRequest.requested_data?.[key];
+                                                // Handle both missing field in requested_data or intentionally null vs empty string
+                                                const newVal = submittedVal !== undefined ? submittedVal : oldVal;
+
+                                                const formattedOldVal = (oldVal === 'male' ? 'Laki-laki' : oldVal === 'female' ? 'Perempuan' : oldVal) || '-';
+                                                const formattedNewVal = (newVal === 'male' ? 'Laki-laki' : newVal === 'female' ? 'Perempuan' : newVal) || '-';
+                                                const isChanged = oldVal !== newVal;
 
                                                 return (
-                                                    <div key={k} className="grid grid-cols-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 items-start">
-                                                        <span className="text-slate-500 capitalize">{k.replace(/_/g, ' ')}</span>
-                                                        <span className="col-span-2 font-medium text-slate-800 dark:text-slate-200 break-words">{renderValue(v)}</span>
+                                                    <div key={key} className={`flex flex-col p-3 bg-white dark:bg-slate-900 rounded-lg shadow-sm border ${isChanged ? 'border-amber-200 dark:border-amber-900/50 ring-1 ring-amber-100 dark:ring-amber-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                            {fieldLabels[key]}
+                                                            {isChanged && <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] lowercase leading-none">Berubah</span>}
+                                                        </span>
+                                                        <div className="flex items-center gap-3">
+                                                            {isChanged ? (
+                                                                <>
+                                                                    <div className="flex-1 p-2 rounded-md bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30">
+                                                                        <div className="text-[10px] text-slate-400 mb-0.5 uppercase">Lama</div>
+                                                                        <div className="text-sm text-rose-700 dark:text-rose-400 line-through opacity-80 break-words">
+                                                                            {formattedOldVal}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-slate-300 dark:text-slate-600 shrink-0">
+                                                                        <iconify-icon icon="solar:arrow-right-linear" width="20"></iconify-icon>
+                                                                    </div>
+                                                                    <div className="flex-1 p-2 rounded-md bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30">
+                                                                        <div className="text-[10px] text-slate-400 mb-0.5 uppercase">Baru</div>
+                                                                        <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 break-words">
+                                                                            {formattedNewVal}
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex-1 p-2 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50">
+                                                                    <div className="text-[10px] text-slate-400 mb-0.5 uppercase">Saat Ini</div>
+                                                                    <div className="text-sm text-slate-700 dark:text-slate-300 font-medium break-words">
+                                                                        {formattedOldVal}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 mb-4">
-                                        {Object.keys(fieldLabels).map((key) => {
-                                            const oldVal = (reviewingRequest.worker as any)?.[key];
-                                            const submittedVal = reviewingRequest.requested_data?.[key];
-                                            // Handle both missing field in requested_data or intentionally null vs empty string
-                                            const newVal = submittedVal !== undefined ? submittedVal : oldVal;
 
-                                            const formattedOldVal = (oldVal === 'male' ? 'Laki-laki' : oldVal === 'female' ? 'Perempuan' : oldVal) || '-';
-                                            const formattedNewVal = (newVal === 'male' ? 'Laki-laki' : newVal === 'female' ? 'Perempuan' : newVal) || '-';
-                                            const isChanged = oldVal !== newVal;
-
+                                        {/* For new_data: show assignment detail + contract if bundled */}
+                                        {(() => {
+                                            const d = reviewingRequest.requested_data as any;
+                                            const assignmentFields = ['project_id', 'branch_id', 'position', 'hire_date', 'employee_id'];
+                                            const hasAssignment = assignmentFields.some(f => d?.[f] !== undefined && d[f] !== null && d[f] !== '');
+                                            if (!hasAssignment && !d?._contract) return null;
                                             return (
-                                                <div key={key} className={`flex flex-col p-3 bg-white dark:bg-slate-900 rounded-lg shadow-sm border ${isChanged ? 'border-amber-200 dark:border-amber-900/50 ring-1 ring-amber-100 dark:ring-amber-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
-                                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                                        {fieldLabels[key]}
-                                                        {isChanged && <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] lowercase leading-none">Berubah</span>}
-                                                    </span>
-                                                    <div className="flex items-center gap-3">
-                                                        {isChanged ? (
-                                                            <>
-                                                                <div className="flex-1 p-2 rounded-md bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30">
-                                                                    <div className="text-[10px] text-slate-400 mb-0.5 uppercase">Lama</div>
-                                                                    <div className="text-sm text-rose-700 dark:text-rose-400 line-through opacity-80 break-words">
-                                                                        {formattedOldVal}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="text-slate-300 dark:text-slate-600 shrink-0">
-                                                                    <iconify-icon icon="solar:arrow-right-linear" width="20"></iconify-icon>
-                                                                </div>
-                                                                <div className="flex-1 p-2 rounded-md bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30">
-                                                                    <div className="text-[10px] text-slate-400 mb-0.5 uppercase">Baru</div>
-                                                                    <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 break-words">
-                                                                        {formattedNewVal}
-                                                                    </div>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="flex-1 p-2 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50">
-                                                                <div className="text-[10px] text-slate-400 mb-0.5 uppercase">Saat Ini</div>
-                                                                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium break-words">
-                                                                    {formattedOldVal}
-                                                                </div>
+                                                <>
+                                                    {hasAssignment && (
+                                                        <div className="mt-4 bg-white dark:bg-slate-900 rounded-lg p-4 border border-indigo-100 dark:border-indigo-900/30">
+                                                            <div className="font-medium text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                                                <iconify-icon icon="solar:buildings-bold" class="text-primary"></iconify-icon>
+                                                                Detail Penempatan
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-100 dark:border-slate-700 text-sm">
+                                                                {assignmentFields.filter(f => d?.[f] !== undefined).map(f => (
+                                                                    <div key={f} className="grid grid-cols-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 items-start">
+                                                                        <span className="text-slate-500">{allFieldLabels[f] || f.replace(/_/g, ' ')}</span>
+                                                                        <span className="col-span-2 font-medium text-slate-800 dark:text-slate-200 break-words">
+                                                                            {renderFieldValue(f, d[f], d?._resolved_labels)}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {d?._contract && (
+                                                        <div className="mt-4 bg-white dark:bg-slate-900 rounded-lg p-4 border border-emerald-100 dark:border-emerald-900/30">
+                                                            <div className="font-medium text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                                                <iconify-icon icon="solar:document-text-bold" class="text-emerald-500"></iconify-icon>
+                                                                Kontrak Pertama
+                                                            </div>
+                                                            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-100 dark:border-slate-700 text-sm">
+                                                                {Object.entries(d._contract).map(([k, v]: [string, any]) => (
+                                                                    <div key={k} className="grid grid-cols-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 items-start">
+                                                                        <span className="text-slate-500">{allFieldLabels[k] || k.replace(/_/g, ' ')}</span>
+                                                                        <span className="col-span-2 font-medium text-slate-800 dark:text-slate-200 break-words">
+                                                                            {renderFieldValue(k, v)}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             );
-                                        })}
-                                    </div>
+                                        })()}
+                                    </>
                                 )}
                                 {reviewingRequest.requested_data?._action === 'bulk_import_update_worker' && (
                                     <div className="mt-2 mb-4 bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-100 dark:border-slate-700 text-sm">
                                         <h5 className="font-semibold text-slate-700 dark:text-slate-400 mb-3 text-xs uppercase tracking-wider">Update Data Relasional (Kontrak, Komp., Keluarga)</h5>
-                                        {Object.entries(reviewingRequest.requested_data).filter(([k]) => !Object.keys(fieldLabels).includes(k) && !['_action', 'worker_id', 'family_id', 'document_id'].includes(k)).map(([k, v]) => {
+                                        {Object.entries(reviewingRequest.requested_data).filter(([k]) => !Object.keys(fieldLabels).includes(k) && !hiddenKeys.has(k)).map(([k, v]) => {
                                             const renderValue = (val: any) => {
                                                 if (val === null || val === undefined || val === '') return '-';
                                                 if (typeof val === 'object') {
@@ -681,7 +818,7 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
                                 </div>
                             )}
 
-                            {postApprovalData.assignment_id && postApprovalData.request_type === 'new_data' && (
+                            {postApprovalData.assignment_id && postApprovalData.request_type === 'new_data' && !postApprovalData.has_contract && (
                                 <div className="flex justify-end gap-3 pt-2">
                                     <button onClick={() => setIsPostApprovalOpen(false)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium">Nanti Saja</button>
                                     <Link
@@ -711,7 +848,7 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
                                                 </span>
                                             )}
                                         </div>
-                                        {item.assignment_id && item.request_type === 'new_data' && (
+                                        {item.assignment_id && item.request_type === 'new_data' && !item.has_contract && (
                                             <Link
                                                 href={route('contracts.create', { assignment_id: item.assignment_id })}
                                                 className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shrink-0"

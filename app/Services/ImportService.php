@@ -187,45 +187,109 @@ class ImportService
     ];
 
     /**
-     * Smart auto-mapping dictionary.
-     * Maps common header substrings to database field keys.
-     *
-     * @var array<string, string>
+     * Dictionary of hints for auto-mapping CSV headers to DB fields.
      */
-    private const AUTO_MAP_HINTS = [
-        'nik ARU' => 'nik_aru',
+    public const AUTO_MAP_HINTS = [
+        'nama lengkap' => 'name',
+        'nama karyawan' => 'name',
         'employee name' => 'name',
         'nama' => 'name',
+        
+        'nik ktp' => 'ktp_number',
+        'no ktp' => 'ktp_number',
+        'nomor ktp' => 'ktp_number',
         'ktp' => 'ktp_number',
+        
+        'nip' => 'employee_id',
+        'nik aru' => 'nik_aru',
+        
+        'jabatan' => 'position',
+        'posisi' => 'position',
+        
+        'cabang' => 'branch_name',
+        'branch' => 'branch_name',
+        
+        'project' => 'project_name',
+        'proyek' => 'project_name',
+        
+        'tanggal masuk' => 'hire_date',
+        'hire date' => 'hire_date',
+        'tgl masuk' => 'hire_date',
+        'join date' => 'hire_date',
+        
+        'tanggal keluar' => 'resign_date',
+        'tgl keluar' => 'resign_date',
+        'resign date' => 'resign_date',
+        'tgl resign' => 'resign_date',
+        'tanggal resign' => 'resign_date',
+        
+        'jenis kontrak' => 'contract_type',
+        'contract type' => 'contract_type',
+        
+        'status' => 'status',
+        
         'jenis kelamin' => 'gender',
+        'kelamin' => 'gender',
+        'gender' => 'gender',
+        
         'tempat lahir' => 'birth_place',
+        
         'tanggal lahir' => 'birth_date',
+        'tgl lahir' => 'birth_date',
+        
+        'alamat ktp' => 'address_ktp',
         'alamat sesuai ktp' => 'address_ktp',
-        'alamat sesuai domisili' => 'address_domicile',
+        
+        'alamat domisili' => 'address_domicile',
+        
+        'no hp' => 'phone',
+        'no handphone' => 'phone',
+        'nomor hp' => 'phone',
+        'whatsapp' => 'phone',
         'no telp' => 'phone',
+        
         'pendidikan' => 'education',
         'agama' => 'religion',
-        'status ptkp' => 'tax_status',
-        'no kk' => 'kk_number',
+        'status ptkp' => 'ptkp_status',
+        'ptkp' => 'ptkp_status',
+        
         'gaji pokok' => 'base_salary',
+        'gapok' => 'base_salary',
+        'basic salary' => 'base_salary',
+        
         'uang makan' => 'meal_allowance',
-        't. transport' => 'transport_allowance',
-        'overtime senin' => 'overtime_weekday',
+        'tunjangan makan' => 'meal_allowance',
+        
+        'tunjangan transport' => 'transport_allowance',
+        'uang transport' => 'transport_allowance',
+        
+        'lembur weekday' => 'overtime_weekday',
+        'overtime weekday' => 'overtime_weekday',
+        
+        'lembur libur' => 'overtime_holiday',
+        'lembur akhir pekan' => 'overtime_holiday',
         'overtime libur' => 'overtime_holiday',
-        'npwp' => 'npwp',
+        
+        'npwp' => 'npwp_number',
         'bank' => 'bank_name',
-        'rekening' => 'bank_account_number',
+        
+        'rekening' => 'bank_account',
+        'no rek' => 'bank_account',
+        
         'bpjs kesehatan' => 'bpjs_kesehatan',
+        'bpjs ks' => 'bpjs_kesehatan',
+        
         'bpjs ketenagakerjaan' => 'bpjs_ketenagakerjaan',
+        'bpjs tk' => 'bpjs_ketenagakerjaan',
+        
+        'no kk' => 'kk_number',
+        'kartu keluarga' => 'kk_number',
+        
+        'ibu kandung' => 'mother_name',
         'nama ibu' => 'mother_name',
-        'project' => 'project_name',
-        'cabang'     => 'branch_name',
-        'branch'     => 'branch_name',
-        'date of hire' => 'hire_date',
-        'type of contract' => 'raw_contract_type',
-        'jabatan' => 'position',
-        'status' => 'status',
-        'tanggal keluar' => 'termination_date',
+        
+        // PKWT overrides
+        'pkwtt' => 'pkwtt_date',
         'pkwt 1 start' => 'pkwt_1_start',
         'pkwt 1 end' => 'pkwt_1_end',
         'pkwt 2 start' => 'pkwt_2_start',
@@ -1223,19 +1287,18 @@ class ImportService
     public function generateTemplate(): string
     {
         $headers = [
-            'No', 'NIK ARU', 'Nama Karyawan', 'Cabang',
+            'NIK ARU', 'Nama Lengkap', 'Project', 'Cabang',
             'Tanggal Masuk', 'Jenis Kontrak', 'Status', 'Tanggal Keluar',
             'Jabatan', 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
-            'Alamat KTP', 'Alamat Domisili', 'No Telp', 'Pendidikan',
+            'Alamat KTP', 'Alamat Domisili', 'No HP', 'Pendidikan',
             'Agama', 'Status PTKP', 'Gaji Pokok', 'Uang Makan',
-            'Tunjangan Transport', 'Overtime Weekday', 'Overtime Libur',
+            'Tunjangan Transport', 'Lembur Weekday', 'Lembur Libur',
             'NPWP', 'Bank', 'Rekening', 'BPJS Kesehatan',
-            'BPJS Ketenagakerjaan', 'KTP', 'No KK', 'Nama Ibu Kandung',
-            'PKWT 1 Start', 'PKWT 1 End', 'PKWT 2 Start', 'PKWT 2 End',
+            'BPJS Ketenagakerjaan', 'No KTP', 'No KK', 'Ibu Kandung',
+            'PKWTT', 'PKWT 1 Start', 'PKWT 1 End', 'PKWT 2 Start', 'PKWT 2 End',
             'PKWT 3 Start', 'PKWT 3 End', 'PKWT 4 Start', 'PKWT 4 End',
             'PKWT 5 Start', 'PKWT 5 End', 'PKWT 6 Start', 'PKWT 6 End',
             'PKWT 7 Start', 'PKWT 7 End', 'PKWT 8 Start', 'PKWT 8 End',
-            'PKWTT',
             'Nama Istri/Suami (1)', 'Tempat Lahir Pasangan (1)',
             'Tanggal Lahir Pasangan (1)', 'NIK Pasangan (1)', 'BPJS Pasangan (1)',
             'Nama Anak 1 (1)', 'Tempat Lahir Anak 1 (1)',
@@ -1254,12 +1317,37 @@ class ImportService
             'Tanggal Lahir Anak 3 (2)', 'NIK Anak 3 (2)', 'BPJS Anak 3 (2)',
         ];
 
-        $filePath = 'templates/import_template.csv';
-        $content = fopen('php://temp', 'r+');
-        fputcsv($content, $headers);
-        rewind($content);
-        Storage::disk('local')->put($filePath, stream_get_contents($content));
-        fclose($content);
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Write headers
+        foreach ($headers as $index => $header) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+            $sheet->setCellValue($colLetter . '1', $header);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+        
+        // Styling headers (bold)
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => [
+                    'argb' => 'FFEFEFEF',
+                ],
+            ],
+        ];
+        $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray($headerStyle);
+        $sheet->freezePane('A2');
+
+        $filePath = 'templates/import_template_karyawan.xlsx';
+        $fullPath = Storage::disk('local')->path($filePath);
+        
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save($fullPath);
 
         return $filePath;
     }

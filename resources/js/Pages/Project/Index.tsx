@@ -281,7 +281,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Manajemen Project</h2>
                     <p className="text-sm text-slate-500">Kelola semua project dan area penempatan</p>
                 </div>
-                <div className="w-full sm:w-auto">
+                <div className="flex gap-3 w-full sm:w-auto">
                     {!isPic && (
                         <button
                             onClick={openCreateModal}

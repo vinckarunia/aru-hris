@@ -106,12 +106,12 @@
         <tr>
             <td class="label-col">Nama</td>
             <td class="colon-col">:</td>
-            <td class="value-col"><strong>{{ $pihakPertama->name ?? '-' }}</strong></td>
+            <td class="value-col"><strong>{{ $pihakPertama->name ?? 'Jumaga Tua Sinaga' }}</strong></td>
         </tr>
         <tr>
             <td class="label-col">Jabatan</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $pihakPertama->position ?? '-' }}</td>
+            <td class="value-col">{{ $pihakPertama->position ?? 'Head of Operation' }}</td>
         </tr>
     </table>
 

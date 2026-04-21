@@ -75,6 +75,7 @@ class ImportController extends Controller
             'clients' => $clients,
             'projects' => $projects,
             'dbColumns' => ImportService::DB_COLUMNS,
+            'autoMapHints' => ImportService::AUTO_MAP_HINTS,
         ]);
     }
 
@@ -328,8 +329,8 @@ class ImportController extends Controller
         $path = $this->importService->generateTemplate();
         $fullPath = Storage::disk('local')->path($path);
 
-        return response()->download($fullPath, 'template_import_karyawan.csv', [
-            'Content-Type' => 'text/csv',
+        return response()->download($fullPath, 'template_import_karyawan.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
@@ -20,6 +20,7 @@ interface Assignment {
 
 interface Props {
     assignment: Assignment;
+    suggestedStartDate?: string;
 }
 
 /**
@@ -28,14 +29,14 @@ interface Props {
  * @param {Props} props - The component props containing the assignment details.
  * @returns {JSX.Element} The rendered Create Contract form.
  */
-export default function Create({ assignment }: Props) {
+export default function Create({ assignment, suggestedStartDate }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         assignment_id: assignment.id,
         // Contract Data
         contract_type: 'Kontrak',
         pkwt_type: 'PKWT',
         pkwt_number: '',
-        start_date: '',
+        start_date: suggestedStartDate || '',
         end_date: '',
         duration_months: '',
         evaluation_notes: '',
@@ -53,8 +54,20 @@ export default function Create({ assignment }: Props) {
         overtime_rate: 'hourly',
     });
 
-    // Calculate contract duration in months when start_date, end_date, pkwt_type, or contract_type changes
+    /**
+     * Tracks which field was last edited to prevent infinite loops between
+     * the two useEffects that sync duration_months ↔ end_date.
+     */
+    const lastEditedBy = useRef<'dates' | 'duration' | null>(null);
+
+    /**
+     * Effect A: When user manually edits end_date (or start_date), auto-calculate duration_months.
+     */
     useEffect(() => {
+        if (lastEditedBy.current === 'duration') {
+            lastEditedBy.current = null;
+            return;
+        }
         if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
@@ -66,15 +79,39 @@ export default function Create({ assignment }: Props) {
                     months -= 1;
                 }
                 const diffMonths = Math.max(months, 0);
-
+                lastEditedBy.current = 'dates';
                 setData('duration_months', diffMonths.toString());
             } else {
+                lastEditedBy.current = 'dates';
                 setData('duration_months', '0');
             }
-        } else {
+        } else if (!data.end_date) {
+            lastEditedBy.current = 'dates';
             setData('duration_months', '');
         }
     }, [data.start_date, data.end_date, data.pkwt_type, data.contract_type]);
+
+    /**
+     * Effect B: When user types duration_months, auto-calculate end_date = start_date + N months - 1 day.
+     */
+    useEffect(() => {
+        if (lastEditedBy.current === 'dates') {
+            lastEditedBy.current = null;
+            return;
+        }
+        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+            const months = parseInt(data.duration_months, 10);
+            if (!isNaN(months) && months > 0) {
+                const start = new Date(data.start_date);
+                const endDate = new Date(start.getFullYear(), start.getMonth() + months, start.getDate() - 1);
+                const yyyy = endDate.getFullYear();
+                const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(endDate.getDate()).padStart(2, '0');
+                lastEditedBy.current = 'duration';
+                setData('end_date', `${yyyy}-${mm}-${dd}`);
+            }
+        }
+    }, [data.duration_months, data.start_date, data.pkwt_type, data.contract_type]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,6 +133,15 @@ export default function Create({ assignment }: Props) {
                     <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon> Kembali
                 </Link>
             </div>
+
+            {suggestedStartDate && (
+                <div className="mb-4 p-4 bg-sky-50 dark:bg-sky-900/20 rounded-xl border border-sky-100 dark:border-sky-800/30 flex items-start gap-3 text-sky-600 dark:text-sky-400">
+                    <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
+                    <div className="text-sm font-medium">
+                        Tanggal mulai otomatis diisi berdasarkan kontrak sebelumnya (hari setelah berakhirnya kontrak terakhir).
+                    </div>
+                </div>
+            )}
 
             {Object.keys(errors).length > 0 && (
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 flex items-start gap-3 text-red-600">
@@ -157,19 +203,18 @@ export default function Create({ assignment }: Props) {
                                 value={data.pkwt_number}
                                 onChange={e => setData('pkwt_number', e.target.value)}
                                 disabled={data.contract_type === 'PKWTT' || data.contract_type === 'Harian'}
-                                placeholder="Contoh: PKWT 1 isi dengan 1"
-                                required min="1"
+                                placeholder="Opsional — Contoh: 1"
                             />
                             <InputError message={errors.pkwt_number} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="start_date" value="Tanggal Mulai Kontrak" />
+                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
                             <TextInput id="start_date" type="date" className="mt-1 block w-full" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required />
                             <InputError message={errors.start_date} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => setData('end_date', e.target.value)} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
+                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
                             <p className="text-xs text-slate-500 mt-1">Kosongkan jika PKWTT</p>
                             <InputError message={errors.end_date} className="mt-1" />
                         </div>
@@ -177,12 +222,15 @@ export default function Create({ assignment }: Props) {
                             <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
                             <TextInput
                                 id="duration_months"
-                                type="text"
-                                className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700"
-                                value={data.duration_months ? `${data.duration_months} Bulan` : ''}
-                                disabled
-                                placeholder="-"
+                                type="number"
+                                className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                                value={data.duration_months}
+                                onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }}
+                                disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'}
+                                placeholder="Contoh: 3"
+                                min="1"
                             />
+                            <p className="text-xs text-slate-500 mt-1">Isi bulan untuk auto-hitung tanggal berakhir, atau sebaliknya</p>
                             <InputError message={errors.duration_months} className="mt-1" />
                         </div>
                         <div className="md:col-span-2 lg:col-span-3">
@@ -235,7 +283,7 @@ export default function Create({ assignment }: Props) {
                                     <TextInput id="allowance" type="text" className="mt-1 block w-full font-mono" value={data.allowance} onChange={e => handleNumberInput('allowance', e.target.value)} placeholder="0" />
                                 </div>
                                 <InputError message={errors.allowance} className="mt-1" />
-                                    </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-4 pt-4">
                                 <div>
                                     <InputLabel htmlFor="meal_allowance" value="Uang Makan" />

@@ -7,6 +7,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\WorkerController;
+use App\Http\Controllers\WorkerExportController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\FamilyMemberController;
@@ -65,7 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/download-failures/{sessionId}', [ImportController::class, 'downloadFailures'])->name('download-failures');
     });
 
-    // Worker CRUD Routes
+    // Worker CRUD and Export Routes
+    Route::get('workers/export', [WorkerExportController::class, 'export'])->name('workers.export');
     Route::resource('workers', WorkerController::class);
     Route::resource('family-members', App\Http\Controllers\FamilyMemberController::class)->except(['index']);
 
@@ -84,14 +86,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserManagementController::class)->except(['create', 'show', 'edit']);
     });
 
+    // Shared Routes: Admin + PIC
+    Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU,PIC'])->group(function () {
+        Route::get('/reminders', [\App\Http\Controllers\ReminderController::class, 'index'])->name('reminders.index');
+        Route::post('/reminders/{reminder}/dismiss', [\App\Http\Controllers\ReminderController::class, 'dismiss'])->name('reminders.dismiss');
+        Route::post('/reminders/{reminder}/restore', [\App\Http\Controllers\ReminderController::class, 'restore'])->name('reminders.restore');
+        Route::post('/reminders/process', [\App\Http\Controllers\ReminderController::class, 'process'])->name('reminders.process');
+
+        // Document Generation
+        Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
+        Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
+    });
+
     // Admin & Super Admin Routes
     Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
         Route::resource('pics', PicController::class)->except(['create', 'show', 'edit']);
         Route::resource('internal-employees', InternalEmployeeController::class);
-        
-        // Document Generation
-        Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
-        Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
         
         // System Settings
         Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
@@ -100,11 +110,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings/reset-data', [\App\Http\Controllers\SettingController::class, 'resetData'])->name('settings.reset-data');
         Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
 
-        // Reminders
-        Route::get('/reminders', [\App\Http\Controllers\ReminderController::class, 'index'])->name('reminders.index');
-        Route::post('/reminders/process', [\App\Http\Controllers\ReminderController::class, 'process'])->name('reminders.process');
-        Route::post('/reminders/{reminder}/dismiss', [\App\Http\Controllers\ReminderController::class, 'dismiss'])->name('reminders.dismiss');
-        Route::post('/reminders/{reminder}/restore', [\App\Http\Controllers\ReminderController::class, 'restore'])->name('reminders.restore');
 
         // Reports (Query Builder)
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

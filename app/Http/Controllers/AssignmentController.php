@@ -27,7 +27,8 @@ class AssignmentController extends Controller
     public function create(Request $request): Response
     {
         $user = $request->user();
-        if (!$user->isAdminOrAbove()) abort(403, 'Akses ditolak. Wewenang untuk manajemen teknis penempatan secara langsung hanya ada pada Admin.');
+        if ($user->isWorker()) abort(403, 'Akses ditolak.');
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403, 'Akses ditolak.');
 
         $workerId = $request->query('worker_id');
         $request->validate(['worker_id' => 'required|exists:workers,id']);
@@ -53,9 +54,11 @@ class AssignmentController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        if (!$user->isAdminOrAbove()) abort(403, 'Akses ditolak. Wewenang untuk manajemen teknis penempatan secara langsung hanya ada pada Admin.');
+        if ($user->isWorker()) abort(403, 'Akses ditolak.');
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403, 'Akses ditolak.');
 
         try {
+            // Validate assignment fields
             $validated = $request->validate([
                 'worker_id'        => 'required|exists:workers,id',
                 'project_id'       => 'required|exists:projects,id',
@@ -70,6 +73,28 @@ class AssignmentController extends Controller
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
             ], [
                 'employee_id.unique' => 'ID Karyawan ini sudah digunakan di Project tersebut.',
+            ]);
+
+            // Validate bundled contract fields
+            $contractData = $request->validate([
+                'contract_type'    => 'required|in:Kontrak,Harian',
+                'pkwt_type'        => 'nullable|in:PKWT,PKWTT',
+                'pkwt_number'      => 'nullable|integer|min:1',
+                'start_date'       => 'required|date',
+                'end_date'         => 'nullable|date|after_or_equal:start_date',
+                'duration_months'  => 'nullable|integer|min:1',
+                'evaluation_notes' => 'nullable|string',
+                'base_salary'      => 'required|numeric|min:0',
+                'salary_rate'      => 'required|in:hourly,daily,monthly,yearly',
+                'meal_allowance'   => 'nullable|numeric|min:0',
+                'transport_allowance' => 'nullable|numeric|min:0',
+                'allowance'        => 'nullable|numeric|min:0',
+                'attendance_allowance' => 'nullable|numeric|min:0',
+                'performance_bonus' => 'nullable|numeric|min:0',
+                'allowance_rate'   => 'nullable|in:hourly,daily,monthly,yearly',
+                'overtime_weekday_rate' => 'nullable|numeric|min:0',
+                'overtime_holiday_rate' => 'nullable|numeric|min:0',
+                'overtime_rate'    => 'nullable|in:hourly,daily,monthly,yearly',
             ]);
 
             if (is_null($request->termination_date)) {
@@ -87,10 +112,37 @@ class AssignmentController extends Controller
             return redirect()->back()->withErrors($e->errors())->withInput();
         }
 
+        // PIC: route through DataRequest instead of direct DB write
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($request->project_id, $projectIds)) abort(403);
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $validated['worker_id'],
+                'project_id' => $validated['project_id'],
+                'request_type' => 'status_change',
+                'requested_by' => $user->id,
+                'requested_fields' => array_keys($validated),
+                'requested_data' => array_merge(
+                    ['_action' => 'create_assignment'],
+                    $validated,
+                    ['_contract' => $contractData]
+                ),
+                'notes' => 'Penambahan Penempatan Baru + Kontrak Pertama oleh PIC',
+                'status' => 'pending',
+                'pic_status' => 'approved',
+                'pic_reviewed_by' => $user->id,
+                'pic_reviewed_at' => now(),
+            ]);
+
+            return redirect()->route('data-requests.index')
+                ->with('message', 'Pengajuan penempatan baru beserta kontrak pertama berhasil dikirim ke Admin untuk direview.');
+        }
+
+        // Admin: create assignment + contract + compensation directly
         $assignment = Assignment::create($validated);
 
         // Generate a fresh NIK ARU based on the assigned project.
-        // NIK is always (re-)generated on a new active assignment.
         if (is_null($validated['termination_date'] ?? null)) {
             $worker  = Worker::find($validated['worker_id']);
             $project = Project::find($validated['project_id']);
@@ -98,8 +150,18 @@ class AssignmentController extends Controller
             $worker->update(['nik_aru' => $newNik]);
         }
 
+        // Create the bundled first contract
+        $contractFields = array_intersect_key($contractData, array_flip((new \App\Models\Contract)->getFillable()));
+        $contractFields['assignment_id'] = $assignment->id;
+        $contract = \App\Models\Contract::create($contractFields);
+
+        // Create compensation record
+        $compFields = array_intersect_key($contractData, array_flip((new \App\Models\ContractCompensation)->getFillable()));
+        $compFields['contract_id'] = $contract->id;
+        \App\Models\ContractCompensation::create($compFields);
+
         return redirect()->route('assignments.show', $assignment)
-            ->with('message', 'Penempatan karyawan berhasil ditambahkan!');
+            ->with('message', 'Penempatan dan kontrak pertama berhasil dibuat!');
     }
 
     /**
@@ -258,7 +320,33 @@ class AssignmentController extends Controller
      */
     public function destroy(Request $request, Assignment $assignment): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
+
+        // PIC: route deletion through DataRequest for admin approval
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) abort(403);
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $assignment->worker_id,
+                'project_id' => $assignment->project_id,
+                'request_type' => 'status_change',
+                'requested_by' => $user->id,
+                'requested_fields' => ['assignment_id'],
+                'requested_data' => ['_action' => 'delete_assignment', 'assignment_id' => $assignment->id],
+                'notes' => 'Penghapusan Penempatan oleh PIC',
+                'status' => 'pending',
+                'pic_status' => 'approved',
+                'pic_reviewed_by' => $user->id,
+                'pic_reviewed_at' => now(),
+            ]);
+
+            return redirect()->route('assignments.show', $assignment)
+                ->with('message', 'Pengajuan penghapusan penempatan berhasil dikirim ke Admin untuk direview.');
+        }
+
         $worker = Worker::find($assignment->worker_id); // Get worker before assignment is deleted
         $assignment->delete();
 

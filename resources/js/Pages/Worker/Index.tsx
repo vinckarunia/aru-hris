@@ -264,6 +264,13 @@ export default function Index({ workers, clients }: Props) {
         return age;
     };
 
+    /**
+     * Export the currently filtered and sorted workers list to XLSX.
+     */
+    const handleExportExcel = () => {
+        window.location.href = route('workers.export');
+    };
+
     /** Helper to render the sort indicator icon based on sort status. */
     const renderSortIndicator = (key: string) => {
         const configIndex = sortConfigs.findIndex(c => c.key === key);
@@ -288,6 +295,13 @@ export default function Index({ workers, clients }: Props) {
                 </div>
 
                 <div className="flex gap-3 w-full md:w-auto">
+                    <button
+                        onClick={handleExportExcel}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
+                        title="Export ke Excel"
+                    >
+                        <iconify-icon icon="solar:file-download-linear" width="20"></iconify-icon> Export Excel
+                    </button>
                     <Link
                         href={route('workers.import.index')}
                         className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"

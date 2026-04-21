@@ -48,6 +48,25 @@ class ContractCompensation extends Model
         'overtime_rate',
     ];
 
+    /**
+     * Default null numeric compensation fields to 0 before insertion.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (ContractCompensation $comp) {
+            $numericFields = [
+                'base_salary', 'meal_allowance', 'transport_allowance',
+                'allowance', 'attendance_allowance', 'performance_bonus',
+                'overtime_weekday_rate', 'overtime_holiday_rate',
+            ];
+            foreach ($numericFields as $field) {
+                if (is_null($comp->{$field})) {
+                    $comp->{$field} = 0;
+                }
+            }
+        });
+    }
+
     public function contract()
     {
         return $this->belongsTo(Contract::class);

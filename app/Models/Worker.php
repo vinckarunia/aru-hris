@@ -101,6 +101,16 @@ class Worker extends Model
     }
 
     /**
+     * Get the contracts associated with the worker through their assignments.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function contracts()
+    {
+        return $this->hasManyThrough(\App\Models\Contract::class, Assignment::class);
+    }
+
+    /**
      * Get the family members associated with the worker.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

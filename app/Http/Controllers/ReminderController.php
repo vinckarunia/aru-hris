@@ -16,7 +16,7 @@ use Inertia\Response;
  *
  * Handles the dedicated Reminders management page, including listing,
  * filtering, sorting, and dismissing reminder records.
- * Access is restricted to SUPER_ADMIN and ADMIN_ARU roles.
+ * Access is available to SUPER_ADMIN, ADMIN_ARU, and PIC roles.
  */
 class ReminderController extends Controller
 {
@@ -28,7 +28,40 @@ class ReminderController extends Controller
      */
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        if ($user->isWorker()) {
+            abort(403, 'Akses ditolak.');
+        }
+
         $query = Reminder::query();
+
+        // PIC: scope reminders to their assigned projects
+        if ($user->isPic()) {
+            $picProjectIds = $user->pic?->projects()->pluck('projects.id')->toArray() ?? [];
+            $query->where(function ($q) use ($picProjectIds) {
+                // Contract-related reminders: Contract → Assignment → Project
+                $q->where(function ($sub) use ($picProjectIds) {
+                    $sub->where('related_type', \App\Models\Contract::class)
+                        ->whereIn('related_id', function ($sq) use ($picProjectIds) {
+                            $sq->select('contracts.id')
+                               ->from('contracts')
+                               ->join('assignments', 'contracts.assignment_id', '=', 'assignments.id')
+                               ->whereIn('assignments.project_id', $picProjectIds);
+                        });
+                })
+                // Worker-related reminders: Worker → Assignment → Project
+                ->orWhere(function ($sub) use ($picProjectIds) {
+                    $sub->where('related_type', \App\Models\Worker::class)
+                        ->whereIn('related_id', function ($sq) use ($picProjectIds) {
+                            $sq->select('workers.id')
+                               ->from('workers')
+                               ->join('assignments', 'assignments.worker_id', '=', 'workers.id')
+                               ->whereIn('assignments.project_id', $picProjectIds);
+                        });
+                });
+                // Client MOU reminders are excluded for PIC (not matched)
+            });
+        }
 
         // Filter by tab (active = not dismissed, dismissed)
         $tab = $request->input('tab', 'active');

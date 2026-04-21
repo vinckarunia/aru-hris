@@ -100,7 +100,7 @@ export default function Edit({ assignment, projects }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="position" value="Jabatan / Posisi" />
-                            <TextInput id="position" type="text" className="mt-1 block w-full" value={data.position} onChange={e => setData('position', e.target.value)} required />
+                            <TextInput id="position" type="text" className="mt-1 block w-full" value={data.position} onChange={e => setData('position', e.target.value)} />
                             <InputError message={errors.position} className="mt-1" />
                         </div>
                         <div>
@@ -109,7 +109,7 @@ export default function Edit({ assignment, projects }: Props) {
                             <InputError message={errors.employee_id} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="hire_date" value="Tanggal Bergabung" />
+                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
                             <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required />
                             <InputError message={errors.hire_date} className="mt-1" />
                         </div>

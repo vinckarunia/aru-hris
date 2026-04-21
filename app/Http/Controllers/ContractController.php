@@ -27,11 +27,36 @@ class ContractController extends Controller
      */
     public function create(Request $request): Response
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
+
         $request->validate(['assignment_id' => 'required|exists:assignments,id']);
         $assignment = Assignment::with(['worker', 'project', 'branch'])->findOrFail($request->assignment_id);
 
-        return Inertia::render('Contract/Create', ['assignment' => $assignment]);
+        // PIC: ensure assignment belongs to their project
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Penempatan ini di luar wewenang project Anda.');
+            }
+        }
+
+        // Suggest start date from the latest contract's end_date + 1 day
+        $suggestedStartDate = null;
+        $latestContract = \App\Models\Contract::where('assignment_id', $assignment->id)
+            ->whereNotNull('end_date')
+            ->orderByDesc('end_date')
+            ->first();
+
+        if ($latestContract && $latestContract->end_date) {
+            $suggestedStartDate = \Carbon\Carbon::parse($latestContract->end_date)->addDay()->format('Y-m-d');
+        }
+
+        return Inertia::render('Contract/Create', [
+            'assignment' => $assignment,
+            'suggestedStartDate' => $suggestedStartDate,
+        ]);
     }
 
     /**
@@ -39,11 +64,37 @@ class ContractController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
 
         $validated = $request->validate($this->getRules($request), $this->getMessages());
 
-        // Use DB transaction to ensure both Contract and ContractCompensation are created successfully or rolled back together
+        // PIC: route through DataRequest for admin approval
+        if ($user->isPic()) {
+            $assignment = Assignment::findOrFail($validated['assignment_id']);
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) abort(403);
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $assignment->worker_id,
+                'project_id' => $assignment->project_id,
+                'request_type' => 'data_change',
+                'requested_by' => $user->id,
+                'requested_fields' => array_keys($validated),
+                'requested_data' => array_merge(['_action' => 'create_contract'], $validated),
+                'notes' => 'Penambahan Kontrak Baru oleh PIC',
+                'status' => 'pending',
+                'pic_status' => 'approved',
+                'pic_reviewed_by' => $user->id,
+                'pic_reviewed_at' => now(),
+            ]);
+
+            return redirect()->route('data-requests.index')
+                ->with('message', 'Pengajuan kontrak baru berhasil dikirim ke Admin untuk direview.');
+        }
+
+        // Admin: direct DB write
         DB::transaction(function () use ($validated, $request) {
             $contract = Contract::create([
                 'assignment_id' => $validated['assignment_id'],
@@ -112,7 +163,19 @@ class ContractController extends Controller
      */
     public function edit(Request $request, Contract $contract): Response
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
+
+        // PIC: ensure contract belongs to their project
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            $contract->load('assignment');
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Kontrak ini di luar wewenang project Anda.');
+            }
+        }
+
         $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
         return Inertia::render('Contract/Edit', ['contract' => $contract]);
     }
@@ -126,10 +189,37 @@ class ContractController extends Controller
      */
     public function update(Request $request, Contract $contract): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
         
         $validated = $request->validate($this->getRules($request, $contract->id), $this->getMessages());
 
+        // PIC: route through DataRequest for admin approval
+        if ($user->isPic()) {
+            $contract->load('assignment');
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) abort(403);
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $contract->assignment->worker_id,
+                'project_id' => $contract->assignment->project_id,
+                'request_type' => 'data_change',
+                'requested_by' => $user->id,
+                'requested_fields' => array_keys($validated),
+                'requested_data' => array_merge(['_action' => 'update_contract', 'contract_id' => $contract->id], $validated),
+                'notes' => 'Perubahan Kontrak & Kompensasi oleh PIC',
+                'status' => 'pending',
+                'pic_status' => 'approved',
+                'pic_reviewed_by' => $user->id,
+                'pic_reviewed_at' => now(),
+            ]);
+
+            return redirect()->route('contracts.show', $contract)
+                ->with('message', 'Pengajuan perubahan kontrak berhasil dikirim ke Admin untuk direview.');
+        }
+
+        // Admin: direct DB write
         DB::transaction(function () use ($validated, $contract) {
             $contract->update([
                 'contract_type' => $validated['contract_type'],
@@ -170,7 +260,34 @@ class ContractController extends Controller
      */
     public function destroy(Request $request, Contract $contract): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if ($user->isWorker()) abort(403);
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
+
+        // PIC: route deletion through DataRequest for admin approval
+        if ($user->isPic()) {
+            $contract->load('assignment');
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) abort(403);
+
+            \App\Models\DataRequest::create([
+                'worker_id' => $contract->assignment->worker_id,
+                'project_id' => $contract->assignment->project_id,
+                'request_type' => 'data_change',
+                'requested_by' => $user->id,
+                'requested_fields' => ['contract_id'],
+                'requested_data' => ['_action' => 'delete_contract', 'contract_id' => $contract->id],
+                'notes' => 'Penghapusan Kontrak oleh PIC',
+                'status' => 'pending',
+                'pic_status' => 'approved',
+                'pic_reviewed_by' => $user->id,
+                'pic_reviewed_at' => now(),
+            ]);
+
+            return redirect()->route('contracts.show', $contract)
+                ->with('message', 'Pengajuan penghapusan kontrak berhasil dikirim ke Admin untuk direview.');
+        }
+
         $assignmentId = $contract->assignment_id;
         $contract->delete();
         

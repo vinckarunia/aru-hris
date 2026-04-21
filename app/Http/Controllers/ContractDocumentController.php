@@ -18,9 +18,18 @@ class ContractDocumentController extends Controller
      */
     public function downloadPkwt(Request $request, Contract $contract)
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin.');
+        $user = $request->user();
 
         $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branch']);
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Kontrak ini di luar wewenang project Anda.');
+            }
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin dan PIC project terkait.');
+        }
         
         $user = $request->user();
         
@@ -28,8 +37,7 @@ class ContractDocumentController extends Controller
         // Falls back to name search, then position search, then any first employee.
         $pihakPertama = ($user->internalEmployee ?? null)
             ?? InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
-            ?? InternalEmployee::where('position', 'Head of Operation')->first()
-            ?? InternalEmployee::first();
+            ?? InternalEmployee::where('position', 'Head of Operation')->first();
             
         $format = $request->query('format', 'pdf');
 
@@ -67,9 +75,18 @@ class ContractDocumentController extends Controller
      */
     public function downloadSuratTugas(Request $request, Contract $contract)
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin.');
+        $user = $request->user();
 
         $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branch']);
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Surat tugas ini di luar wewenang project Anda.');
+            }
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Mengunduh surat tugas hanya diperbolehkan untuk Admin dan PIC project terkait.');
+        }
         
         $user = $request->user();
         

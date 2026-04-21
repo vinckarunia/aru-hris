@@ -542,7 +542,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                 {/* Tab: Assignments */}
                 {activeTab === 'assignments' && (
                     <div className="p-6">
-                        {!isWorker && !isPic && (
+                        {!isWorker && (
                             <div className="flex justify-end mb-4">
                                 <Link href={route('assignments.create', { worker_id: worker.id })} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold shadow-sm shadow-primary/30 flex items-center gap-2">
                                     <iconify-icon icon="solar:add-circle-bold" width="20"></iconify-icon> Tambah Penempatan Baru
