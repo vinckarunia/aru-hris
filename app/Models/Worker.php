@@ -75,6 +75,19 @@ class Worker extends Model
      */
     protected static function booted()
     {
+        // Normalize worker name on create and update
+        static::creating(function ($worker) {
+            if ($worker->name) {
+                $worker->name = static::normalizeName($worker->name);
+            }
+        });
+
+        static::updating(function ($worker) {
+            if ($worker->isDirty('name') && $worker->name) {
+                $worker->name = static::normalizeName($worker->name);
+            }
+        });
+
         static::updated(function ($worker) {
             $bpjsKesehatanChanged = $worker->wasChanged('bpjs_kesehatan') && !empty($worker->bpjs_kesehatan);
             $bpjsKetenagakerjaanChanged = $worker->wasChanged('bpjs_ketenagakerjaan') && !empty($worker->bpjs_ketenagakerjaan);
@@ -88,6 +101,48 @@ class Worker extends Model
                 }
             }
         });
+    }
+
+    /**
+     * Normalize a person's name to Title Case with proper handling
+     * for Indonesian particles and Roman numerals.
+     *
+     * Examples:
+     * - "BUDI SANTOSO"      → "Budi Santoso"
+     * - "siti nurhaliza"    → "Siti Nurhaliza"
+     * - "MUHAMMAD ALI bin AHMAD" → "Muhammad Ali bin Ahmad"
+     *
+     * @param string $name The raw name string.
+     * @return string The normalized name in Title Case.
+     */
+    public static function normalizeName(string $name): string
+    {
+        // Collapse multiple spaces and trim
+        $name = preg_replace('/\s+/', ' ', trim($name));
+
+        // Indonesian name particles that should stay lowercase
+        $particles = ['bin', 'binti', 'van', 'von', 'de', 'del', 'della', 'di', 'el', 'al'];
+
+        // Roman numerals that should stay uppercase
+        $romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+        $words = explode(' ', mb_strtolower($name));
+
+        return implode(' ', array_map(function ($word, $index) use ($particles, $romanNumerals) {
+            $upper = mb_strtoupper($word);
+
+            // Keep Roman numerals uppercase
+            if (in_array($upper, $romanNumerals)) {
+                return $upper;
+            }
+
+            // Keep particles lowercase (but capitalize if first word)
+            if ($index > 0 && in_array($word, $particles)) {
+                return $word;
+            }
+
+            return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
+        }, $words, array_keys($words)));
     }
 
     /**

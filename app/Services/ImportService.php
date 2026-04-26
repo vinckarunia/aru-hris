@@ -996,7 +996,7 @@ class ImportService
 
         return [
             'nik_aru' => $c::extractField($row, $mapping, 'nik_aru'),
-            'name' => $c::extractField($row, $mapping, 'name'),
+            'name' => ($rawName = $c::extractField($row, $mapping, 'name')) ? \App\Models\Worker::normalizeName($rawName) : null,
             'ktp_number' => $c::cleanIdentityNumber($c::extractField($row, $mapping, 'ktp_number')),
             'kk_number' => $c::cleanIdentityNumber($c::extractField($row, $mapping, 'kk_number')),
             'birth_place' => $c::extractField($row, $mapping, 'birth_place'),
