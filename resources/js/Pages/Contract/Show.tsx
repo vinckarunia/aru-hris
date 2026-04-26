@@ -44,7 +44,7 @@ export default function Show({ contract }: any) {
                                 : `PKWT-${contract.pkwt_number}`
                         }: {contract.assignment.worker.name}
                     </h2>
-                    <p className="text-sm text-slate-500">{contract.assignment.project.name} - {contract.assignment.branch.name}</p>
+                    <p className="text-sm text-slate-500">{contract.assignment.project.name} - {contract.assignment.branches?.map((b: any) => b.name).join(', ') || '-'}</p>
                 </div>
                 <div className="flex gap-3">
                     <Link href={route('assignments.show', contract.assignment.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center gap-2 text-sm">

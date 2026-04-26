@@ -22,7 +22,7 @@ interface Assignment {
     project_id: string;
     worker: { id: string; name: string; nik_aru: string; };
     project: { id: string; name: string; prefix: string; branches?: Branch[] } | null;
-    branch: { id: string; name: string; } | null;
+    branches?: Branch[];
     contracts?: any[];
 }
 
@@ -52,7 +52,7 @@ export default function Show({ assignment, picProjects = [] }: Props & { picProj
                     <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
                         <span className="flex items-center gap-1"><iconify-icon icon="solar:user-bold"></iconify-icon> {assignment.worker.name}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span className="flex items-center gap-1"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Cabang: {assignment.branch?.name || 'Unknown'}</span>
+                        <span className="flex items-center gap-1"><iconify-icon icon="solar:buildings-bold"></iconify-icon> Cabang: {assignment.branches && assignment.branches.length > 0 ? assignment.branches.map(b => b.name).join(', ') : 'Belum Ditentukan'}</span>
                     </div>
                 </div>
                 <div className="z-10 flex gap-3">

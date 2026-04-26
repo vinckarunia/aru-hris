@@ -20,7 +20,7 @@ export default function Create({ worker, projects }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         worker_id: worker.id,
         project_id: '',
-        branch_id: '',
+        branch_ids: [] as string[],
         employee_id: '',
         position: '',
         hire_date: '',
@@ -153,7 +153,7 @@ export default function Create({ worker, projects }: Props) {
                         {/* Project Selection */}
                         <div>
                             <InputLabel htmlFor="project_id">Pilih Project <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_id', ''); }} required>
+                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_ids', []); }} required>
                                 <option value="">-- Pilih Project --</option>
                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name} ({p.prefix})</option>)}
                             </select>
@@ -162,13 +162,36 @@ export default function Create({ worker, projects }: Props) {
 
                         {/* Branch Selection */}
                         <div>
-                            <InputLabel htmlFor="branch_id">Pilih Cabang Spesifik <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <select id="branch_id" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary disabled:opacity-50" value={data.branch_id} onChange={e => setData('branch_id', e.target.value)} disabled={!data.project_id} required>
-                                <option value="">-- Pilih Cabang --</option>
-                                {availableBranches.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                            </select>
-                            {availableBranches.length === 0 && data.project_id && <p className="text-xs text-red-500 mt-1">Project ini belum memiliki cabang.</p>}
-                            <InputError message={errors.branch_id} className="mt-1" />
+                            <InputLabel htmlFor="branch_ids">Pilih Cabang (Bisa Pilih &gt;1) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                            <div className="mt-1 block w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-900 rounded-md shadow-sm xl:max-h-48 max-h-32 overflow-y-auto p-2">
+                                {availableBranches.length > 0 ? (
+                                    <div className="space-y-1">
+                                        {availableBranches.map(b => (
+                                            <label key={b.id} className={`flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded border border-transparent transition-colors ${data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never) ? 'bg-primary/5 border-primary/20' : ''}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-slate-300 text-primary shadow-sm focus:border-primary focus:ring-primary h-4 w-4"
+                                                    checked={data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setData('branch_ids', [...data.branch_ids, b.id.toString() as never]);
+                                                        } else {
+                                                            setData('branch_ids', data.branch_ids.filter((id: any) => id.toString() !== b.id.toString()));
+                                                        }
+                                                    }}
+                                                    disabled={!data.project_id}
+                                                />
+                                                <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{b.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-3 text-sm text-slate-500 text-center italic">
+                                        {!data.project_id ? "Pilih project terlebih dahulu" : "Project ini belum memiliki cabang"}
+                                    </div>
+                                )}
+                            </div>
+                            <InputError message={errors.branch_ids} className="mt-1" />
                         </div>
 
                         {/* Job Details */}
@@ -185,8 +208,8 @@ export default function Create({ worker, projects }: Props) {
 
                         {/* Dates & Status */}
                         <div>
-                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required />
+                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date) {data.contract_type !== 'Harian' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                            <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required={data.contract_type !== 'Harian'} />
                             <InputError message={errors.hire_date} className="mt-1" />
                         </div>
                         <div>
@@ -241,8 +264,8 @@ export default function Create({ worker, projects }: Props) {
                             <InputError message={errors.pkwt_number} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <TextInput id="start_date" type="date" className="mt-1 block w-full" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required />
+                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak {data.contract_type !== 'Harian' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                            <TextInput id="start_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required={data.contract_type !== 'Harian'} />
                             <InputError message={errors.start_date} className="mt-1" />
                         </div>
                         <div>

@@ -252,6 +252,16 @@ class ProcessBulkImport implements ShouldQueue
                 // 1.5 Pre-process Project and Department Auto-Creation
                 $projectName = ImportDataCleaner::extractField($row, $this->mapping, 'project_name');
                 $projectToBind = null;
+                if (isset($this->globalSettings['client_id']) && isset($this->globalSettings['branch_ids']) && count($this->globalSettings['branch_ids']) > 0) {
+                    // Coba cari project dari salah satu branch_id pertama (hanya untuk fallback logic yang sama)
+                    $firstBranchId = $this->globalSettings['branch_ids'][0];
+                    $existingBranch = \App\Models\Branch::where('client_id', $this->globalSettings['client_id'])
+                        ->where('id', $firstBranchId)
+                        ->first();
+                    if ($existingBranch) {
+                        $this->globalSettings['branch_ids'] = [$existingBranch->id];
+                    }
+                }
                 if ($projectName && !empty($this->globalSettings['client_id'])) {
                     $existingProject = Project::where('name', 'like', trim($projectName))
                         ->where('client_id', $this->globalSettings['client_id'])
@@ -284,7 +294,7 @@ class ProcessBulkImport implements ShouldQueue
                             'name'      => trim($branchName)
                         ]);
                     }
-                    $this->globalSettings['branch_id'] = $existingBranch->id;
+                    $this->globalSettings['branch_ids'] = [$existingBranch->id];
 
                     if ($projectToBind) {
                         $projectToBind->branches()->syncWithoutDetaching([$existingBranch->id]);
@@ -348,6 +358,9 @@ class ProcessBulkImport implements ShouldQueue
 
                 // 2. Create or update Assignment
                 $assignmentData = $importService->buildAssignmentData($row, $this->mapping, $this->globalSettings);
+                // branch_id is no longer in assignment table, handled via branches()
+                unset($assignmentData['branch_id']);
+                
                 if ($isUpdate) {
                     // Update existing assignment if exists, otherwise create new
                     $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
@@ -361,6 +374,10 @@ class ProcessBulkImport implements ShouldQueue
                 } else {
                     $assignmentData['worker_id'] = $worker->id;
                     $assignment = Assignment::create($assignmentData);
+                }
+
+                if (!empty($this->globalSettings['branch_ids'])) {
+                    $assignment->branches()->sync($this->globalSettings['branch_ids']);
                 }
 
                 // Auto-generate NIK ARU — always fresh per assignment (reflects the active project).
@@ -424,7 +441,7 @@ class ProcessBulkImport implements ShouldQueue
         // Generate failed rows if any
         $failedFilePath = null;
         if (count($failedRows) > 0) {
-            $failedFilePath = $this->generateFailedCsv($failedHeaders, $failedRows);
+            $failedFilePath = $this->generateFailedXlsx($failedHeaders, $failedRows);
         }
 
         // Mark as completed
@@ -482,28 +499,54 @@ class ProcessBulkImport implements ShouldQueue
     }
 
     /**
-     * Generate a file containing rows that failed during import.
-     *
-     * The output includes all original columns plus an ERROR_REASON column,
-     * allowing users to review, fix, and re-import through the same tool.
+     * Generate a file containing rows that failed during import in XLSX format.
      *
      * @param array $headers The header row including ERROR_REASON.
      * @param array $failedRows The failed row data.
      * @return string The storage path of the failed file.
      */
-    private function generateFailedCsv(array $headers, array $failedRows): string
+    private function generateFailedXlsx(array $headers, array $failedRows): string
     {
-        $fileName = 'failed_imports/failed_import_' . $this->sessionId . '.csv';
-        $content = fopen('php://temp', 'r+');
+        $fileName = 'failed_imports/failed_import_' . $this->sessionId . '.xlsx';
+        $fullPath = Storage::disk('local')->path($fileName);
 
-        fputcsv($content, $headers);
-        foreach ($failedRows as $row) {
-            fputcsv($content, $row);
+        if (!Storage::disk('local')->exists('failed_imports')) {
+            Storage::disk('local')->makeDirectory('failed_imports');
         }
 
-        rewind($content);
-        Storage::disk('local')->put($fileName, stream_get_contents($content));
-        fclose($content);
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Write headers
+        foreach ($headers as $index => $header) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+            $sheet->setCellValue($colLetter . '1', $header);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+        
+        $headerStyle = [
+            'font' => ['bold' => true],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FFEFEFEF'],
+            ],
+        ];
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
+        $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray($headerStyle);
+        $sheet->freezePane('A2');
+
+        // Write data
+        $rowNum = 2;
+        foreach ($failedRows as $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+                $sheet->setCellValueExplicit($colLetter . $rowNum, $value, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            }
+            $rowNum++;
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save($fullPath);
 
         return $fileName;
     }

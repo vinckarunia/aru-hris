@@ -43,7 +43,7 @@ class ClientController extends Controller implements HasMiddleware
         $projects = Project::whereHas('client')->get();
         $workers = Worker::whereHas('assignments')
             ->with(['assignments' => function ($query) {
-                $query->with(['project:id,name', 'branch:id,name']);
+                $query->with(['project:id,name', 'branches:id,name']);
             }])
             ->get();
 
@@ -75,7 +75,7 @@ class ClientController extends Controller implements HasMiddleware
             // Count workers with at least one active assignment in this branch
             $branch->active_workers_count = \App\Models\Worker::whereHas(
                 'assignments',
-                fn($q) => $q->where('branch_id', $branch->id)->where('status', 'active')
+                fn($q) => $q->whereHas('branches', fn($bq) => $bq->where('branches.id', $branch->id))->where('status', 'active')
             )->count();
         });
 
@@ -91,7 +91,7 @@ class ClientController extends Controller implements HasMiddleware
             ->with(['assignments' => function ($query) use ($projectIds) {
                 $query->whereIn('project_id', $projectIds)
                       ->where('status', 'active')
-                      ->with(['project:id,name', 'branch:id,name']);
+                      ->with(['project:id,name', 'branches:id,name']);
             }])
             ->get(['id', 'nik_aru', 'name']);
 

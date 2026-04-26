@@ -48,7 +48,7 @@ export default function Create({ picProjects = [] }: CreateProps) {
         tax_status: '', address_ktp: '', address_domicile: '', mother_name: '',
         npwp: '', bpjs_kesehatan: '', bpjs_ketenagakerjaan: '', bank_name: '', bank_account_number: '',
         project_id: '',
-        branch_id: '',
+        branch_ids: [] as string[],
         position: '',
         hire_date: '',
         employee_id: '',
@@ -145,14 +145,14 @@ export default function Create({ picProjects = [] }: CreateProps) {
                             Detail Penempatan
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            <div>
-                                <InputLabel htmlFor="project_id">Pilih Project <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                            <div className="md:col-span-2">
+                                <InputLabel htmlFor="project_id">Project / Site <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
                                 <select
                                     id="project_id"
                                     className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
                                     value={data.project_id}
                                     onChange={e => {
-                                        setData(prev => ({ ...prev, project_id: e.target.value, branch_id: '' }));
+                                        setData(prev => ({ ...prev, project_id: e.target.value, branch_ids: [] }));
                                     }}
                                     required
                                 >
@@ -163,21 +163,37 @@ export default function Create({ picProjects = [] }: CreateProps) {
                                 </select>
                                 <InputError message={errors.project_id} className="mt-1" />
                             </div>
-                            <div>
-                                <InputLabel htmlFor="branch_id">Cabang Penempatan</InputLabel>
-                                <select
-                                    id="branch_id"
-                                    className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
-                                    value={data.branch_id}
-                                    onChange={e => setData('branch_id', e.target.value)}
-                                    disabled={!data.project_id}
-                                >
-                                    <option value="">{data.project_id ? '-- Pilih Cabang --' : '-- Pilih project dulu --'}</option>
-                                    {selectedProjectBranches.map(b => (
-                                        <option key={b.id} value={b.id.toString()}>{b.name}</option>
-                                    ))}
-                                </select>
-                                <InputError message={(errors as any).branch_id} className="mt-1" />
+                            <div className="md:col-span-2">
+                                <InputLabel htmlFor="branch_ids">Cabang Penempatan (Bisa Pilih &gt;1)</InputLabel>
+                                <div className="mt-1 block w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-900 rounded-md shadow-sm xl:max-h-48 max-h-32 overflow-y-auto p-2">
+                                    {selectedProjectBranches.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                                            {selectedProjectBranches.map(b => (
+                                                <label key={b.id} className={`flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded border border-transparent transition-colors ${data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never) ? 'bg-primary/5 border-primary/20' : ''}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="rounded border-slate-300 text-primary shadow-sm focus:border-primary focus:ring-primary h-4 w-4"
+                                                        checked={data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setData('branch_ids', [...data.branch_ids, b.id.toString() as never]);
+                                                            } else {
+                                                                setData('branch_ids', data.branch_ids.filter((id: any) => id.toString() !== b.id.toString()));
+                                                            }
+                                                        }}
+                                                        disabled={!data.project_id}
+                                                    />
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{b.name}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-3 text-sm text-slate-500 text-center italic">
+                                            {!data.project_id ? "Pilih project terlebih dahulu" : "Project ini belum memiliki cabang"}
+                                        </div>
+                                    )}
+                                </div>
+                                <InputError message={(errors as any).branch_ids} className="mt-1" />
                             </div>
                             <div>
                                 <InputLabel htmlFor="position">Jabatan</InputLabel>
@@ -192,8 +208,8 @@ export default function Create({ picProjects = [] }: CreateProps) {
                                 <InputError message={(errors as any).position} className="mt-1" />
                             </div>
                             <div>
-                                <InputLabel htmlFor="hire_date">Tanggal Bergabung <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                                <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required />
+                                <InputLabel htmlFor="hire_date">Tanggal Bergabung {data.contract_type !== 'Harian' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                                <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required={data.contract_type !== 'Harian'} />
                                 <InputError message={(errors as any).hire_date} className="mt-1" />
                             </div>
                             <div>
@@ -420,8 +436,8 @@ export default function Create({ picProjects = [] }: CreateProps) {
                                 <InputError message={(errors as any).pkwt_number} className="mt-1" />
                             </div>
                             <div>
-                                <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                                <TextInput id="start_date" type="date" className="mt-1 block w-full" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required />
+                                <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak {data.contract_type !== 'Harian' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                                <TextInput id="start_date" type="date" className="mt-1 block w-full" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required={data.contract_type !== 'Harian'} />
                                 <InputError message={(errors as any).start_date} className="mt-1" />
                             </div>
                             <div>

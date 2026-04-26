@@ -71,9 +71,11 @@ class DataRequestController extends Controller
                 $p = \App\Models\Project::find($data['project_id']);
                 if ($p) $resolved['project_id'] = $p->name;
             }
-            if (isset($data['branch_id'])) {
-                $b = \App\Models\Branch::find($data['branch_id']);
-                if ($b) $resolved['branch_id'] = $b->name;
+            if (isset($data['branch_ids']) && is_array($data['branch_ids'])) {
+                $branches = \App\Models\Branch::whereIn('id', $data['branch_ids'])->get();
+                if ($branches->isNotEmpty()) {
+                    $resolved['branch_ids'] = $branches->pluck('name')->implode(', ');
+                }
             }
             if (isset($data['worker_id'])) {
                 $w = \App\Models\Worker::find($data['worker_id']);
@@ -408,13 +410,19 @@ class DataRequestController extends Controller
                     $assignmentFillable = array_merge([
                         'worker_id' => $worker->id,
                         'project_id' => $project->id,
-                        'branch_id' => $dataRequest->requested_data['branch_id'] ?? ($project->branches->first()->id ?? 1),
                         'position' => $dataRequest->requested_data['position'] ?? null,
                         'hire_date' => now(),
                         'status' => 'active',
                     ], $assignmentFillable);
 
                     $assignment = \App\Models\Assignment::create($assignmentFillable);
+                    
+                    if (!empty($dataRequest->requested_data['branch_ids'])) {
+                        $assignment->branches()->sync($dataRequest->requested_data['branch_ids']);
+                    } else if ($project->branches->isNotEmpty()) {
+                        $assignment->branches()->sync([$project->branches->first()->id]);
+                    }
+
                     $newNik = (new AssignmentController)->generateNikForProject($project);
                     $worker->update(['nik_aru' => $newNik]);
 
@@ -504,6 +512,10 @@ class DataRequestController extends Controller
                         $assignmentFillable = array_intersect_key($createFields, array_flip((new \App\Models\Assignment)->getFillable()));
                         $assignment = \App\Models\Assignment::create($assignmentFillable);
 
+                        if (!empty($dataRequest->requested_data['branch_ids'])) {
+                            $assignment->branches()->sync($dataRequest->requested_data['branch_ids']);
+                        }
+
                         if (is_null($assignmentFillable['termination_date'] ?? null)) {
                             $project = \App\Models\Project::find($assignmentFillable['project_id']);
                             if ($project) {
@@ -581,6 +593,10 @@ class DataRequestController extends Controller
                                     $newNik = (new AssignmentController)->generateNikForProject($project);
                                     $worker->update(['nik_aru' => $newNik]);
                                 }
+                            }
+                            
+                            if (!empty($dataRequest->requested_data['branch_ids'])) {
+                                $assignment->branches()->sync($dataRequest->requested_data['branch_ids']);
                             }
 
                             // 3. Contracts

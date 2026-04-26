@@ -167,7 +167,8 @@ class ImportController extends Controller
             'global_settings' => ['required', 'array'],
             'global_settings.client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'global_settings.project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'global_settings.branch_id'    => ['nullable', 'integer', 'exists:branches,id'],
+            'global_settings.branch_ids'   => ['nullable', 'array'],
+            'global_settings.branch_ids.*' => ['integer', 'exists:branches,id'],
             'header_row' => ['nullable', 'integer', 'min:1'],
             'active_sheet_name' => ['nullable', 'string'],
         ], [
@@ -314,8 +315,8 @@ class ImportController extends Controller
             ], 404);
         }
 
-        return response()->download($fullPath, 'import_gagal_' . date('Y-m-d_His') . '.csv', [
-            'Content-Type' => 'text/csv',
+        return response()->download($fullPath, 'import_gagal_' . date('Y-m-d_His') . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 

@@ -32,7 +32,7 @@ class ContractController extends Controller
         if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403);
 
         $request->validate(['assignment_id' => 'required|exists:assignments,id']);
-        $assignment = Assignment::with(['worker', 'project', 'branch'])->findOrFail($request->assignment_id);
+        $assignment = Assignment::with(['worker', 'project', 'branches'])->findOrFail($request->assignment_id);
 
         // PIC: ensure assignment belongs to their project
         if ($user->isPic()) {
@@ -147,7 +147,7 @@ class ContractController extends Controller
             abort(403, 'Akses ditolak. Detail kontrak dan kompensasi hanya dapat diakses oleh Admin.');
         }
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branches']);
 
         return Inertia::render('Contract/Show', [
             'contract' => $contract
@@ -176,7 +176,7 @@ class ContractController extends Controller
             }
         }
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branch']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branches']);
         return Inertia::render('Contract/Edit', ['contract' => $contract]);
     }
 
@@ -312,7 +312,7 @@ class ContractController extends Controller
                 'nullable', 'integer', 'min:1',
                 Rule::unique('contracts')->where('assignment_id', $request->assignment_id)->ignore($contractId)
             ],
-            'start_date' => 'required|date',
+            'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'duration_months' => 'nullable|integer|min:1',
             'evaluation_notes' => 'nullable|string',

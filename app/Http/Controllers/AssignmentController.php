@@ -62,13 +62,14 @@ class AssignmentController extends Controller
             $validated = $request->validate([
                 'worker_id'        => 'required|exists:workers,id',
                 'project_id'       => 'required|exists:projects,id',
-                'branch_id'        => 'required|exists:branches,id',
+                'branch_ids'       => 'required|array|min:1',
+                'branch_ids.*'     => 'exists:branches,id',
                 'employee_id'      => [
                     'nullable', 'string', 'max:255',
                     Rule::unique('assignments')->where('project_id', $request->project_id),
                 ],
                 'position'         => 'nullable|string|max:255',
-                'hire_date'        => 'required|date',
+                'hire_date'        => 'nullable|date',
                 'status'           => 'nullable|in:active,contract expired,resign,fired,project closed,other',
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
             ], [
@@ -80,7 +81,7 @@ class AssignmentController extends Controller
                 'contract_type'    => 'required|in:Kontrak,Harian',
                 'pkwt_type'        => 'nullable|in:PKWT,PKWTT',
                 'pkwt_number'      => 'nullable|integer|min:1',
-                'start_date'       => 'required|date',
+                'start_date'       => 'nullable|date',
                 'end_date'         => 'nullable|date|after_or_equal:start_date',
                 'duration_months'  => 'nullable|integer|min:1',
                 'evaluation_notes' => 'nullable|string',
@@ -140,7 +141,10 @@ class AssignmentController extends Controller
         }
 
         // Admin: create assignment + contract + compensation directly
+        $branchIds = $validated['branch_ids'] ?? [];
+        unset($validated['branch_ids']);
         $assignment = Assignment::create($validated);
+        $assignment->branches()->sync($branchIds);
 
         // Generate a fresh NIK ARU based on the assigned project.
         if (is_null($validated['termination_date'] ?? null)) {
@@ -183,7 +187,7 @@ class AssignmentController extends Controller
             abort(403, 'Akses ditolak. Wewenang untuk melihat detail teknis penempatan dan kontrak hanya ada pada Admin.');
         }
 
-        $assignment->load(['worker', 'project', 'branch', 'contracts']);
+        $assignment->load(['worker', 'project', 'branches', 'contracts']);
 
         return Inertia::render('Assignment/Show', [
             'assignment' => $assignment,
@@ -237,13 +241,14 @@ class AssignmentController extends Controller
         try {
             $rules = [
                 'project_id'       => 'required|exists:projects,id',
-                'branch_id'        => 'required|exists:branches,id',
+                'branch_ids'       => 'required|array|min:1',
+                'branch_ids.*'     => 'exists:branches,id',
                 'employee_id'      => [
                     'nullable', 'string', 'max:255',
                     Rule::unique('assignments')->where('project_id', $request->project_id)->ignore($assignment->id),
                 ],
                 'position'         => 'nullable|string|max:255',
-                'hire_date'        => 'required|date',
+                'hire_date'        => 'nullable|date',
                 'status'           => 'nullable|in:active,contract expired,resign,fired,project closed,other',
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
             ];
@@ -296,7 +301,10 @@ class AssignmentController extends Controller
         $isNowActive    = is_null($validated['termination_date'] ?? null);
         $projectChanged = (int) $assignment->project_id !== (int) $validated['project_id'];
 
+        $branchIds = $validated['branch_ids'] ?? [];
+        unset($validated['branch_ids']);
         $assignment->update($validated);
+        $assignment->branches()->sync($branchIds);
 
         $worker = Worker::find($assignment->worker_id);
 

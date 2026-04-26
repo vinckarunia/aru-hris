@@ -126,7 +126,7 @@ class DashboardController extends Controller
                 ->get();
 
             // FR-DASH-04: Data Grid (Recent Assignments)
-            $recentAssignmentsQuery = Assignment::with(['worker', 'project.client', 'branch'])
+            $recentAssignmentsQuery = Assignment::with(['worker', 'project.client', 'branches'])
                 ->orderBy('hire_date', 'desc');
             
             if ($isPic) {

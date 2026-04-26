@@ -258,10 +258,11 @@ export default function Index({ workers, clients }: Props) {
 
     /** Calculates the age of a worker based on their birth date. */
     const calculateAge = (worker: Worker) => {
+        if (!worker.birth_date || worker.birth_date.startsWith('1970-01-01') || worker.birth_date.startsWith('0000-00-00') || worker.birth_date.trim() === '') return '-';
         const today = new Date();
         const birthDateObj = new Date(worker.birth_date);
         const age = today.getFullYear() - birthDateObj.getFullYear();
-        return age;
+        return `${age} Tahun`;
     };
 
     /**
@@ -497,7 +498,7 @@ export default function Index({ workers, clients }: Props) {
                                                     </Link>
                                                 </div>
                                                 <div className="text-xs text-slate-400 capitalize">{worker.gender === 'male' ? 'Laki-laki' : worker.gender === 'female' ? 'Perempuan' : '-'}</div>
-                                                <div className="text-xs text-slate-400 capitalize">{calculateAge(worker)}<span> Tahun</span></div>
+                                                <div className="text-xs text-slate-400 capitalize">{calculateAge(worker)}</div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {worker.nik_aru ? (

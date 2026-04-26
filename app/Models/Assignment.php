@@ -47,7 +47,6 @@ class Assignment extends Model
     protected $fillable = [
         'worker_id',
         'project_id',
-        'branch_id',
         'employee_id',
         'position',
         'hire_date',
@@ -70,9 +69,9 @@ class Assignment extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function branch()
+    public function branches()
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsToMany(Branch::class, 'assignment_branch');
     }
 
     /**

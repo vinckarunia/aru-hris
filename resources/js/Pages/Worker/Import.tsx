@@ -46,7 +46,7 @@ interface DbColumnGroup {
 interface GlobalSettings {
     client_id: string | null;
     project_id: string | null;
-    branch_id: string | null;
+    branch_ids: string[];
     salary_rate: string;
     allowance_rate: string;
     overtime_rate: string;
@@ -221,7 +221,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
     const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
         client_id: null,
         project_id: null,
-        branch_id: null,
+        branch_ids: [],
         salary_rate: 'monthly',
         allowance_rate: 'daily',
         overtime_rate: 'hourly',
@@ -354,15 +354,15 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
             alert('Silakan pilih Project di pengaturan global, atau mapping kolom "Nama Project" dari file.');
             return;
         }
-        if (!hasBranchMapping && !globalSettings.branch_id) {
-            alert('Silakan pilih Cabang di pengaturan global, atau mapping kolom "Nama Cabang" dari file.');
+        if (!hasBranchMapping && globalSettings.branch_ids.length === 0) {
+            alert('Silakan pilih setidaknya satu Cabang di pengaturan global, atau mapping kolom "Nama Cabang" dari file.');
             return;
         }
 
         // If they mapped the project/branch name but didn't pick global Project/Branch ID,
         // they MUST pick a Client to allow auto-creation.
         if ((hasProjectMapping && !globalSettings.project_id && !globalSettings.client_id) ||
-            (hasBranchMapping && !globalSettings.branch_id && !globalSettings.client_id)) {
+            (hasBranchMapping && globalSettings.branch_ids.length === 0 && !globalSettings.client_id)) {
             alert('Jika Anda melakukan mapping nama Project/Cabang dari CSV, silakan pilih setidaknya "Client" di Pengaturan Global agar sistem dapat membuatkannya secara otomatis jika tidak ditemukan.');
             return;
         }
@@ -705,17 +705,17 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                             <h4 className="text-sm font-bold text-slate-700 dark:text-white">Pengaturan Global</h4>
                             <span className="text-[11px] text-slate-400 ml-1">Parameter default yang diterapkan ke seluruh baris data</span>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4">
                             {/* Client */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Client {((mapping['project_name'] !== undefined || mapping['branch_name'] !== undefined) && !globalSettings.project_id && !globalSettings.branch_id) ? <span className="text-red-500">*</span> : ''}
+                                    Client {((mapping['project_name'] !== undefined || mapping['branch_name'] !== undefined) && !globalSettings.project_id && globalSettings.branch_ids.length === 0) ? <span className="text-red-500">*</span> : ''}
                                 </label>
                                 <select
                                     value={globalSettings.client_id ?? ''}
                                     onChange={(e) => {
                                         const cid = e.target.value || null;
-                                        setGlobalSettings(prev => ({ ...prev, client_id: cid, project_id: null, branch_id: null }));
+                                        setGlobalSettings(prev => ({ ...prev, client_id: cid, project_id: null, branch_ids: [] }));
                                     }}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
                                 >
@@ -733,7 +733,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                     value={globalSettings.project_id ?? ''}
                                     onChange={(e) => {
                                         const pid = e.target.value || null;
-                                        setGlobalSettings(prev => ({ ...prev, project_id: pid, branch_id: null }));
+                                        setGlobalSettings(prev => ({ ...prev, project_id: pid, branch_ids: [] }));
                                     }}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
                                 >
@@ -743,18 +743,20 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                             </div>
 
                             {/* Branch (cascading) */}
-                            <div>
+                            <div className="lg:col-span-2">
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                                     Cabang {mapping['branch_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari file)</span> : <span className="text-red-500">*</span>}
                                 </label>
                                 <select
-                                    value={globalSettings.branch_id ?? ''}
-                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, branch_id: e.target.value || null }))}
-                                    disabled={!globalSettings.project_id}
+                                    value={globalSettings.branch_ids[0] ?? ''}
+                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, branch_ids: e.target.value ? [e.target.value as never] : [] }))}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
+                                    disabled={!globalSettings.project_id}
                                 >
-                                    <option value="">-- Pilih Cabang --</option>
-                                    {filteredBranches.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                    <option value="">-- Pilih Cabang Default --</option>
+                                    {filteredBranches.map(b => (
+                                        <option key={b.id} value={b.id.toString()}>{b.name}</option>
+                                    ))}
                                 </select>
                             </div>
 

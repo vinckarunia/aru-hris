@@ -30,17 +30,23 @@ class WorkerExportController extends Controller
 
         // Query workers, including relationships loaded for export
         $workersQuery = Worker::with([
-            'latestAssignment.project', 
-            'latestAssignment.branch',
-            'latestContract',
-            'latestCompensation',
+            'assignments' => function ($query) {
+                $query->orderBy('hire_date', 'desc')
+                      ->with([
+                          'project',
+                          'branches',
+                          'contracts' => function ($q) {
+                              $q->orderBy('start_date', 'desc')->with('compensation');
+                          }
+                      ]);
+            },
             'familyMembers'
         ]);
 
         // If user is PIC, restrict to workers in their assigned projects
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
-            $workersQuery->whereHas('latestAssignment', function ($q) use ($projectIds) {
+            $workersQuery->whereHas('assignments', function ($q) use ($projectIds) {
                 $q->whereIn('project_id', $projectIds);
             });
         }
@@ -57,10 +63,7 @@ class WorkerExportController extends Controller
             'Tunjangan Transport', 'Lembur Weekday', 'Lembur Libur',
             'NPWP', 'Bank', 'Rekening', 'BPJS Kesehatan',
             'BPJS Ketenagakerjaan', 'No KTP', 'No KK', 'Ibu Kandung',
-            'PKWTT', 'PKWT 1 Start', 'PKWT 1 End', 'PKWT 2 Start', 'PKWT 2 End',
-            'PKWT 3 Start', 'PKWT 3 End', 'PKWT 4 Start', 'PKWT 4 End',
-            'PKWT 5 Start', 'PKWT 5 End', 'PKWT 6 Start', 'PKWT 6 End',
-            'PKWT 7 Start', 'PKWT 7 End', 'PKWT 8 Start', 'PKWT 8 End',
+            'Kontrak Start Date', 'Kontrak End Date',
             'Nama Istri/Suami (1)', 'Tempat Lahir Pasangan (1)',
             'Tanggal Lahir Pasangan (1)', 'NIK Pasangan (1)', 'BPJS Pasangan (1)',
             'Nama Anak 1 (1)', 'Tempat Lahir Anak 1 (1)',
@@ -104,9 +107,9 @@ class WorkerExportController extends Controller
         // Write Data Rows
         $rowNum = 2;
         foreach ($workers as $worker) {
-            $assignment = $worker->latestAssignment;
-            $contract = $worker->latestContract;
-            $comp = $worker->latestCompensation;
+            $assignment = $worker->assignments->first();
+            $contract = $assignment ? $assignment->contracts->first() : null;
+            $comp = $contract ? $contract->compensation : null;
             $family = $worker->familyMembers;
 
             // Group family members by type
@@ -118,69 +121,54 @@ class WorkerExportController extends Controller
                 $worker->nik_aru ?? '',
                 $worker->name ?? '',
                 $assignment ? ($assignment->project->name ?? '') : '',
-                $assignment ? ($assignment->branch->name ?? '') : '',
+                $assignment ? $assignment->branches->pluck('name')->implode(', ') : '',
                 $worker->hire_date ? $worker->hire_date->format('Y-m-d') : '',
-                $contract->type ?? 'Draft',
-                $worker->status ?? 'Aktif',
-                $worker->resign_date ? $worker->resign_date->format('Y-m-d') : '',
+                $contract->contract_type ?? 'Draft',
+                $assignment ? ($assignment->status ?? 'Active') : 'Tanpa Penempatan',
+                $assignment ? ($assignment->termination_date ? \Carbon\Carbon::parse($assignment->termination_date)->format('Y-m-d') : '') : '',
                 $assignment->position ?? '',
-                $worker->gender === 'M' ? 'Pria' : ($worker->gender === 'F' ? 'Wanita' : ''),
+                $worker->gender === 'male' ? 'Pria' : ($worker->gender === 'female' ? 'Wanita' : ''),
                 $worker->birth_place ?? '',
-                $worker->birth_date ? $worker->birth_date->format('Y-m-d') : '',
+                $worker->birth_date ? \Carbon\Carbon::parse($worker->birth_date)->format('Y-m-d') : '',
                 $worker->address_ktp ?? '',
                 $worker->address_domicile ?? '',
                 $worker->phone ?? '',
                 $worker->education ?? '',
                 $worker->religion ?? '',
-                $comp->ptkp_status ?? '',
+                $worker->tax_status ?? '', // Status PTKP
 
                 // Kompensasi & Keuangan
-                $comp->base_salary ?? '',
-                $comp->meal_allowance ?? '',
-                $comp->transport_allowance ?? '',
-                $comp->overtime_weekday ?? '',
-                $comp->overtime_holiday ?? '',
-                $comp->npwp_number ?? '',
-                $comp->bank_name ?? '',
-                $comp->bank_account ?? '',
-                $comp->bpjs_kesehatan ?? '',
-                $comp->bpjs_ketenagakerjaan ?? '',
+                $comp ? $comp->base_salary : '',
+                $comp ? $comp->meal_allowance : '',
+                $comp ? $comp->transport_allowance : '',
+                $comp ? $comp->overtime_weekday_rate : '',
+                $comp ? $comp->overtime_holiday_rate : '',
+                $worker->npwp ?? '',
+                $worker->bank_name ?? '',
+                $worker->bank_account_number ?? '',
+                $worker->bpjs_kesehatan ?? '',
+                $worker->bpjs_ketenagakerjaan ?? '',
 
                 // Identitas Lanjutan
                 $worker->ktp_number ?? '',
                 $worker->kk_number ?? '',
                 $worker->mother_name ?? '',
 
-                // Kontrak (PKWTT & PKWT 1-8)
-                $contract->type === 'PKWTT' && $contract->start_date ? $contract->start_date->format('Y-m-d') : '',
-                $contract->type === 'PKWT 1' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 1' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 2' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 2' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 3' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 3' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 4' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 4' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 5' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 5' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 6' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 6' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 7' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 7' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 8' ? ($contract->start_date ? $contract->start_date->format('Y-m-d') : '') : '',
-                $contract->type === 'PKWT 8' ? ($contract->end_date ? $contract->end_date->format('Y-m-d') : '') : '',
+                // Kontrak (Start & End)
+                $contract && $contract->start_date ? \Carbon\Carbon::parse($contract->start_date)->format('Y-m-d') : '',
+                $contract && $contract->end_date ? \Carbon\Carbon::parse($contract->end_date)->format('Y-m-d') : '',
 
                 // Keluarga Pasangan 1 & Anak 1-3
-                $spouses[0]->name ?? '', $spouses[0]->birth_place ?? '', $spouses[0]->birth_date ? $spouses[0]->birth_date->format('Y-m-d') : '', $spouses[0]->ktp_number ?? '', $spouses[0]->bpjs_kesehatan ?? '',
-                $children[0]->name ?? '', $children[0]->birth_place ?? '', $children[0]->birth_date ? $children[0]->birth_date->format('Y-m-d') : '', $children[0]->ktp_number ?? '', $children[0]->bpjs_kesehatan ?? '',
-                $children[1]->name ?? '', $children[1]->birth_place ?? '', $children[1]->birth_date ? $children[1]->birth_date->format('Y-m-d') : '', $children[1]->ktp_number ?? '', $children[1]->bpjs_kesehatan ?? '',
-                $children[2]->name ?? '', $children[2]->birth_place ?? '', $children[2]->birth_date ? $children[2]->birth_date->format('Y-m-d') : '', $children[2]->ktp_number ?? '', $children[2]->bpjs_kesehatan ?? '',
+                $spouses[0]->name ?? '', $spouses[0]->birth_place ?? '', (isset($spouses[0]) && $spouses[0]->birth_date) ? \Carbon\Carbon::parse($spouses[0]->birth_date)->format('Y-m-d') : '', $spouses[0]->ktp_number ?? '', $spouses[0]->bpjs_kesehatan ?? '',
+                $children[0]->name ?? '', $children[0]->birth_place ?? '', (isset($children[0]) && $children[0]->birth_date) ? \Carbon\Carbon::parse($children[0]->birth_date)->format('Y-m-d') : '', $children[0]->ktp_number ?? '', $children[0]->bpjs_kesehatan ?? '',
+                $children[1]->name ?? '', $children[1]->birth_place ?? '', (isset($children[1]) && $children[1]->birth_date) ? \Carbon\Carbon::parse($children[1]->birth_date)->format('Y-m-d') : '', $children[1]->ktp_number ?? '', $children[1]->bpjs_kesehatan ?? '',
+                $children[2]->name ?? '', $children[2]->birth_place ?? '', (isset($children[2]) && $children[2]->birth_date) ? \Carbon\Carbon::parse($children[2]->birth_date)->format('Y-m-d') : '', $children[2]->ktp_number ?? '', $children[2]->bpjs_kesehatan ?? '',
 
                 // Keluarga Pasangan 2 & Anak 4-6
-                $spouses[1]->name ?? '', $spouses[1]->birth_place ?? '', $spouses[1]->birth_date ? $spouses[1]->birth_date->format('Y-m-d') : '', $spouses[1]->ktp_number ?? '', $spouses[1]->bpjs_kesehatan ?? '',
-                $children[3]->name ?? '', $children[3]->birth_place ?? '', $children[3]->birth_date ? $children[3]->birth_date->format('Y-m-d') : '', $children[3]->ktp_number ?? '', $children[3]->bpjs_kesehatan ?? '',
-                $children[4]->name ?? '', $children[4]->birth_place ?? '', $children[4]->birth_date ? $children[4]->birth_date->format('Y-m-d') : '', $children[4]->ktp_number ?? '', $children[4]->bpjs_kesehatan ?? '',
-                $children[5]->name ?? '', $children[5]->birth_place ?? '', $children[5]->birth_date ? $children[5]->birth_date->format('Y-m-d') : '', $children[5]->ktp_number ?? '', $children[5]->bpjs_kesehatan ?? '',
+                $spouses[1]->name ?? '', $spouses[1]->birth_place ?? '', (isset($spouses[1]) && $spouses[1]->birth_date) ? \Carbon\Carbon::parse($spouses[1]->birth_date)->format('Y-m-d') : '', $spouses[1]->ktp_number ?? '', $spouses[1]->bpjs_kesehatan ?? '',
+                $children[3]->name ?? '', $children[3]->birth_place ?? '', (isset($children[3]) && $children[3]->birth_date) ? \Carbon\Carbon::parse($children[3]->birth_date)->format('Y-m-d') : '', $children[3]->ktp_number ?? '', $children[3]->bpjs_kesehatan ?? '',
+                $children[4]->name ?? '', $children[4]->birth_place ?? '', (isset($children[4]) && $children[4]->birth_date) ? \Carbon\Carbon::parse($children[4]->birth_date)->format('Y-m-d') : '', $children[4]->ktp_number ?? '', $children[4]->bpjs_kesehatan ?? '',
+                $children[5]->name ?? '', $children[5]->birth_place ?? '', (isset($children[5]) && $children[5]->birth_date) ? \Carbon\Carbon::parse($children[5]->birth_date)->format('Y-m-d') : '', $children[5]->ktp_number ?? '', $children[5]->bpjs_kesehatan ?? '',
             ];
 
             foreach ($rowData as $colIndex => $value) {

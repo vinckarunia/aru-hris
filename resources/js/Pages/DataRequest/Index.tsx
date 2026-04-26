@@ -218,7 +218,7 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
     const allFieldLabels: Record<string, string> = {
         ...fieldLabels,
         project_id: 'Project',
-        branch_id: 'Cabang',
+        branch_ids: 'Cabang',
         worker_id: 'Karyawan',
         assignment_id: 'Penempatan',
         contract_id: 'Kontrak',
@@ -606,7 +606,7 @@ export default function DataRequestIndex({ dataRequests, filters }: DataRequestI
                                         {/* For new_data: show assignment detail + contract if bundled */}
                                         {(() => {
                                             const d = reviewingRequest.requested_data as any;
-                                            const assignmentFields = ['project_id', 'branch_id', 'position', 'hire_date', 'employee_id'];
+                                            const assignmentFields = ['project_id', 'branch_ids', 'position', 'hire_date', 'employee_id'];
                                             const hasAssignment = assignmentFields.some(f => d?.[f] !== undefined && d[f] !== null && d[f] !== '');
                                             if (!hasAssignment && !d?._contract) return null;
                                             return (

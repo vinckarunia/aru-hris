@@ -240,7 +240,8 @@ class ReportController extends Controller
             $query->leftJoin('clients', 'projects.client_id', '=', 'clients.id');
         }
         if (isset($requiredJoins['branches'])) {
-            $query->leftJoin('branches', 'assignments.branch_id', '=', 'branches.id');
+            $query->leftJoin('assignment_branch', 'assignments.id', '=', 'assignment_branch.assignment_id')
+                  ->leftJoin('branches', 'assignment_branch.branch_id', '=', 'branches.id');
         }
         if (isset($requiredJoins['contracts'])) {
             $query->leftJoin('contracts', function ($join) use ($onlyLatest) {

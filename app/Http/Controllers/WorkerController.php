@@ -54,7 +54,7 @@ class WorkerController extends Controller
             $query->orderBy('hire_date', 'desc')
                   ->with([
                       'project' => fn($q) => $q->withTrashed()->select('id', 'name', 'deleted_at'),
-                      'branch:id,name',
+                      'branches:id,name',
                       'contracts' => fn ($q) => $q->orderBy('start_date', 'desc'),
                   ]);
         }]);
@@ -114,8 +114,8 @@ class WorkerController extends Controller
             if ($request->filled('position')) {
                 $payload['position'] = $request->position;
             }
-            if ($request->filled('branch_id')) {
-                $payload['branch_id'] = $request->branch_id;
+            if ($request->filled('branch_ids')) {
+                $payload['branch_ids'] = $request->branch_ids;
             }
             if ($request->filled('hire_date')) {
                 $payload['hire_date'] = $request->hire_date;
@@ -129,7 +129,7 @@ class WorkerController extends Controller
                 'contract_type'    => 'required|in:Kontrak,Harian',
                 'pkwt_type'        => 'nullable|in:PKWT,PKWTT',
                 'pkwt_number'      => 'nullable|integer|min:1',
-                'start_date'       => 'required|date',
+                'start_date'       => 'nullable|date',
                 'end_date'         => 'nullable|date|after_or_equal:start_date',
                 'duration_months'  => 'nullable|integer|min:1',
                 'evaluation_notes' => 'nullable|string',
@@ -197,7 +197,7 @@ class WorkerController extends Controller
             }
         }
 
-        $worker->load(['assignments.project', 'assignments.branch', 'assignments.contracts', 'familyMembers', 'documents']);
+        $worker->load(['assignments.project', 'assignments.branches', 'assignments.contracts', 'familyMembers', 'documents']);
 
         // Load document settings for the frontend (active types, max size, allowed formats)
         $docTypesJson = \App\Models\Setting::where('key', 'document_types')->value('value');

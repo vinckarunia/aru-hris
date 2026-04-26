@@ -57,11 +57,11 @@ class BranchController extends Controller
         // Workers with at least one active assignment in this branch
         $projectIds = $projects->pluck('id');
         $workers = Worker::whereHas('assignments', function ($query) use ($branch) {
-                $query->where('branch_id', $branch->id)
+                $query->whereHas('branches', fn($bq) => $bq->where('branches.id', $branch->id))
                       ->where('status', 'active');
             })
             ->with(['assignments' => function ($query) use ($branch) {
-                $query->where('branch_id', $branch->id)
+                $query->whereHas('branches', fn($bq) => $bq->where('branches.id', $branch->id))
                       ->where('status', 'active')
                       ->with(['project:id,name']);
             }])

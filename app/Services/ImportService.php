@@ -93,24 +93,9 @@ class ImportService
         [
             'group' => 'Data Kontrak (PKWT/PKWTT/Harian)',
             'options' => [
-                ['key' => 'raw_contract_type', 'label' => 'Jenis Kontrak (Contract/Harian)'],
-                ['key' => 'pkwt_1_start', 'label' => 'PKWT 1 - Mulai'],
-                ['key' => 'pkwt_1_end', 'label' => 'PKWT 1 - Selesai'],
-                ['key' => 'pkwt_2_start', 'label' => 'PKWT 2 - Mulai'],
-                ['key' => 'pkwt_2_end', 'label' => 'PKWT 2 - Selesai'],
-                ['key' => 'pkwt_3_start', 'label' => 'PKWT 3 - Mulai'],
-                ['key' => 'pkwt_3_end', 'label' => 'PKWT 3 - Selesai'],
-                ['key' => 'pkwt_4_start', 'label' => 'PKWT 4 - Mulai'],
-                ['key' => 'pkwt_4_end', 'label' => 'PKWT 4 - Selesai'],
-                ['key' => 'pkwt_5_start', 'label' => 'PKWT 5 - Mulai'],
-                ['key' => 'pkwt_5_end', 'label' => 'PKWT 5 - Selesai'],
-                ['key' => 'pkwt_6_start', 'label' => 'PKWT 6 - Mulai'],
-                ['key' => 'pkwt_6_end', 'label' => 'PKWT 6 - Selesai'],
-                ['key' => 'pkwt_7_start', 'label' => 'PKWT 7 - Mulai'],
-                ['key' => 'pkwt_7_end', 'label' => 'PKWT 7 - Selesai'],
-                ['key' => 'pkwt_8_start', 'label' => 'PKWT 8 - Mulai'],
-                ['key' => 'pkwt_8_end', 'label' => 'PKWT 8 - Selesai'],
-                ['key' => 'pkwtt_start', 'label' => 'PKWTT - Mulai'],
+                ['key' => 'raw_contract_type', 'label' => 'Jenis Kontrak (PKWT/PKWTT/Harian)'],
+                ['key' => 'contract_start', 'label' => 'Kontrak Start Date/Mulai'],
+                ['key' => 'contract_end', 'label' => 'Kontrak End Date/Selesai'],
                 ['key' => 'evaluation_notes', 'label' => 'Catatan Evaluasi Kontrak'],
             ],
         ],
@@ -288,25 +273,17 @@ class ImportService
         'ibu kandung' => 'mother_name',
         'nama ibu' => 'mother_name',
         
-        // PKWT overrides
-        'pkwtt' => 'pkwtt_date',
-        'pkwt 1 start' => 'pkwt_1_start',
-        'pkwt 1 end' => 'pkwt_1_end',
-        'pkwt 2 start' => 'pkwt_2_start',
-        'pkwt 2 end' => 'pkwt_2_end',
-        'pkwt 3 start' => 'pkwt_3_start',
-        'pkwt 3 end' => 'pkwt_3_end',
-        'pkwt 4 start' => 'pkwt_4_start',
-        'pkwt 4 end' => 'pkwt_4_end',
-        'pkwt 5 start' => 'pkwt_5_start',
-        'pkwt 5 end' => 'pkwt_5_end',
-        'pkwt 6 start' => 'pkwt_6_start',
-        'pkwt 6 end' => 'pkwt_6_end',
-        'pkwt 7 start' => 'pkwt_7_start',
-        'pkwt 7 end' => 'pkwt_7_end',
-        'pkwt 8 start' => 'pkwt_8_start',
-        'pkwt 8 end' => 'pkwt_8_end',
-        'pkwtt' => 'pkwtt_start',
+        // Override for Contract
+        'kontrak start date' => 'contract_start',
+        'pkwt start date' => 'contract_start',
+        'pkwtt start date' => 'contract_start',
+        'mulai kontrak' => 'contract_start',
+        'awal kontrak' => 'contract_start',
+        
+        'kontrak end date' => 'contract_end',
+        'pkwt end date' => 'contract_end',
+        'selesai kontrak' => 'contract_end',
+        'akhir kontrak' => 'contract_end',
         'nama istri/suami_1' => 'spouse_1_name',
         'tempat lahir istri/suami_1' => 'spouse_1_birth_place',
         'tanggal lahir istri/suami_1' => 'spouse_1_birth_date',
@@ -838,7 +815,7 @@ class ImportService
 
         // Resolve department: column first, fall back to global setting
         $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
-        $branchResolved = $this->resolveBranchId($row, $mapping, $globalSettings, $projectResolved);
+        $branchResolved = $this->resolveBranchIds($row, $mapping, $globalSettings, $projectResolved);
         
         if (!$branchResolved) {
             // If branch not found but client_id is set and branchName is in CSV, it will be auto-created
@@ -897,45 +874,59 @@ class ImportService
     }
 
     /**
-     * Resolve branch_id from column (by name) or global settings.
+     * Resolve branch_ids from column (by name, comma-separated) or global settings.
      * column takes priority over global settings.
      * When resolved by name, scopes to the project's client.
      */
-    private function resolveBranchId(array $row, array $mapping, array $globalSettings, ?int $projectId): ?int
+    private function resolveBranchIds(array $row, array $mapping, array $globalSettings, ?int $projectId): array
     {
-        // Try column first
-        $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
-        if ($branchName) {
-            $query = Branch::where('name', 'like', trim($branchName));
-            // Scope to the project's client_id (not project_id) if possible
-            if ($projectId) {
-                $project = Project::find($projectId);
-                if ($project) {
-                    $query->where('client_id', $project->client_id);
+        $branchIds = [];
+        $branchNameRaw = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
+        if ($branchNameRaw) {
+            // Support multiple separators: comma, ampersand, and the words "dan" or "and"
+            // We use positive lookahead/behind to replace " dan " with "," to split easily
+            // Note: we just replace them all with a comma, then explode by comma
+            $normalizedStr = str_ireplace([' & ', ' and ', ' dan '], ',', $branchNameRaw);
+            $normalizedStr = str_replace('&', ',', $normalizedStr);
+
+            $branchNames = array_map('trim', explode(',', $normalizedStr));
+            foreach ($branchNames as $branchName) {
+                if (empty($branchName)) continue;
+
+                $query = Branch::where('name', 'like', $branchName);
+                if ($projectId) {
+                    $project = Project::find($projectId);
+                    if ($project) {
+                        $query->where('client_id', $project->client_id);
+                    }
+                }
+                $branch = $query->first();
+                if (!$branch) {
+                    // Try without client scope as fallback
+                    $queryFallback = Branch::where('name', 'like', $branchName);
+                    if (!empty($globalSettings['client_id'])) {
+                        $queryFallback->where('client_id', $globalSettings['client_id']);
+                    }
+                    $branch = $queryFallback->first();
+                }
+
+                if ($branch) {
+                    $branchIds[] = $branch->id;
                 }
             }
-            $branch = $query->first();
-            if ($branch) {
-                return $branch->id;
-            }
-            // Try without client scope as fallback, but boundary restricted to global settings if available
-            $queryFallback = Branch::where('name', 'like', trim($branchName));
-            if (!empty($globalSettings['client_id'])) {
-                $queryFallback->where('client_id', $globalSettings['client_id']);
-            }
-            $branch = $queryFallback->first();
-            if ($branch) {
-                return $branch->id;
-            }
+        }
+
+        if (!empty($branchIds)) {
+            return $branchIds;
         }
 
         // Fall back to global setting
-        $globalId = $globalSettings['branch_id'] ?? null;
-        if ($globalId && Branch::find($globalId)) {
-            return (int) $globalId;
+        $globalIds = $globalSettings['branch_ids'] ?? null;
+        if ($globalIds && Branch::find($globalIds[0])) {
+            return [(int) $globalIds[0]];
         }
 
-        return null;
+        return [];
     }
 
     /**
@@ -1058,24 +1049,24 @@ class ImportService
             throw new \Exception('Project tidak ditemukan. Pastikan nama project di benar atau pilih project di pengaturan global.');
         }
 
-        $branchId = $this->resolveBranchId($row, $mapping, $globalSettings, $projectId);
-        if (!$branchId) {
+        $branchIds = $this->resolveBranchIds($row, $mapping, $globalSettings, $projectId);
+        if (empty($branchIds)) {
             throw new \Exception('Cabang tidak ditemukan. Pastikan nama cabang di benar atau pilih cabang di pengaturan global.');
         }
 
         return [
             'project_id' => $projectId,
-            'branch_id' => $branchId,
+            'branch_ids' => $branchIds,
             'employee_id' => $c::extractField($row, $mapping, 'nik_tlj'),
             'position' => $c::extractField($row, $mapping, 'position'),
-            'hire_date' => $c::parseDate($c::extractField($row, $mapping, 'hire_date')) ?? now()->format('Y-m-d'),
+            'hire_date' => $c::parseDate($c::extractField($row, $mapping, 'hire_date')),
             'termination_date' => $terminationDate,
             'status' => $parsedStatus['status'],
         ];
     }
 
     /**
-     * Build Contract model data from a row (horizontal PKWT 1-8 to vertical).
+     * Build Contract model data from a row.
      *
      * @param array $row The row data.
      * @param array $mapping The column mapping.
@@ -1094,40 +1085,27 @@ class ImportService
             : $c::parseContractType($rawContractType);
 
         $evalNotes = $c::extractField($row, $mapping, 'evaluation_notes');
+        
+        $startRaw = $c::extractField($row, $mapping, 'contract_start');
+        $endRaw = $c::extractField($row, $mapping, 'contract_end');
 
-        // Process PKWT 1-8
-        for ($i = 1; $i <= 8; $i++) {
-            $startRaw = $c::extractField($row, $mapping, "pkwt_{$i}_start");
-            $start = $c::parseDate($startRaw);
+        $start = $c::parseDate($startRaw);
+        $end = $c::parseDate($endRaw);
 
-            if ($start) {
-                $endRaw = $c::extractField($row, $mapping, "pkwt_{$i}_end");
-                $end = $c::parseDate($endRaw);
-
-                $contracts[] = [
-                    'contract_type' => $contractType,
-                    'pkwt_type' => $contractType === 'Kontrak' ? 'PKWT' : null,
-                    'pkwt_number' => $contractType === 'Kontrak' ? $i : null,
-                    'start_date' => $start,
-                    'end_date' => $end,
-                    'evaluation_notes' => $evalNotes,
-                ];
-            }
+        // Jika tidak ada tanggal kontrak, gunakan tanggal masuk (yang mungkin null jika Harian)
+        if (!$start) {
+            $hireDateRaw = $c::extractField($row, $mapping, 'hire_date');
+            $start = $c::parseDate($hireDateRaw);
         }
 
-        // Check for PKWTT
-        $pkwttRaw = $c::extractField($row, $mapping, 'pkwtt_start');
-        $pkwttStart = $c::parseDate($pkwttRaw);
-        if ($pkwttStart) {
-            $contracts[] = [
-                'contract_type' => 'Kontrak',
-                'pkwt_type' => 'PKWTT',
-                'pkwt_number' => null,
-                'start_date' => $pkwttStart,
-                'end_date' => null,
-                'evaluation_notes' => $evalNotes,
-            ];
-        }
+        $contracts[] = [
+            'contract_type' => $contractType,
+            'pkwt_type' => $contractType === 'Kontrak' ? ($end ? 'PKWT' : 'PKWTT') : null,
+            'pkwt_number' => null, // Optional, no longer required
+            'start_date' => $start,
+            'end_date' => $end,
+            'evaluation_notes' => $evalNotes,
+        ];
 
         return $contracts;
     }
@@ -1295,10 +1273,7 @@ class ImportService
             'Tunjangan Transport', 'Lembur Weekday', 'Lembur Libur',
             'NPWP', 'Bank', 'Rekening', 'BPJS Kesehatan',
             'BPJS Ketenagakerjaan', 'No KTP', 'No KK', 'Ibu Kandung',
-            'PKWTT', 'PKWT 1 Start', 'PKWT 1 End', 'PKWT 2 Start', 'PKWT 2 End',
-            'PKWT 3 Start', 'PKWT 3 End', 'PKWT 4 Start', 'PKWT 4 End',
-            'PKWT 5 Start', 'PKWT 5 End', 'PKWT 6 Start', 'PKWT 6 End',
-            'PKWT 7 Start', 'PKWT 7 End', 'PKWT 8 Start', 'PKWT 8 End',
+            'Kontrak Start Date', 'Kontrak End Date',
             'Nama Istri/Suami (1)', 'Tempat Lahir Pasangan (1)',
             'Tanggal Lahir Pasangan (1)', 'NIK Pasangan (1)', 'BPJS Pasangan (1)',
             'Nama Anak 1 (1)', 'Tempat Lahir Anak 1 (1)',

@@ -78,7 +78,7 @@ class ProjectController extends Controller
             'assignments' => function ($query) {
                 $query->with([
                     'worker:id,nik_aru,name',
-                    'branch:id,name',
+                    'branches:id,name',
                     'contracts' => fn ($q) => $q->orderBy('start_date', 'desc'),
                 ]);
             },

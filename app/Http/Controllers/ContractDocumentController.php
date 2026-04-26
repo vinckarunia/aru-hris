@@ -20,7 +20,7 @@ class ContractDocumentController extends Controller
     {
         $user = $request->user();
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branch']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
@@ -77,7 +77,7 @@ class ContractDocumentController extends Controller
     {
         $user = $request->user();
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branch']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];

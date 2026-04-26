@@ -9,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 
 interface Branch { id: string; name: string; }
 interface Project { id: string; name: string; prefix: string; branches: Branch[]; }
-interface Assignment { id: string; worker_id: string; project_id: string; branch_id: string; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: string, name: string; nik_aru: string | null; } }
+interface Assignment { id: string; worker_id: string; project_id: string; branches: Branch[]; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: string, name: string; nik_aru: string | null; } }
 
 interface Props { assignment: Assignment; projects: Project[]; }
 
@@ -22,7 +22,7 @@ export default function Edit({ assignment, projects }: Props) {
 
     const { data, setData, put, processing, errors } = useForm({
         project_id: assignment.project_id.toString(),
-        branch_id: assignment.branch_id.toString(),
+        branch_ids: assignment.branches ? assignment.branches.map(b => b.id.toString()) : [] as string[],
         employee_id: assignment.employee_id || '',
         position: assignment.position || '',
         hire_date: assignment.hire_date || '',
@@ -83,20 +83,44 @@ export default function Edit({ assignment, projects }: Props) {
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <InputLabel htmlFor="project_id" value="Project" />
-                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_id', ''); }} required>
+                            <InputLabel htmlFor="project_id">Pilih Project <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                            <select id="project_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_ids', []); }} required>
                                 <option value="">-- Pilih Project --</option>
                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                             <InputError message={errors.project_id} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="branch_id" value="Cabang Spesifik" />
-                            <select id="branch_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md disabled:opacity-50" value={data.branch_id} onChange={e => setData('branch_id', e.target.value)} disabled={!data.project_id} required>
-                                <option value="">-- Pilih Cabang --</option>
-                                {availableBranches.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                            </select>
-                            <InputError message={errors.branch_id} className="mt-1" />
+                            <InputLabel htmlFor="branch_ids" value="Cabang Spesifik (Bisa Pilih >1)" />
+                            <div className="mt-1 block w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-900 rounded-md shadow-sm xl:max-h-48 max-h-32 overflow-y-auto p-2">
+                                {availableBranches.length > 0 ? (
+                                    <div className="space-y-1">
+                                        {availableBranches.map(b => (
+                                            <label key={b.id} className={`flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded border border-transparent transition-colors ${data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never) ? 'bg-primary/5 border-primary/20' : ''}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-slate-300 text-primary shadow-sm focus:border-primary focus:ring-primary h-4 w-4"
+                                                    checked={data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setData('branch_ids', [...data.branch_ids, b.id.toString() as never]);
+                                                        } else {
+                                                            setData('branch_ids', data.branch_ids.filter((id: any) => id.toString() !== b.id.toString()));
+                                                        }
+                                                    }}
+                                                    disabled={!data.project_id}
+                                                />
+                                                <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{b.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-3 text-sm text-slate-500 text-center italic">
+                                        {!data.project_id ? "Pilih project terlebih dahulu" : "Project ini belum memiliki cabang"}
+                                    </div>
+                                )}
+                            </div>
+                            <InputError message={errors.branch_ids} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="position" value="Jabatan / Posisi" />
@@ -109,8 +133,8 @@ export default function Edit({ assignment, projects }: Props) {
                             <InputError message={errors.employee_id} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date) <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required />
+                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date)</InputLabel>
+                            <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} />
                             <InputError message={errors.hire_date} className="mt-1" />
                         </div>
                         <div>
