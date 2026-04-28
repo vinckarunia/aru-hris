@@ -61,13 +61,15 @@ class UserManagementController extends Controller
             return back()->withErrors(['internal_employee_id' => 'User dengan role ARU harus dihubungkan dengan data karyawan internal.']);
         }
 
-        User::create([
+        $newUser = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'internal_employee_id' => $validated['role'] === UserRole::ADMIN_ARU->value ? ($validated['internal_employee_id'] ?? null) : null,
         ]);
+
+        \App\Models\AuditLog::log('create', 'user', "Membuat user: {$newUser->name} ({$newUser->role})", ['target_user_id' => $newUser->id]);
 
         return redirect()->back()->with('message', 'User berhasil ditambahkan.');
     }
@@ -107,6 +109,8 @@ class UserManagementController extends Controller
 
         $user->update($data);
 
+        \App\Models\AuditLog::log('update', 'user', "Memperbarui user: {$user->name}", ['target_user_id' => $user->id, 'changes' => $user->getChanges()]);
+
         return redirect()->back()->with('message', 'User berhasil diperbarui.');
     }
 
@@ -120,6 +124,7 @@ class UserManagementController extends Controller
             return back()->withErrors(['error' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
         }
 
+        \App\Models\AuditLog::log('delete', 'user', "Menghapus user: {$user->name}", ['target_user_id' => $user->id]);
         $user->delete();
         return redirect()->back()->with('message', 'User berhasil dihapus.');
     }

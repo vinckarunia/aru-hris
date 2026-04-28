@@ -110,6 +110,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings/reset-data', [\App\Http\Controllers\SettingController::class, 'resetData'])->name('settings.reset-data');
         Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
 
+        Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+
 
         // Reports (Query Builder)
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

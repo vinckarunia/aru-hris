@@ -129,6 +129,8 @@ class ProjectController extends Controller
             $project->pics()->attach($validated['pic_ids']);
         }
 
+        \App\Models\AuditLog::log('create', 'project', "Menambahkan project: {$project->name}", ['project_id' => $project->id]);
+
         return redirect()->back()->with('message', 'Project berhasil ditambahkan.');
     }
 
@@ -172,6 +174,8 @@ class ProjectController extends Controller
             $project->pics()->sync($validated['pic_ids'] ?? []);
         }
 
+        \App\Models\AuditLog::log('update', 'project', "Memperbarui project: {$project->name}", ['project_id' => $project->id, 'changes' => $project->getChanges()]);
+
         return redirect()->back()->with('message', 'Project berhasil diperbarui.');
     }
 
@@ -189,6 +193,7 @@ class ProjectController extends Controller
                 'termination_date' => now(),
             ]);
 
+        \App\Models\AuditLog::log('delete', 'project', "Menghapus project: {$project->name}", ['project_id' => $project->id]);
         $project->delete();
         return redirect()->back()->with('message', 'Project berhasil dihapus dan seluruh penempatan aktif telah diubah menjadi Project Closed.');
     }

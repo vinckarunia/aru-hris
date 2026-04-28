@@ -19,6 +19,9 @@ class DataRequestController extends Controller
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc');
         $type = $request->input('type', 'data_change'); // Tab selection
+        $search = $request->input('search');
+        $projectId = $request->input('project_id');
+        $requesterId = $request->input('requester_id');
 
         $query = DataRequest::with(['worker', 'project:id,name', 'requester:id,name,role', 'reviewer:id,name', 'picReviewer:id,name'])
                     ->where('request_type', $type);
@@ -27,10 +30,24 @@ class DataRequestController extends Controller
             $query->where('worker_id', $user->worker_id);
         } elseif ($user->isPic()) {
             // Get project_ids handled by this PIC
-            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id') : [];
-            $query->whereIn('project_id', $projectIds);
+            $picProjectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            $query->whereIn('project_id', $picProjectIds);
         }
-        // Super Admin and Admin ARU can view all records
+
+        if ($search) {
+            $query->whereHas('worker', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nik_aru', 'like', "%{$search}%");
+            });
+        }
+
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        if ($requesterId && $user->isAdminOrAbove()) {
+            $query->where('requested_by', $requesterId);
+        }
 
         $status = $request->input('status');
 
@@ -58,12 +75,13 @@ class DataRequestController extends Controller
             $query->where('data_requests.status', $status);
         }
 
-        $dataRequests = $query->get();
+        $dataRequests = $query->paginate(20)->withQueryString();
 
-        // Post-process: resolve FK IDs to human-readable names
-        $dataRequests->each(function ($dr) {
+        // Post-process: resolve FK IDs to human-readable names format requires iteration over Collection rather than Builder collection
+        // However, using tap or through over pagination allows this
+        $dataRequests->getCollection()->transform(function ($dr) {
             $data = $dr->requested_data;
-            if (!is_array($data)) return;
+            if (!is_array($data)) return $dr;
 
             $resolved = [];
 
@@ -94,15 +112,31 @@ class DataRequestController extends Controller
                 $data['_resolved_labels'] = $resolved;
                 $dr->requested_data = $data;
             }
+            return $dr;
         });
+
+        $filterOptions = [];
+        if ($user->isAdminOrAbove()) {
+            $filterOptions['projects'] = Project::orderBy('name')->get(['id', 'name']);
+            // Distinct requesters from data_requests table
+            $requesterIds = DataRequest::distinct()->pluck('requested_by')->filter();
+            $filterOptions['requesters'] = \App\Models\User::whereIn('id', $requesterIds)->orderBy('name')->get(['id', 'name']);
+        } elseif ($user->isPic()) {
+            $picProjectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            $filterOptions['projects'] = Project::whereIn('id', $picProjectIds)->orderBy('name')->get(['id', 'name']);
+        }
 
         return Inertia::render('DataRequest/Index', [
             'dataRequests' => $dataRequests,
+            'filterOptions' => $filterOptions,
             'filters' => [
                 'sort' => $sort,
                 'direction' => $direction,
                 'status' => $status,
                 'type' => $type,
+                'search' => $search,
+                'project_id' => $projectId,
+                'requester_id' => $requesterId,
             ],
         ]);
     }
@@ -252,6 +286,11 @@ class DataRequestController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $actionLog = $validated['status'] === 'approved' ? 'approve' : 'reject';
+        $statusText = $validated['status'] === 'approved' ? 'menyetujui' : 'menolak';
+        $workerName = \App\Models\Worker::find($dataRequest->worker_id)?->name ?? 'Unknown Worker';
+        \App\Models\AuditLog::log($actionLog, 'data_request', ucfirst($statusText) . " data request #{$dataRequest->id} untuk karyawan: {$workerName}", ['data_request_id' => $dataRequest->id, 'type' => $dataRequest->request_type]);
+
         $message = 'Review status berhasil diupdate.';
 
         // If Approved, automatically apply the requested changes payload to the actual Worker record
@@ -351,6 +390,11 @@ class DataRequestController extends Controller
                     'review_notes' => $validated['review_notes'],
                     'reviewed_at' => now(),
                 ]);
+
+                $actionLog = $validated['status'] === 'approved' ? 'approve' : 'reject';
+                $statusText = $validated['status'] === 'approved' ? 'menyetujui' : 'menolak';
+                $workerName = \App\Models\Worker::find($dataRequest->worker_id)?->name ?? 'Unknown Worker';
+                \App\Models\AuditLog::log($actionLog, 'data_request', ucfirst($statusText) . " data request #{$dataRequest->id} untuk karyawan: {$workerName} (Bulk)", ['data_request_id' => $dataRequest->id, 'type' => $dataRequest->request_type]);
 
                 if ($validated['status'] === 'approved' && is_array($dataRequest->requested_data)) {
                     $worker = $this->applyApprovedChanges($dataRequest, $user);

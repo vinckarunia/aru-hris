@@ -323,7 +323,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                             <iconify-icon icon="solar:filter-linear" width="18"></iconify-icon>
                             Filter
                             {activeFilterCount > 0 && (
-                                <span className="ml-1 inline-flex items-center justify-onPageChange bg-primary text-white text-xs font-bold h-4 w-4 rounded-full">
+                                <span className="ml-1 inline-flex items-center justify-center bg-primary text-white text-xs font-bold h-4 w-4 rounded-full">
                                     {activeFilterCount}
                                 </span>
                             )}

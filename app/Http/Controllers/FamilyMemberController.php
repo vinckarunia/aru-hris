@@ -49,7 +49,9 @@ class FamilyMemberController extends Controller
             return redirect()->back()->with('success', 'Pengajuan tambah keluarga sukses direkam dan menunggu persetujuan Admin.');
         }
 
-        FamilyMember::create($validated);
+        $familyMember = FamilyMember::create($validated);
+
+        \App\Models\AuditLog::log('create', 'family_member', "Menambahkan data keluarga: {$familyMember->name}", ['family_member_id' => $familyMember->id, 'worker_id' => $familyMember->worker_id]);
 
         return redirect()->back()->with('success', 'Family member added successfully.');
     }
@@ -90,6 +92,8 @@ class FamilyMemberController extends Controller
 
         $familyMember->update($validated);
 
+        \App\Models\AuditLog::log('update', 'family_member', "Memperbarui data keluarga: {$familyMember->name}", ['family_member_id' => $familyMember->id, 'worker_id' => $familyMember->worker_id, 'changes' => $familyMember->getChanges()]);
+
         return redirect()->back()->with('success', 'Family member updated successfully.');
     }
 
@@ -117,6 +121,7 @@ class FamilyMemberController extends Controller
             return redirect()->back()->with('success', 'Pengajuan hapus data keluarga sukses direkam dan menunggu persetujuan Admin.');
         }
 
+        \App\Models\AuditLog::log('delete', 'family_member', "Menghapus data keluarga: {$familyMember->name}", ['family_member_id' => $familyMember->id, 'worker_id' => $familyMember->worker_id]);
         $familyMember->delete();
 
         return redirect()->back()->with('success', 'Family member removed successfully.');

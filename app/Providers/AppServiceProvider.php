@@ -27,5 +27,15 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Contract::observe(\App\Observers\ContractObserver::class);
         \App\Models\Client::observe(\App\Observers\ClientObserver::class);
         \App\Models\Project::observe(\App\Observers\ProjectObserver::class);
+
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) {
+            \App\Models\AuditLog::log('login', 'auth', "User {$event->user->name} berhasil login", null, $event->user->id);
+        });
+
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($event) {
+            if ($event->user) {
+                \App\Models\AuditLog::log('logout', 'auth', "User {$event->user->name} berhasil logout", null, $event->user->id);
+            }
+        });
     }
 }

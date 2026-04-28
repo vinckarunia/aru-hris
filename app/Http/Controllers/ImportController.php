@@ -254,6 +254,8 @@ class ImportController extends Controller
         $activeSheetName = $request->input('active_sheet_name');
         ProcessBulkImport::dispatch($sessionId, $mapping, $globalSettings, auth()->id(), $rowActions, $headerRow, $activeSheetName);
 
+        \App\Models\AuditLog::log('import', 'import', "Memulai bulk import data karyawan (Sesi: {$sessionId})", ['session_id' => $sessionId]);
+
         // Auto-start queue worker in background (stops when empty)
         // Using terminating callback avoids exec() function which is typically disabled on shared hosting
         app()->terminating(function () {

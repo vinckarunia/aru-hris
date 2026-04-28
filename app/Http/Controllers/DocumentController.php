@@ -151,6 +151,8 @@ class DocumentController extends Controller
             'verified_at' => now(),
         ]);
 
+        \App\Models\AuditLog::log('upload', 'document', "Mengunggah dokumen {$validated['type']} untuk karyawan: {$worker->name}", ['worker_id' => $worker->id]);
+
         return redirect()->back()->with('success', 'Dokumen berhasil diunggah dan diverifikasi secara native.');
     }
 
@@ -185,6 +187,7 @@ class DocumentController extends Controller
         }
 
         $this->disk()->delete($document->file_path);
+        \App\Models\AuditLog::log('delete', 'document', "Menghapus dokumen {$document->type}", ['document_id' => $document->id, 'worker_id' => $document->worker_id]);
         $document->delete();
 
         return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
@@ -238,9 +241,11 @@ class DocumentController extends Controller
         if ($document->verified_at) {
             $document->update(['verified_at' => null]);
             $message = 'Verifikasi dokumen berhasil dibatalkan.';
+            \App\Models\AuditLog::log('update', 'document', "Membatalkan verifikasi dokumen {$document->type}", ['document_id' => $document->id]);
         } else {
             $document->update(['verified_at' => now()]);
             $message = 'Dokumen berhasil diverifikasi.';
+            \App\Models\AuditLog::log('approve', 'document', "Memverifikasi dokumen {$document->type}", ['document_id' => $document->id]);
         }
 
         return redirect()->back()->with('success', $message);

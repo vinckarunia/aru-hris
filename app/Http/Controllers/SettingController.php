@@ -50,6 +50,8 @@ class SettingController extends Controller
             );
         }
 
+        \App\Models\AuditLog::log('settings', 'settings', "Memperbarui pengaturan sistem", ['keys' => array_keys($validated['settings'])]);
+
         return Redirect::route('settings.index')->with('success', 'Pengaturan sistem berhasil diperbarui.');
     }
 
@@ -142,6 +144,8 @@ class SettingController extends Controller
             ['value' => 'assets/' . $filename, 'group' => 'assets']
         );
 
+        \App\Models\AuditLog::log('upload', 'settings', "Mengunggah aset perusahaan ({$type})", ['type' => $type]);
+
         return Redirect::route('settings.index')->with('success', ucfirst($type) . ' berhasil diunggah dan background dihapus.');
     }
     public function resetData(Request $request)
@@ -180,6 +184,8 @@ class SettingController extends Controller
             \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('documents');
             \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('photos');
         });
+
+        \App\Models\AuditLog::log('settings', 'settings', "Melakukan penghapusan seluruh data operasional");
 
         return Redirect::route('settings.index')->with('success', 'Semua data operasional berhasil dihapus.');
     }
@@ -236,6 +242,8 @@ class SettingController extends Controller
 
         // Log the user back in
         \Illuminate\Support\Facades\Auth::login($newSuperAdmin);
+
+        \App\Models\AuditLog::log('settings', 'settings', "Melakukan Factory Reset sistem");
 
         return Redirect::route('settings.index')->with('success', 'Sistem berhasil di-reset ke pengaturan pabrik.');
     }

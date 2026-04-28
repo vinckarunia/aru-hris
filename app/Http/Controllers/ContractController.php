@@ -123,6 +123,8 @@ class ContractController extends Controller
             ]);
         });
 
+        \App\Models\AuditLog::log('create', 'contract', "Membuat kontrak baru untuk assignment #{$request->assignment_id}", ['assignment_id' => $request->assignment_id]);
+
         return redirect()->route('assignments.show', \App\Models\Assignment::encodeHashid($request->assignment_id))->with('message', 'Kontrak & Kompensasi berhasil dibuat!');
     }
 
@@ -248,6 +250,8 @@ class ContractController extends Controller
             }
         });
 
+        \App\Models\AuditLog::log('update', 'contract', "Memperbarui kontrak #{$contract->id}", ['contract_id' => $contract->id]);
+
         return redirect()->route('contracts.show', $contract)->with('message', 'Kontrak & Kompensasi berhasil diperbarui!');
     }
 
@@ -289,6 +293,7 @@ class ContractController extends Controller
         }
 
         $assignmentId = $contract->assignment_id;
+        \App\Models\AuditLog::log('delete', 'contract', "Menghapus kontrak #{$contract->id}", ['contract_id' => $contract->id, 'assignment_id' => $assignmentId]);
         $contract->delete();
         
         return redirect()->route('assignments.show', \App\Models\Assignment::encodeHashid($assignmentId))->with('message', 'Kontrak berhasil dihapus.');

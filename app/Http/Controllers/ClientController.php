@@ -121,7 +121,9 @@ class ClientController extends Controller implements HasMiddleware
             'mou_end_date' => 'nullable|date|after_or_equal:mou_start_date',
         ]);
 
-        Client::create($validated);
+        $client = Client::create($validated);
+
+        \App\Models\AuditLog::log('create', 'client', "Menambahkan client: {$client->short_name}", ['client_id' => $client->id]);
 
         return redirect()->back()->with('message', 'Client berhasil ditambahkan.');
     }
@@ -144,6 +146,8 @@ class ClientController extends Controller implements HasMiddleware
 
         $client->update($validated);
 
+        \App\Models\AuditLog::log('update', 'client', "Memperbarui client: {$client->short_name}", ['client_id' => $client->id, 'changes' => $client->getChanges()]);
+
         return redirect()->back()->with('message', 'Client berhasil diperbarui.');
     }
 
@@ -155,6 +159,7 @@ class ClientController extends Controller implements HasMiddleware
      */
     public function destroy(Client $client): RedirectResponse
     {
+        \App\Models\AuditLog::log('delete', 'client', "Menghapus client: {$client->short_name}", ['client_id' => $client->id]);
         $client->delete();
 
         return redirect()->back()->with('message', 'Client berhasil dihapus.');

@@ -168,6 +168,8 @@ class WorkerController extends Controller
 
         $worker = Worker::create($validated);
 
+        \App\Models\AuditLog::log('create', 'worker', "Menambahkan karyawan: {$worker->name}", ['worker_id' => $worker->id]);
+
         return redirect()->route('assignments.create', ['worker_id' => $worker->id])
                          ->with('message', 'Karyawan berhasil ditambahkan. Silahkan lengkapi penempatan project.');
     }
@@ -249,7 +251,10 @@ class WorkerController extends Controller
         if ($request->user()->isWorker() || $request->user()->isPic()) abort(403, 'Akses ditolak. Silahkan gunakan fitur Ajukan Perubahan Data.');
         $validated = $request->validate($this->getValidationRules($worker->id), $this->getValidationMessages());
 
+        $oldData = $worker->getOriginal();
         $worker->update($validated);
+
+        \App\Models\AuditLog::log('update', 'worker', "Memperbarui data karyawan: {$worker->name}", ['worker_id' => $worker->id, 'changes' => $worker->getChanges()]);
 
         return redirect()->route('workers.show', $worker)->with('message', 'Data karyawan berhasil diperbarui.');
     }
@@ -267,6 +272,7 @@ class WorkerController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk menghapus data karyawan.');
         }
 
+        \App\Models\AuditLog::log('delete', 'worker', "Menghapus karyawan: {$worker->name}", ['worker_id' => $worker->id]);
         $worker->delete();
         return redirect()->route('workers.index')->with('message', 'Karyawan berhasil dihapus.');
     }

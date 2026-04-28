@@ -95,7 +95,9 @@ class BranchController extends Controller
             'name.unique' => 'Nama cabang ini sudah ada di Perusahaan Client tersebut.',
         ]);
 
-        Branch::create($validated);
+        $branch = Branch::create($validated);
+
+        \App\Models\AuditLog::log('create', 'branch', "Menambahkan cabang: {$branch->name}", ['branch_id' => $branch->id]);
 
         return redirect()->back()->with('message', 'Cabang berhasil ditambahkan.');
     }
@@ -124,6 +126,8 @@ class BranchController extends Controller
 
         $branch->update($validated);
 
+        \App\Models\AuditLog::log('update', 'branch', "Memperbarui cabang: {$branch->name}", ['branch_id' => $branch->id, 'changes' => $branch->getChanges()]);
+
         return redirect()->back()->with('message', 'Cabang berhasil diperbarui.');
     }
 
@@ -135,6 +139,7 @@ class BranchController extends Controller
      */
     public function destroy(Branch $branch): RedirectResponse
     {
+        \App\Models\AuditLog::log('delete', 'branch', "Menghapus cabang: {$branch->name}", ['branch_id' => $branch->id]);
         $branch->delete();
 
         return redirect()->back()->with('message', 'Cabang berhasil dihapus.');

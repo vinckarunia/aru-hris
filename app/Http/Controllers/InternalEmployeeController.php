@@ -52,7 +52,9 @@ class InternalEmployeeController extends Controller
     {
         $validated = $request->validate($this->getValidationRules(), $this->getValidationMessages());
 
-        InternalEmployee::create($validated);
+        $employee = InternalEmployee::create($validated);
+
+        \App\Models\AuditLog::log('create', 'internal_employee', "Menambahkan karyawan internal: {$employee->name}", ['internal_employee_id' => $employee->id]);
 
         return redirect()->route('internal-employees.index')
             ->with('message', 'Karyawan internal berhasil ditambahkan.');
@@ -100,6 +102,8 @@ class InternalEmployeeController extends Controller
 
         $internalEmployee->update($validated);
 
+        \App\Models\AuditLog::log('update', 'internal_employee', "Memperbarui karyawan internal: {$internalEmployee->name}", ['internal_employee_id' => $internalEmployee->id, 'changes' => $internalEmployee->getChanges()]);
+
         return redirect()->route('internal-employees.show', $internalEmployee)
             ->with('message', 'Data karyawan internal berhasil diperbarui.');
     }
@@ -112,6 +116,7 @@ class InternalEmployeeController extends Controller
      */
     public function destroy(InternalEmployee $internalEmployee): RedirectResponse
     {
+        \App\Models\AuditLog::log('delete', 'internal_employee', "Menghapus karyawan internal: {$internalEmployee->name}", ['internal_employee_id' => $internalEmployee->id]);
         $internalEmployee->delete();
 
         return redirect()->route('internal-employees.index')

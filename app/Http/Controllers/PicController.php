@@ -67,6 +67,8 @@ class PicController extends Controller
             $pic->projects()->attach($validated['project_ids']);
         }
 
+        \App\Models\AuditLog::log('create', 'pic', "Menambahkan profil PIC untuk user: {$user->name}", ['pic_id' => $pic->id, 'user_id' => $user->id]);
+
         return redirect()->back()->with('message', 'Profil PIC berhasil dibuat.');
     }
 
@@ -89,11 +91,14 @@ class PicController extends Controller
             $pic->projects()->detach();
         }
 
+        \App\Models\AuditLog::log('update', 'pic', "Memperbarui profil PIC: {$pic->name}", ['pic_id' => $pic->id, 'changes' => $pic->getChanges()]);
+
         return redirect()->back()->with('message', 'Profil PIC berhasil diperbarui.');
     }
 
     public function destroy(Pic $pic): RedirectResponse
     {
+        \App\Models\AuditLog::log('delete', 'pic', "Menghapus profil PIC: {$pic->name}", ['pic_id' => $pic->id]);
         $pic->delete();
         return redirect()->back()->with('message', 'Profil PIC berhasil dihapus.');
     }

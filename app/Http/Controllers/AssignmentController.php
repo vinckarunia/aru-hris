@@ -146,6 +146,8 @@ class AssignmentController extends Controller
         $assignment = Assignment::create($validated);
         $assignment->branches()->sync($branchIds);
 
+        \App\Models\AuditLog::log('create', 'assignment', "Menambahkan penempatan untuk worker #{$validated['worker_id']} ke project #{$validated['project_id']}", ['assignment_id' => $assignment->id]);
+
         // Generate a fresh NIK ARU based on the assigned project.
         if (is_null($validated['termination_date'] ?? null)) {
             $worker  = Worker::find($validated['worker_id']);
@@ -306,6 +308,8 @@ class AssignmentController extends Controller
         $assignment->update($validated);
         $assignment->branches()->sync($branchIds);
 
+        \App\Models\AuditLog::log('update', 'assignment', "Memperbarui penempatan #{$assignment->id}", ['assignment_id' => $assignment->id, 'changes' => $assignment->getChanges()]);
+
         $worker = Worker::find($assignment->worker_id);
 
         if (!$isNowActive) {
@@ -356,6 +360,7 @@ class AssignmentController extends Controller
         }
 
         $worker = Worker::find($assignment->worker_id); // Get worker before assignment is deleted
+        \App\Models\AuditLog::log('delete', 'assignment', "Menghapus penempatan #{$assignment->id} untuk karyawan: {$worker->name}", ['assignment_id' => $assignment->id]);
         $assignment->delete();
 
         // After deletion, clear the worker's NIK — they have no active assignment.
