@@ -21,3 +21,9 @@ Artisan::command('inspire', function () {
  */
 Schedule::job(new ProcessReminders)->daily();
 
+/**
+ * Schedule the database backup to run daily at midnight.
+ * The backup will be saved in the storage/app/backups directory.
+ */
+Schedule::command('db:backup')->daily();
+
