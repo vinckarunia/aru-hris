@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -114,6 +114,27 @@ const calculateIdleDuration = (terminationDate?: string) => {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl p-3 text-sm">
+                {label && <p className="font-semibold text-slate-800 dark:text-white mb-2">{label}</p>}
+                {payload.map((entry: any, index: number) => {
+                    const itemName = entry.name === 'Jumlah' ? (label || entry.name) : entry.name;
+                    return (
+                        <div key={`item-${index}`} className="flex items-center gap-2 mt-1">
+                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                            <span className="text-slate-600 dark:text-slate-300 font-medium">{itemName}:</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-100">{entry.value}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+    return null;
+};
+
 /**
  * Dashboard Component
  *
@@ -127,9 +148,43 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
     const { quick_stats, alerts, charts, recent_assignments } = dashboardData;
     const isPic = auth.user.role === 'PIC';
 
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['dashboardData', 'remindersSummary']
+            });
+        }, 15000); // 15 seconds polling
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleManualRefresh = () => {
+        setIsRefreshing(true);
+        router.reload({
+            only: ['dashboardData', 'remindersSummary'],
+            onFinish: () => setIsRefreshing(false)
+        });
+    };
+
     return (
         <AdminLayout title="Dashboard" header="Dashboard">
             <Head title="Dashboard Overview" />
+
+            {!isPic && (
+            <div className="flex justify-between items-end mb-6">
+                <div></div> {/* Placeholder for flex alignment if needed */}
+                <button
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium disabled:opacity-50"
+                >
+                    <iconify-icon icon="solar:refresh-linear" width="16" className={isRefreshing ? "animate-spin" : ""}></iconify-icon>
+                    {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
+                </button>
+            </div>
+            )}
 
             <div className="space-y-6">
                 {/* FR-DASH-01: Quick Statistics */}
@@ -195,6 +250,22 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                             <p className="text-xs text-slate-400 dark:text-slate-500">Karyawan dengan status non-aktif</p>
                         </Link>
                     )}
+
+                    <div></div>
+
+                    {isPic && (
+                        <div className="flex justify-between items-start mb-6">
+                            <div></div> {/* Placeholder for flex alignment if needed */}
+                            <button
+                                onClick={handleManualRefresh}
+                                disabled={isRefreshing}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium disabled:opacity-50"
+                            >
+                                <iconify-icon icon="solar:refresh-linear" width="16" className={isRefreshing ? "animate-spin" : ""}></iconify-icon>
+                                {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
+                            </button>
+                        </div>
+                        )}
                 </div>
 
                 {/* Main Content Layout */}
@@ -230,7 +301,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                         ))}
                                                     </Pie>
-                                                    <RechartsTooltip />
+                                                    <RechartsTooltip content={<CustomTooltip />} />
                                                     <Legend />
                                                 </PieChart>
                                             </ResponsiveContainer>
@@ -256,7 +327,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                                 <XAxis dataKey="status" tick={{ fill: '#64748b', fontSize: 12 }} />
                                                 <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
-                                                <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                                                <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} content={<CustomTooltip />} />
                                                 <Bar dataKey="count" name="Jumlah" fill="#8B2E8B" radius={[4, 4, 0, 0]} barSize={40}>
                                                     {charts.employment_demographics.map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -275,6 +346,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                         </div>
 
                         {/* Data Grid */}
+                        {!isPic && (
                         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
                             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                                 <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -318,7 +390,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                 </table>
                             </div>
                         </div>
-
+                        )}
                     </div>
 
                     {/* Actionable Alerts & Quick Actions */}
@@ -389,7 +461,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                             </div>
                         )}
 
-                        {/* Quick Actions (Admin Only) */}
+                        {/* Quick Actions */}
                         {!isPic && (
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
@@ -405,20 +477,55 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                             <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Karyawan Baru</h4>
                                         </div>
                                     </Link>
-                                    <Link href={route('workers.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                    <Link href={route('workers.import.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
                                         <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                            <iconify-icon icon="solar:document-add-bold" width="20"></iconify-icon>
+                                            <iconify-icon icon="solar:import-bold" width="20"></iconify-icon>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Buat Penempatan</h4>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Bulk Import Data</h4>
                                         </div>
                                     </Link>
-                                    <Link href={route('clients.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                    <Link href={route('data-requests.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
                                         <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                                            <iconify-icon icon="solar:buildings-bold" width="20"></iconify-icon>
+                                            <iconify-icon icon="solar:file-check-bold" width="20"></iconify-icon>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Client/Project</h4>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Daftar Data Request</h4>
+                                        </div>
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
+
+                        {isPic && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                    <iconify-icon icon="solar:electric-plug-bold" className="text-primary"></iconify-icon>
+                                    Akses Cepat
+                                </h3>
+                                <div className="grid grid-cols-1 gap-3">
+                                    <Link href={route('workers.create')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                                            <iconify-icon icon="solar:user-plus-bold" width="20"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Tambah Karyawan Baru</h4>
+                                        </div>
+                                    </Link>
+                                    <Link href={route('workers.import.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                            <iconify-icon icon="solar:import-bold" width="20"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Bulk Import Data</h4>
+                                        </div>
+                                    </Link>
+                                    <Link href={route('reminders.index')} className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700 rounded-xl transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group">
+                                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                            <iconify-icon icon="solar:bell-bing-bold" width="20"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Lihat Reminder</h4>
                                         </div>
                                     </Link>
                                 </div>
@@ -475,6 +582,51 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                         )}
                     </div>
                 </div>
+                {isPic && (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <iconify-icon icon="solar:history-bold" className="text-primary"></iconify-icon>
+                            Penempatan Terbaru
+                        </h3>
+                        <Link href={route('workers.index')} className="text-sm text-primary hover:underline font-semibold">Lihat Semua</Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left whitespace-nowrap">
+                            <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
+                                <tr>
+                                    <th className="px-6 py-3">Nama Karyawan</th>
+                                    <th className="px-6 py-3">Client</th>
+                                    <th className="px-6 py-3">Project</th>
+                                    <th className="px-6 py-3">Tgl Mulai</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
+                                {recent_assignments.length > 0 ? (
+                                    recent_assignments.map((assignment) => (
+                                        <tr key={assignment.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                            <td className="px-6 py-3">
+                                                <Link href={route('workers.show', assignment.worker.id)} className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                                                    {assignment.worker.name}
+                                                </Link>
+                                            </td>
+                                            <td className="px-6 py-3">{assignment.project?.client?.short_name || '-'}</td>
+                                            <td className="px-6 py-3">{assignment.project?.name || '-'}</td>
+                                            <td className="px-6 py-3">{formatDate(assignment.hire_date)}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-8 text-center text-slate-400 italic">
+                                            Belum ada histori penempatan.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                )}
             </div>
         </AdminLayout>
     );

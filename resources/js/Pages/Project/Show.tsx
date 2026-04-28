@@ -268,12 +268,18 @@ export default function Show({ project }: Props) {
                             )}
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             {/* Branch badges */}
-                            <div className="flex flex-wrap gap-1.5">
-                                {project.branches.map(branch => (
-                                    <Link href={route('branches.show', branch.id)} key={branch.id} className="flex items-center gap-1.5 hover:text-primary transition-colors">
-                                        <iconify-icon icon="solar:buildings-bold" width="14"></iconify-icon>
-                                        Cabang: {branch.name}
-                                    </Link>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="flex items-center gap-1.5">
+                                    <iconify-icon icon="solar:buildings-bold" width="14"></iconify-icon>
+                                    Cabang:
+                                </span>
+                                {project.branches.map((branch, idx) => (
+                                    <React.Fragment key={branch.id}>
+                                        <Link href={route('branches.show', branch.id)} className="hover:text-primary transition-colors">
+                                            {branch.name}
+                                        </Link>
+                                        {idx < project.branches.length - 1 && <span className="text-slate-400 mr-1">,</span>}
+                                    </React.Fragment>
                                 ))}
                             </div>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>

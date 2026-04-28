@@ -32,7 +32,7 @@ class DashboardController extends Controller
      */
     public function index(): Response
     {
-        $cacheTtl = 60 * 15; // 15 minutes cache
+        $cacheTtl = 15; // 15 seconds cache
 
         $user = auth()->user();
         $isPic = $user && $user->isPic();
