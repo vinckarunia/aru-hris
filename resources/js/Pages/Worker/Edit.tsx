@@ -18,12 +18,14 @@ interface Worker {
     bpjs_ketenagakerjaan: string | null; bank_name: string | null; bank_account_number: string | null;
 }
 
-interface Props { worker: Worker; }
+interface Props {
+    worker: Worker;
+    validationDigits?: Record<string, number>;
+    validationEnums?: Record<string, { value: string; label: string; enabled: boolean }[]>;
+}
 
 /**
  * List of banks grouped by category for the bank selection dropdown.
- * The flat list is used to determine if the worker's current bank is in the predefined options.
- * If not, the "Lainnya" option will be selected and a text input will appear for manual entry.
  */
 const BANK_OPTIONS = [
     { group: "Bank BUMN / HIMBARA", banks: ["Bank Mandiri", "Bank Rakyat Indonesia (BRI)", "Bank Negara Indonesia (BNI)", "Bank Tabungan Negara (BTN)", "Bank Syariah Indonesia (BSI)"] },
@@ -34,12 +36,10 @@ const BANK_OPTIONS = [
 
 const FLAT_BANK_LIST = BANK_OPTIONS.flatMap(group => group.banks);
 
-/**
- * Worker Edit Page Component
- *
- * Provides a comprehensive form to update an existing worker's data.
- */
-export default function Edit({ worker }: Props) {
+export default function Edit({ worker, validationDigits, validationEnums }: Props) {
+    const digits = validationDigits ?? { ktp: 16, kk: 16, npwp: 16, bpjs_kes: 13, bpjs_tk: 11 };
+    const enums = validationEnums ?? {};
+    const enabledOptions = (key: string) => (enums[key] || []).filter(i => i.enabled);
     const { data, setData, put, processing, errors } = useForm({
         nik_aru: worker.nik_aru || '', name: worker.name || '', ktp_number: worker.ktp_number || '',
         kk_number: worker.kk_number || '', birth_place: worker.birth_place || '', birth_date: worker.birth_date || '',
@@ -139,7 +139,7 @@ export default function Edit({ worker }: Props) {
                             <InputLabel htmlFor="religion" value="Agama" />
                             <select id="religion" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.religion} onChange={e => setData('religion', e.target.value)}>
                                 <option value="">-- Pilih --</option>
-                                <option value="Islam">Islam</option><option value="Kristen">Kristen</option><option value="Katolik">Katolik</option><option value="Hindu">Hindu</option><option value="Buddha">Buddha</option><option value="Konghucu">Konghucu</option><option value="Lainnya">Lainnya</option>
+                                {enabledOptions('religion').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <InputError message={errors.religion} className="mt-1" />
                         </div>
@@ -147,16 +147,7 @@ export default function Edit({ worker }: Props) {
                             <InputLabel htmlFor="education" value="Pendidikan Terakhir" />
                             <select id="education" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.education} onChange={e => setData('education', e.target.value)}>
                                 <option value="">-- Pilih Jenjang --</option>
-                                <option value="SD">SD / Sederajat</option>
-                                <option value="SMP">SMP / Sederajat</option>
-                                <option value="SMA/SMK">SMA / SMK / Sederajat</option>
-                                <option value="D1">Diploma 1 (D1)</option>
-                                <option value="D2">Diploma 2 (D2)</option>
-                                <option value="D3">Diploma 3 (D3)</option>
-                                <option value="D4">Diploma 4 (D4)</option>
-                                <option value="S1">Strata 1 (S1)</option>
-                                <option value="S2">Strata 2 (S2)</option>
-                                <option value="S3">Strata 3 (S3)</option>
+                                {enabledOptions('education').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <InputError message={errors.education} className="mt-1" />
                         </div>
@@ -193,8 +184,7 @@ export default function Edit({ worker }: Props) {
                             <InputLabel htmlFor="tax_status" value="Status PTKP (Pajak)" />
                             <select id="tax_status" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.tax_status} onChange={e => setData('tax_status', e.target.value)}>
                                 <option value="">-- Pilih --</option>
-                                <option value="TK/0">TK/0</option><option value="TK/1">TK/1</option><option value="TK/2">TK/2</option><option value="TK/3">TK/3</option>
-                                <option value="K/0">K/0</option><option value="K/1">K/1</option><option value="K/2">K/2</option><option value="K/3">K/3</option>
+                                {enabledOptions('tax_status').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <InputError message={errors.tax_status} className="mt-1" />
                         </div>

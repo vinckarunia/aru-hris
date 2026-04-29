@@ -125,18 +125,20 @@ class InternalEmployeeController extends Controller
 
     /**
      * Define validation rules for internal employee data.
-     * Mirrors the Worker validation rules with additional fields for position, department, etc.
+     * Digit lengths are loaded dynamically from system settings.
      *
      * @param int|null $employeeId Optional employee ID to ignore for unique checks during updates.
      * @return array
      */
     private function getValidationRules(?int $employeeId = null): array
     {
+        $digits = \App\Http\Controllers\SettingController::getValidationDigits();
+
         return [
             'nik_aru' => ['nullable', 'string', 'max:50', Rule::unique('internal_employees')->ignore($employeeId)],
             'name' => 'required|string|max:255',
-            'ktp_number' => ['required', 'digits:16', Rule::unique('internal_employees')->ignore($employeeId)],
-            'kk_number' => 'nullable|digits:16',
+            'ktp_number' => ['required', 'digits:' . $digits['ktp'], Rule::unique('internal_employees')->ignore($employeeId)],
+            'kk_number' => 'nullable|digits:' . $digits['kk'],
             'birth_place' => 'nullable|string|max:255',
             'birth_date' => 'nullable|date',
             'gender' => 'nullable|in:male,female',
@@ -147,9 +149,9 @@ class InternalEmployeeController extends Controller
             'address_ktp' => 'nullable|string',
             'address_domicile' => 'nullable|string',
             'mother_name' => 'nullable|string|max:255',
-            'npwp' => 'nullable|regex:/^[0-9]{15,16}$/',
-            'bpjs_kesehatan' => 'nullable|digits:13',
-            'bpjs_ketenagakerjaan' => 'nullable|digits:11',
+            'npwp' => 'nullable|regex:/^[0-9]{' . max($digits['npwp'] - 1, 1) . ',' . $digits['npwp'] . '}$/',
+            'bpjs_kesehatan' => 'nullable|digits:' . $digits['bpjs_kes'],
+            'bpjs_ketenagakerjaan' => 'nullable|digits:' . $digits['bpjs_tk'],
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:255',
@@ -161,17 +163,20 @@ class InternalEmployeeController extends Controller
 
     /**
      * Custom error messages for digit validations.
+     * Messages are generated dynamically based on configured digit lengths.
      *
      * @return array
      */
     private function getValidationMessages(): array
     {
+        $digits = \App\Http\Controllers\SettingController::getValidationDigits();
+
         return [
-            'ktp_number.digits' => 'Nomor KTP (NIK) harus terdiri dari tepat 16 digit angka.',
-            'kk_number.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari tepat 16 digit angka.',
-            'npwp.regex' => 'Nomor NPWP harus terdiri dari 15 atau 16 digit angka.',
-            'bpjs_kesehatan.digits' => 'Nomor BPJS Kesehatan harus terdiri dari tepat 13 digit angka.',
-            'bpjs_ketenagakerjaan.digits' => 'Nomor BPJS Ketenagakerjaan harus terdiri dari tepat 11 digit angka.',
+            'ktp_number.digits' => 'Nomor KTP (NIK) harus terdiri dari tepat ' . $digits['ktp'] . ' digit angka.',
+            'kk_number.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari tepat ' . $digits['kk'] . ' digit angka.',
+            'npwp.regex' => 'Nomor NPWP harus terdiri dari ' . max($digits['npwp'] - 1, 1) . ' atau ' . $digits['npwp'] . ' digit angka.',
+            'bpjs_kesehatan.digits' => 'Nomor BPJS Kesehatan harus terdiri dari tepat ' . $digits['bpjs_kes'] . ' digit angka.',
+            'bpjs_ketenagakerjaan.digits' => 'Nomor BPJS Ketenagakerjaan harus terdiri dari tepat ' . $digits['bpjs_tk'] . ' digit angka.',
         ];
     }
 }

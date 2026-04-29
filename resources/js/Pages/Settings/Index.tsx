@@ -86,7 +86,12 @@ function AssetUploadCard({ label, type, currentUrl, icon }: {
     );
 }
 
-export default function Index({ settings, assetUrls }: { settings: Record<string, string | null>; assetUrls: { logo: string | null; signature: string | null } }) {
+export default function Index({ settings, assetUrls, validationDigits, validationEnums }: {
+    settings: Record<string, string | null>;
+    assetUrls: { logo: string | null; signature: string | null };
+    validationDigits: Record<string, number>;
+    validationEnums: Record<string, { value: string; label: string; enabled: boolean }[]>;
+}) {
     const user = usePage<PageProps>().props.auth.user;
 
     /** Document type entry stored in the document_types JSON setting. */
@@ -114,6 +119,8 @@ export default function Index({ settings, assetUrls }: { settings: Record<string
             reminder_contract_expiry_enabled: settings.reminder_contract_expiry_enabled ?? '1',
             reminder_contract_expiry_days: settings.reminder_contract_expiry_days ?? '30',
             reminder_bpjs_incomplete_enabled: settings.reminder_bpjs_incomplete_enabled ?? '1',
+            validation_digits: settings.validation_digits ?? JSON.stringify(validationDigits),
+            validation_enums: settings.validation_enums ?? JSON.stringify(validationEnums),
         }
     });
 
@@ -134,6 +141,61 @@ export default function Index({ settings, assetUrls }: { settings: Record<string
 
     const currentMimes = (data.settings as any).document_allowed_mimes ?? 'pdf,jpg,jpeg,png';
     const currentMaxKb = Number((data.settings as any).document_max_size_kb ?? 5120);
+
+    // Validation digits state
+    const [vDigits, setVDigits] = useState<Record<string, number>>(validationDigits);
+    const syncVDigits = (updated: Record<string, number>) => {
+        setVDigits(updated);
+        handleSettingChange('validation_digits', JSON.stringify(updated));
+    };
+
+    // Validation enums state
+    type EnumItem = { value: string; label: string; enabled: boolean };
+    const [vEnums, setVEnums] = useState<Record<string, EnumItem[]>>(validationEnums);
+    const syncVEnums = (updated: Record<string, EnumItem[]>) => {
+        setVEnums(updated);
+        handleSettingChange('validation_enums', JSON.stringify(updated));
+    };
+    const [newEnumValue, setNewEnumValue] = useState<Record<string, string>>({});
+    const [newEnumLabel, setNewEnumLabel] = useState<Record<string, string>>({});
+
+    const addEnumItem = (category: string) => {
+        const val = (newEnumValue[category] || '').trim();
+        const lbl = (newEnumLabel[category] || '').trim();
+        if (!val || !lbl) return;
+        const items = vEnums[category] || [];
+        if (items.some(i => i.value === val)) return;
+        syncVEnums({ ...vEnums, [category]: [...items, { value: val, label: lbl, enabled: true }] });
+        setNewEnumValue({ ...newEnumValue, [category]: '' });
+        setNewEnumLabel({ ...newEnumLabel, [category]: '' });
+    };
+    const removeEnumItem = (category: string, value: string) => {
+        const items = vEnums[category].filter(i => i.value !== value);
+        if (items.length === 0) return;
+        syncVEnums({ ...vEnums, [category]: items });
+    };
+
+    // Drag-to-reorder state
+    const [dragCategory, setDragCategory] = useState<string | null>(null);
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const handleDragStart = (category: string, index: number) => {
+        setDragCategory(category);
+        setDragIndex(index);
+    };
+    const handleDragOver = (e: React.DragEvent, category: string, index: number) => {
+        e.preventDefault();
+        if (dragCategory !== category || dragIndex === null || dragIndex === index) return;
+        const items = [...(vEnums[category] || [])];
+        const [moved] = items.splice(dragIndex, 1);
+        items.splice(index, 0, moved);
+        setVEnums({ ...vEnums, [category]: items });
+        setDragIndex(index);
+    };
+    const handleDragEnd = (category: string) => {
+        handleSettingChange('validation_enums', JSON.stringify(vEnums));
+        setDragCategory(null);
+        setDragIndex(null);
+    };
 
     /** Toggle a MIME extension group on/off */
     const toggleMime = (keys: string) => {
@@ -554,6 +616,137 @@ export default function Index({ settings, assetUrls }: { settings: Record<string
                             </div>
                         </div>
                     </div>
+
+                    {/* Validation Settings Section (Super Admin Only) */}
+                    {user.role === 'SUPER_ADMIN' && (
+                        <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">
+                            <header className="mb-6">
+                                <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                    <iconify-icon icon="solar:shield-check-bold" width="24" className="text-primary"></iconify-icon>
+                                    Pengaturan Validasi
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                    Konfigurasi panjang digit dan opsi dropdown untuk formulir karyawan.
+                                </p>
+                            </header>
+
+                            <div className="space-y-8">
+                                {/* Digit Lengths */}
+                                <div>
+                                    <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                                        <iconify-icon icon="solar:hashtag-bold" width="16" className="text-primary"></iconify-icon>
+                                        Panjang Digit Identitas
+                                    </h3>
+                                    <p className="text-xs text-slate-400 mb-4">Jumlah digit yang wajib diisi untuk setiap field nomor identitas.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {[
+                                            { key: 'ktp', label: 'Nomor KTP (NIK)' },
+                                            { key: 'kk', label: 'Nomor KK' },
+                                            { key: 'npwp', label: 'Nomor NPWP' },
+                                            { key: 'bpjs_kes', label: 'BPJS Kesehatan' },
+                                            { key: 'bpjs_tk', label: 'BPJS Ketenagakerjaan' },
+                                            { key: 'prefix_max', label: 'Prefix Project (maks. karakter)' },
+                                        ].map(field => (
+                                            <div key={field.key} className="p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">{field.label}</label>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        max={50}
+                                                        value={vDigits[field.key] ?? 16}
+                                                        onChange={e => syncVDigits({ ...vDigits, [field.key]: Math.max(1, Math.min(50, parseInt(e.target.value) || 1)) })}
+                                                        className="w-20 border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm font-mono text-center"
+                                                    />
+                                                    <span className="text-xs text-slate-400">digit</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Enum Options */}
+                                {[
+                                    { key: 'religion', label: 'Pilihan Agama', icon: 'solar:moon-bold' },
+                                    { key: 'education', label: 'Pilihan Pendidikan', icon: 'solar:square-academic-cap-bold' },
+                                ].map(cat => (
+                                    <div key={cat.key}>
+                                        <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                                            <iconify-icon icon={cat.icon} width="16" className="text-primary"></iconify-icon>
+                                            {cat.label}
+                                        </h3>
+                                        <p className="text-xs text-slate-400 mb-3">Seret item untuk mengubah urutan tampilan di dropdown.</p>
+                                        <div className="space-y-2 mb-4">
+                                            {(vEnums[cat.key] || []).map((item, idx) => (
+                                                <div
+                                                    key={item.value}
+                                                    draggable
+                                                    onDragStart={() => handleDragStart(cat.key, idx)}
+                                                    onDragOver={(e) => handleDragOver(e, cat.key, idx)}
+                                                    onDragEnd={() => handleDragEnd(cat.key)}
+                                                    className={`flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-xl cursor-grab active:cursor-grabbing transition-all ${dragCategory === cat.key && dragIndex === idx ? 'opacity-50 scale-95' : ''}`}
+                                                >
+                                                    <iconify-icon icon="solar:hamburger-menu-linear" width="18" className="text-slate-400 shrink-0"></iconify-icon>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold truncate text-slate-800 dark:text-white">{item.label}</p>
+                                                        <p className="text-xs font-mono text-slate-400">{item.value}</p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeEnumItem(cat.key, item.value)}
+                                                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                        title="Hapus opsi"
+                                                    >
+                                                        <iconify-icon icon="solar:trash-bin-trash-bold" width="16"></iconify-icon>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Add new item */}
+                                        <div className="flex gap-2 items-end p-4 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+                                            <div className="flex-1">
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Nilai</label>
+                                                <input
+                                                    type="text"
+                                                    value={newEnumValue[cat.key] || ''}
+                                                    onChange={e => setNewEnumValue({ ...newEnumValue, [cat.key]: e.target.value })}
+                                                    placeholder="Nilai"
+                                                    className="w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm font-mono"
+                                                />
+                                            </div>
+                                            <div className="flex-[2]">
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Nama Tampilan</label>
+                                                <input
+                                                    type="text"
+                                                    value={newEnumLabel[cat.key] || ''}
+                                                    onChange={e => setNewEnumLabel({ ...newEnumLabel, [cat.key]: e.target.value })}
+                                                    placeholder="Label"
+                                                    className="w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm text-sm"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => addEnumItem(cat.key)}
+                                                disabled={!(newEnumValue[cat.key] || '').trim() || !(newEnumLabel[cat.key] || '').trim()}
+                                                className="px-4 py-2 bg-primary hover:bg-primary-dark disabled:opacity-40 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 shrink-0"
+                                            >
+                                                <iconify-icon icon="solar:add-circle-bold" width="16"></iconify-icon> Tambah
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <div className="flex items-center gap-4 pt-2">
+                                    <PrimaryButton type="submit" form="global-settings-form" disabled={processing} className="dark:bg-primary dark:hover:bg-primary-dark dark:text-white">
+                                        Simpan Pengaturan Validasi
+                                    </PrimaryButton>
+                                    <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">Tersimpan.</p>
+                                    </Transition>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Company Assets Section */}
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">

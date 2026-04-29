@@ -90,7 +90,9 @@ class WorkerController extends Controller
         }
 
         return Inertia::render('Worker/Create', [
-            'picProjects' => $picProjects
+            'picProjects' => $picProjects,
+            'validationDigits' => SettingController::getValidationDigits(),
+            'validationEnums' => SettingController::getValidationEnums(),
         ]);
     }
 
@@ -236,7 +238,11 @@ class WorkerController extends Controller
     public function edit(Request $request, Worker $worker): Response
     {
         if ($request->user()->isWorker() || $request->user()->isPic()) abort(403, 'Akses ditolak. Silahkan gunakan fitur Ajukan Perubahan Data.');
-        return Inertia::render('Worker/Edit', ['worker' => $worker]);
+        return Inertia::render('Worker/Edit', [
+        'worker' => $worker,
+        'validationDigits' => SettingController::getValidationDigits(),
+        'validationEnums' => SettingController::getValidationEnums(),
+    ]);
     }
 
     /**
@@ -279,17 +285,20 @@ class WorkerController extends Controller
 
     /**
      * Define the strict validation rules for Indonesian identity numbers.
+     * Digit lengths are loaded dynamically from system settings.
      * 
      * @param int|null $workerId Optional worker ID to ignore for unique checks during updates.
      * @return array
      */
     private function getValidationRules(?int $workerId = null): array
     {
+        $digits = \App\Http\Controllers\SettingController::getValidationDigits();
+
         return [
             'nik_aru' => ['nullable', 'string', 'max:50', Rule::unique('workers')->ignore($workerId)],
             'name' => 'required|string|max:255',
-            'ktp_number' => ['required', 'digits:16', Rule::unique('workers')->ignore($workerId)],
-            'kk_number' => 'nullable|digits:16',
+            'ktp_number' => ['required', 'digits:' . $digits['ktp'], Rule::unique('workers')->ignore($workerId)],
+            'kk_number' => 'nullable|digits:' . $digits['kk'],
             'birth_place' => 'nullable|string|max:255',
             'birth_date' => 'nullable|date',
             'gender' => 'nullable|in:male,female',
@@ -300,9 +309,9 @@ class WorkerController extends Controller
             'address_ktp' => 'nullable|string',
             'address_domicile' => 'nullable|string',
             'mother_name' => 'required|string|max:255',
-            'npwp' => 'nullable|digits:16',
-            'bpjs_kesehatan' => 'nullable|digits:13',
-            'bpjs_ketenagakerjaan' => 'nullable|digits:11',
+            'npwp' => 'nullable|digits:' . $digits['npwp'],
+            'bpjs_kesehatan' => 'nullable|digits:' . $digits['bpjs_kes'],
+            'bpjs_ketenagakerjaan' => 'nullable|digits:' . $digits['bpjs_tk'],
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:100',
         ];
@@ -310,17 +319,20 @@ class WorkerController extends Controller
 
     /**
      * Custom error messages for digit validations.
+     * Messages are generated dynamically based on configured digit lengths.
      * 
      * @return array
      */
     private function getValidationMessages(): array
     {
+        $digits = \App\Http\Controllers\SettingController::getValidationDigits();
+
         return [
-            'ktp_number.digits' => 'Nomor KTP (NIK) harus terdiri dari tepat 16 digit angka.',
-            'kk_number.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari tepat 16 digit angka.',
-            'npwp.digits' => 'Nomor NPWP harus terdiri dari tepat 16 digit angka (sama dengan NIK).',
-            'bpjs_kesehatan.digits' => 'Nomor BPJS Kesehatan harus terdiri dari tepat 13 digit angka.',
-            'bpjs_ketenagakerjaan.digits' => 'Nomor BPJS Ketenagakerjaan harus terdiri dari tepat 11 digit angka.',
+            'ktp_number.digits' => 'Nomor KTP (NIK) harus terdiri dari tepat ' . $digits['ktp'] . ' digit angka.',
+            'kk_number.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari tepat ' . $digits['kk'] . ' digit angka.',
+            'npwp.digits' => 'Nomor NPWP harus terdiri dari tepat ' . $digits['npwp'] . ' digit angka.',
+            'bpjs_kesehatan.digits' => 'Nomor BPJS Kesehatan harus terdiri dari tepat ' . $digits['bpjs_kes'] . ' digit angka.',
+            'bpjs_ketenagakerjaan.digits' => 'Nomor BPJS Ketenagakerjaan harus terdiri dari tepat ' . $digits['bpjs_tk'] . ' digit angka.',
         ];
     }
 }

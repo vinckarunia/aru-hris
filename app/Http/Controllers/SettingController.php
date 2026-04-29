@@ -10,6 +10,79 @@ use Illuminate\Support\Facades\Redirect;
 class SettingController extends Controller
 {
     /**
+     * Default validation digit lengths for identity number fields.
+     */
+    private const DEFAULT_VALIDATION_DIGITS = [
+        'ktp' => 16,
+        'kk' => 16,
+        'npwp' => 16,
+        'bpjs_kes' => 13,
+        'bpjs_tk' => 11,
+        'prefix_max' => 5,
+    ];
+
+    /**
+     * Default enum options for dropdown fields.
+     */
+    private const DEFAULT_VALIDATION_ENUMS = [
+        'religion' => [
+            ['value' => 'Islam', 'label' => 'Islam', 'enabled' => true],
+            ['value' => 'Kristen', 'label' => 'Kristen', 'enabled' => true],
+            ['value' => 'Katolik', 'label' => 'Katolik', 'enabled' => true],
+            ['value' => 'Hindu', 'label' => 'Hindu', 'enabled' => true],
+            ['value' => 'Buddha', 'label' => 'Buddha', 'enabled' => true],
+            ['value' => 'Konghucu', 'label' => 'Konghucu', 'enabled' => true],
+            ['value' => 'Lainnya', 'label' => 'Lainnya', 'enabled' => true],
+        ],
+        'education' => [
+            ['value' => 'SD', 'label' => 'SD / Sederajat', 'enabled' => true],
+            ['value' => 'SMP', 'label' => 'SMP / Sederajat', 'enabled' => true],
+            ['value' => 'SMA/SMK', 'label' => 'SMA / SMK / Sederajat', 'enabled' => true],
+            ['value' => 'D1', 'label' => 'Diploma 1 (D1)', 'enabled' => true],
+            ['value' => 'D2', 'label' => 'Diploma 2 (D2)', 'enabled' => true],
+            ['value' => 'D3', 'label' => 'Diploma 3 (D3)', 'enabled' => true],
+            ['value' => 'D4', 'label' => 'Diploma 4 (D4)', 'enabled' => true],
+            ['value' => 'S1', 'label' => 'Strata 1 (S1)', 'enabled' => true],
+            ['value' => 'S2', 'label' => 'Strata 2 (S2)', 'enabled' => true],
+            ['value' => 'S3', 'label' => 'Strata 3 (S3)', 'enabled' => true],
+        ],
+        'tax_status' => [
+            ['value' => 'TK/0', 'label' => 'TK/0', 'enabled' => true],
+            ['value' => 'TK/1', 'label' => 'TK/1', 'enabled' => true],
+            ['value' => 'TK/2', 'label' => 'TK/2', 'enabled' => true],
+            ['value' => 'TK/3', 'label' => 'TK/3', 'enabled' => true],
+            ['value' => 'K/0', 'label' => 'K/0', 'enabled' => true],
+            ['value' => 'K/1', 'label' => 'K/1', 'enabled' => true],
+            ['value' => 'K/2', 'label' => 'K/2', 'enabled' => true],
+            ['value' => 'K/3', 'label' => 'K/3', 'enabled' => true],
+        ],
+    ];
+
+    /**
+     * Retrieve the validation digits config from the database, with fallback to defaults.
+     *
+     * @return array
+     */
+    public static function getValidationDigits(): array
+    {
+        $raw = Setting::where('key', 'validation_digits')->value('value');
+        $digits = $raw ? json_decode($raw, true) : null;
+        return is_array($digits) ? array_merge(self::DEFAULT_VALIDATION_DIGITS, $digits) : self::DEFAULT_VALIDATION_DIGITS;
+    }
+
+    /**
+     * Retrieve the validation enums config from the database, with fallback to defaults.
+     *
+     * @return array
+     */
+    public static function getValidationEnums(): array
+    {
+        $raw = Setting::where('key', 'validation_enums')->value('value');
+        $enums = $raw ? json_decode($raw, true) : null;
+        return is_array($enums) ? array_merge(self::DEFAULT_VALIDATION_ENUMS, $enums) : self::DEFAULT_VALIDATION_ENUMS;
+    }
+
+    /**
      * Display a listing of the system settings.
      */
     public function index()
@@ -22,8 +95,10 @@ class SettingController extends Controller
         ];
         
         return Inertia::render('Settings/Index', [
-            'settings'  => $settings,
-            'assetUrls' => $assetUrls,
+            'settings'          => $settings,
+            'assetUrls'         => $assetUrls,
+            'validationDigits'  => self::getValidationDigits(),
+            'validationEnums'   => self::getValidationEnums(),
         ]);
     }
 
@@ -39,11 +114,47 @@ class SettingController extends Controller
                     $fail('Format data jenis dokumen tidak valid.');
                 }
             }],
+            'settings.validation_digits'        => ['nullable', function ($attr, $val, $fail) {
+                if ($val !== null) {
+                    $decoded = json_decode($val, true);
+                    if (!is_array($decoded)) {
+                        $fail('Format data digit validasi tidak valid.');
+                        return;
+                    }
+                    foreach ($decoded as $key => $value) {
+                        if (!is_int($value) || $value < 1 || $value > 50) {
+                            $fail("Panjang digit untuk '{$key}' harus antara 1 dan 50.");
+                        }
+                    }
+                }
+            }],
+            'settings.validation_enums'         => ['nullable', function ($attr, $val, $fail) {
+                if ($val !== null) {
+                    $decoded = json_decode($val, true);
+                    if (!is_array($decoded)) {
+                        $fail('Format data enum validasi tidak valid.');
+                        return;
+                    }
+                    foreach ($decoded as $category => $items) {
+                        if (!is_array($items) || empty($items)) {
+                            $fail("Kategori '{$category}' harus memiliki setidaknya satu opsi.");
+                        }
+                    }
+                }
+            }],
             'settings.*'                        => 'nullable|string',
         ]);
 
         foreach ($validated['settings'] as $key => $value) {
-            $group = str_starts_with($key, 'document_') ? 'documents' : 'general';
+            if (str_starts_with($key, 'document_')) {
+                $group = 'documents';
+            } elseif (str_starts_with($key, 'validation_')) {
+                $group = 'validation';
+            } elseif (str_starts_with($key, 'reminder_')) {
+                $group = 'reminders';
+            } else {
+                $group = 'general';
+            }
             Setting::updateOrCreate(
                 ['key' => $key, 'role_specifier' => null],
                 ['value' => $value, 'group' => $group]
