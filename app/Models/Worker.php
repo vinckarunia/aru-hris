@@ -23,6 +23,7 @@ use App\Models\User;
  * @property string|null $birth_date
  * @property string|null $gender
  * @property string|null $phone
+ * @property string|null $email
  * @property string|null $education
  * @property string|null $religion
  * @property string|null $tax_status
@@ -55,6 +56,7 @@ class Worker extends Model
         'birth_date',
         'gender',
         'phone',
+        'email',
         'education',
         'religion',
         'tax_status',
@@ -96,8 +98,9 @@ class Worker extends Model
             $kosongSblmKetenagakerjaan = empty($worker->getOriginal('bpjs_ketenagakerjaan'));
 
             if (($bpjsKesehatanChanged && $kosongSblmKesehatan) || ($bpjsKetenagakerjaanChanged && $kosongSblmKetenagakerjaan)) {
-                if ($worker->user && $worker->user->email) {
-                    \Illuminate\Support\Facades\Mail::to($worker->user->email)->send(new \App\Mail\BpjsReminderMail($worker));
+                $recipientEmail = ($worker->user->email ?? null) ?: ($worker->email ?? null);
+                if ($recipientEmail) {
+                    \Illuminate\Support\Facades\Mail::to($recipientEmail)->send(new \App\Mail\BpjsReminderMail($worker));
                 }
             }
         });

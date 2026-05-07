@@ -267,10 +267,22 @@ class ProcessBulkImport implements ShouldQueue
                         ->where('client_id', $this->globalSettings['client_id'])
                         ->first();
                     if (!$existingProject) {
+                        // Generate a unique prefix from the project name
+                        $basePrefix = strtoupper(substr(trim($projectName), 0, 3));
+                        if (strlen($basePrefix) < 2) {
+                            $basePrefix = 'ARU';
+                        }
+                        $prefix = $basePrefix;
+                        $suffix = 1;
+                        while (Project::where('prefix', $prefix)->exists()) {
+                            $prefix = $basePrefix . $suffix;
+                            $suffix++;
+                        }
+
                         $existingProject = Project::create([
                             'client_id' => $this->globalSettings['client_id'],
                             'name' => trim($projectName),
-                            'prefix' => strtoupper(substr(trim($projectName), 0, 3)),
+                            'prefix' => $prefix,
                             'id_running_number' => 0
                         ]);
                     }

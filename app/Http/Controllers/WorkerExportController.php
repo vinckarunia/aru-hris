@@ -21,6 +21,12 @@ class WorkerExportController extends Controller
     /**
      * Generate and stream the Worker XLSX export.
      *
+     * Supports query-string filters passed from the frontend:
+     *   - search: Filters by name or NIK ARU (partial match).
+     *   - status: Filters by assignment status ('active', 'non_active', 'resign', etc.).
+     *   - client_id: Filters workers whose assignment project belongs to this client.
+     *   - project_id: Filters workers whose assignment matches this project.
+     *
      * @param Request $request
      * @return BinaryFileResponse
      */
@@ -40,7 +46,6 @@ class WorkerExportController extends Controller
                           }
                       ]);
             },
-            'familyMembers'
         ]);
 
         // If user is PIC, restrict to workers in their assigned projects
@@ -51,9 +56,48 @@ class WorkerExportController extends Controller
             });
         }
 
+        // ── Apply filters from query string ──────────────────────────
+        $search    = $request->query('search');
+        $status    = $request->query('status');
+        $clientId  = $request->query('client_id');
+        $projectId = $request->query('project_id');
+
+        if ($search) {
+            $workersQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nik_aru', 'like', "%{$search}%");
+            });
+        }
+
+        if ($projectId) {
+            $workersQuery->whereHas('assignments', function ($q) use ($projectId) {
+                $q->where('project_id', $projectId);
+            });
+        } elseif ($clientId) {
+            $workersQuery->whereHas('assignments.project', function ($q) use ($clientId) {
+                $q->where('client_id', $clientId);
+            });
+        }
+
+        if ($status && $status !== 'all') {
+            $nonActiveStatuses = ['resign', 'contract expired', 'end_contract', 'project closed', 'fired', 'other'];
+
+            if ($status === 'non_active') {
+                $workersQuery->whereHas('assignments', function ($q) use ($nonActiveStatuses) {
+                    $q->whereIn('status', $nonActiveStatuses);
+                });
+            } elseif ($status === 'none') {
+                $workersQuery->doesntHave('assignments');
+            } else {
+                $workersQuery->whereHas('assignments', function ($q) use ($status) {
+                    $q->where('status', $status);
+                });
+            }
+        }
+
         $workers = $workersQuery->get();
 
-        // Define Headers (MUST PERFECTLY MATCH ImportService::generateTemplate)
+        // Define Headers (family columns removed)
         $headers = [
             'NIK ARU', 'Nama Lengkap', 'Project', 'Cabang',
             'Tanggal Masuk', 'Jenis Kontrak', 'Status', 'Tanggal Keluar',
@@ -64,22 +108,6 @@ class WorkerExportController extends Controller
             'NPWP', 'Bank', 'Rekening', 'BPJS Kesehatan',
             'BPJS Ketenagakerjaan', 'No KTP', 'No KK', 'Ibu Kandung',
             'Kontrak Start Date', 'Kontrak End Date',
-            'Nama Istri/Suami (1)', 'Tempat Lahir Pasangan (1)',
-            'Tanggal Lahir Pasangan (1)', 'NIK Pasangan (1)', 'BPJS Pasangan (1)',
-            'Nama Anak 1 (1)', 'Tempat Lahir Anak 1 (1)',
-            'Tanggal Lahir Anak 1 (1)', 'NIK Anak 1 (1)', 'BPJS Anak 1 (1)',
-            'Nama Anak 2 (1)', 'Tempat Lahir Anak 2 (1)',
-            'Tanggal Lahir Anak 2 (1)', 'NIK Anak 2 (1)', 'BPJS Anak 2 (1)',
-            'Nama Anak 3 (1)', 'Tempat Lahir Anak 3 (1)',
-            'Tanggal Lahir Anak 3 (1)', 'NIK Anak 3 (1)', 'BPJS Anak 3 (1)',
-            'Nama Istri/Suami (2)', 'Tempat Lahir Pasangan (2)',
-            'Tanggal Lahir Pasangan (2)', 'NIK Pasangan (2)', 'BPJS Pasangan (2)',
-            'Nama Anak 1 (2)', 'Tempat Lahir Anak 1 (2)',
-            'Tanggal Lahir Anak 1 (2)', 'NIK Anak 1 (2)', 'BPJS Anak 1 (2)',
-            'Nama Anak 2 (2)', 'Tempat Lahir Anak 2 (2)',
-            'Tanggal Lahir Anak 2 (2)', 'NIK Anak 2 (2)', 'BPJS Anak 2 (2)',
-            'Nama Anak 3 (2)', 'Tempat Lahir Anak 3 (2)',
-            'Tanggal Lahir Anak 3 (2)', 'NIK Anak 3 (2)', 'BPJS Anak 3 (2)',
         ];
 
         $spreadsheet = new Spreadsheet();
@@ -110,11 +138,6 @@ class WorkerExportController extends Controller
             $assignment = $worker->assignments->first();
             $contract = $assignment ? $assignment->contracts->first() : null;
             $comp = $contract ? $contract->compensation : null;
-            $family = $worker->familyMembers;
-
-            // Group family members by type
-            $spouses = $family->where('relationship', 'Spouse')->values();
-            $children = $family->where('relationship', 'Child')->values();
 
             $rowData = [
                 // Identitas & Pekerjaan
@@ -127,7 +150,7 @@ class WorkerExportController extends Controller
                 $assignment ? ($assignment->status ?? 'Active') : 'Tanpa Penempatan',
                 $assignment ? ($assignment->termination_date ? \Carbon\Carbon::parse($assignment->termination_date)->format('Y-m-d') : '') : '',
                 $assignment->position ?? '',
-                $worker->gender === 'male' ? 'Laki-laki' : ($worker->gender === 'female' ? 'Perempuan' : ''),
+                $worker->gender === 'male' ? 'Pria' : ($worker->gender === 'female' ? 'Wanita' : ''),
                 $worker->birth_place ?? '',
                 $worker->birth_date ? \Carbon\Carbon::parse($worker->birth_date)->format('Y-m-d') : '',
                 $worker->address_ktp ?? '',
@@ -157,18 +180,6 @@ class WorkerExportController extends Controller
                 // Kontrak (Start & End)
                 $contract && $contract->start_date ? \Carbon\Carbon::parse($contract->start_date)->format('Y-m-d') : '',
                 $contract && $contract->end_date ? \Carbon\Carbon::parse($contract->end_date)->format('Y-m-d') : '',
-
-                // Keluarga Pasangan 1 & Anak 1-3
-                $spouses[0]->name ?? '', $spouses[0]->birth_place ?? '', (isset($spouses[0]) && $spouses[0]->birth_date) ? \Carbon\Carbon::parse($spouses[0]->birth_date)->format('Y-m-d') : '', $spouses[0]->ktp_number ?? '', $spouses[0]->bpjs_kesehatan ?? '',
-                $children[0]->name ?? '', $children[0]->birth_place ?? '', (isset($children[0]) && $children[0]->birth_date) ? \Carbon\Carbon::parse($children[0]->birth_date)->format('Y-m-d') : '', $children[0]->ktp_number ?? '', $children[0]->bpjs_kesehatan ?? '',
-                $children[1]->name ?? '', $children[1]->birth_place ?? '', (isset($children[1]) && $children[1]->birth_date) ? \Carbon\Carbon::parse($children[1]->birth_date)->format('Y-m-d') : '', $children[1]->ktp_number ?? '', $children[1]->bpjs_kesehatan ?? '',
-                $children[2]->name ?? '', $children[2]->birth_place ?? '', (isset($children[2]) && $children[2]->birth_date) ? \Carbon\Carbon::parse($children[2]->birth_date)->format('Y-m-d') : '', $children[2]->ktp_number ?? '', $children[2]->bpjs_kesehatan ?? '',
-
-                // Keluarga Pasangan 2 & Anak 4-6
-                $spouses[1]->name ?? '', $spouses[1]->birth_place ?? '', (isset($spouses[1]) && $spouses[1]->birth_date) ? \Carbon\Carbon::parse($spouses[1]->birth_date)->format('Y-m-d') : '', $spouses[1]->ktp_number ?? '', $spouses[1]->bpjs_kesehatan ?? '',
-                $children[3]->name ?? '', $children[3]->birth_place ?? '', (isset($children[3]) && $children[3]->birth_date) ? \Carbon\Carbon::parse($children[3]->birth_date)->format('Y-m-d') : '', $children[3]->ktp_number ?? '', $children[3]->bpjs_kesehatan ?? '',
-                $children[4]->name ?? '', $children[4]->birth_place ?? '', (isset($children[4]) && $children[4]->birth_date) ? \Carbon\Carbon::parse($children[4]->birth_date)->format('Y-m-d') : '', $children[4]->ktp_number ?? '', $children[4]->bpjs_kesehatan ?? '',
-                $children[5]->name ?? '', $children[5]->birth_place ?? '', (isset($children[5]) && $children[5]->birth_date) ? \Carbon\Carbon::parse($children[5]->birth_date)->format('Y-m-d') : '', $children[5]->ktp_number ?? '', $children[5]->bpjs_kesehatan ?? '',
             ];
 
             foreach ($rowData as $colIndex => $value) {

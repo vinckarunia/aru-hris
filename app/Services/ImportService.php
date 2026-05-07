@@ -1274,22 +1274,6 @@ class ImportService
             'NPWP', 'Bank', 'Rekening', 'BPJS Kesehatan',
             'BPJS Ketenagakerjaan', 'No KTP', 'No KK', 'Ibu Kandung',
             'Kontrak Start Date', 'Kontrak End Date',
-            'Nama Istri/Suami (1)', 'Tempat Lahir Pasangan (1)',
-            'Tanggal Lahir Pasangan (1)', 'NIK Pasangan (1)', 'BPJS Pasangan (1)',
-            'Nama Anak 1 (1)', 'Tempat Lahir Anak 1 (1)',
-            'Tanggal Lahir Anak 1 (1)', 'NIK Anak 1 (1)', 'BPJS Anak 1 (1)',
-            'Nama Anak 2 (1)', 'Tempat Lahir Anak 2 (1)',
-            'Tanggal Lahir Anak 2 (1)', 'NIK Anak 2 (1)', 'BPJS Anak 2 (1)',
-            'Nama Anak 3 (1)', 'Tempat Lahir Anak 3 (1)',
-            'Tanggal Lahir Anak 3 (1)', 'NIK Anak 3 (1)', 'BPJS Anak 3 (1)',
-            'Nama Istri/Suami (2)', 'Tempat Lahir Pasangan (2)',
-            'Tanggal Lahir Pasangan (2)', 'NIK Pasangan (2)', 'BPJS Pasangan (2)',
-            'Nama Anak 1 (2)', 'Tempat Lahir Anak 1 (2)',
-            'Tanggal Lahir Anak 1 (2)', 'NIK Anak 1 (2)', 'BPJS Anak 1 (2)',
-            'Nama Anak 2 (2)', 'Tempat Lahir Anak 2 (2)',
-            'Tanggal Lahir Anak 2 (2)', 'NIK Anak 2 (2)', 'BPJS Anak 2 (2)',
-            'Nama Anak 3 (2)', 'Tempat Lahir Anak 3 (2)',
-            'Tanggal Lahir Anak 3 (2)', 'NIK Anak 3 (2)', 'BPJS Anak 3 (2)',
         ];
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();

@@ -267,9 +267,17 @@ export default function Index({ workers, clients }: Props) {
 
     /**
      * Export the currently filtered and sorted workers list to XLSX.
+     * Passes active filter parameters to the backend.
      */
     const handleExportExcel = () => {
-        window.location.href = route('workers.export');
+        const params = new URLSearchParams();
+        if (searchQuery) params.set('search', searchQuery);
+        if (filterStatus !== 'all') params.set('status', filterStatus);
+        if (filterClientId !== 'all') params.set('client_id', filterClientId);
+        if (filterProjectId !== 'all') params.set('project_id', filterProjectId);
+
+        const queryString = params.toString();
+        window.location.href = route('workers.export') + (queryString ? `?${queryString}` : '');
     };
 
     /** Helper to render the sort indicator icon based on sort status. */
