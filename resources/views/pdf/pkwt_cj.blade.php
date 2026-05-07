@@ -218,7 +218,7 @@
             <td></td>
             <td class="label-col">Jenis Kelamin</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $worker->gender === 'male' ? 'Pria' : ($worker->gender === 'female' ? 'Wanita' : '-') }}</td>
+            <td class="value-col">{{ $worker->gender === 'male' ? 'Laki-laki' : ($worker->gender === 'female' ? 'Perempuan' : '-') }}</td>
         </tr>
         <tr>
             <td></td>

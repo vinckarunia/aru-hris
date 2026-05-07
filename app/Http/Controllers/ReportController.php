@@ -310,8 +310,8 @@ class ReportController extends Controller
     {
         $aliases = [
             // Gender
-            'male'   => 'Pria',
-            'female' => 'Wanita',
+            'male'   => 'Laki-laki',
+            'female' => 'Perempuan',
             
             // Religion
             'islam'    => 'Islam',

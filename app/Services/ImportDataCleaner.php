@@ -233,11 +233,11 @@ class ImportDataCleaner
 
         $lower = strtolower(trim($value));
 
-        if (in_array($lower, ['l', 'laki-laki', 'laki', 'male', 'pria'])) {
+        if (in_array($lower, ['l', 'laki-laki', 'laki', 'male', 'Laki-laki'])) {
             return 'male';
         }
 
-        if (in_array($lower, ['p', 'perempuan', 'female', 'wanita'])) {
+        if (in_array($lower, ['p', 'perempuan', 'female', 'Perempuan'])) {
             return 'female';
         }
 

@@ -127,7 +127,7 @@ class WorkerExportController extends Controller
                 $assignment ? ($assignment->status ?? 'Active') : 'Tanpa Penempatan',
                 $assignment ? ($assignment->termination_date ? \Carbon\Carbon::parse($assignment->termination_date)->format('Y-m-d') : '') : '',
                 $assignment->position ?? '',
-                $worker->gender === 'male' ? 'Pria' : ($worker->gender === 'female' ? 'Wanita' : ''),
+                $worker->gender === 'male' ? 'Laki-laki' : ($worker->gender === 'female' ? 'Perempuan' : ''),
                 $worker->birth_place ?? '',
                 $worker->birth_date ? \Carbon\Carbon::parse($worker->birth_date)->format('Y-m-d') : '',
                 $worker->address_ktp ?? '',
