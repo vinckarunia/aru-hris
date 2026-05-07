@@ -218,7 +218,7 @@
             <td></td>
             <td class="label-col">Jenis Kelamin</td>
             <td class="colon-col">:</td>
-            <td class="value-col">{{ $worker->gender === 'male' ? 'L' : ($worker->gender === 'female' ? 'P' : '-') }}</td>
+            <td class="value-col">{{ $worker->gender === 'male' ? 'Pria' : ($worker->gender === 'female' ? 'Wanita' : '-') }}</td>
         </tr>
         <tr>
             <td></td>
@@ -318,7 +318,7 @@
                 Yang dimaksud sebagai Tenaga Kerja Jasa dalam kesepakatan kerja ini adalah Tenaga Kerja dalam waktu tertentu yang
                 dipekerjakan dan ditempatkan oleh Pihak I di
                 <strong>{{ strtoupper($contract->assignment->project->client->full_name ?? '-') }}
-                - {{ strtoupper($contract->assignment->branch->name ?? '-') }}</strong>
+                - {{ strtoupper($contract->assignment->branches->pluck('name')->implode(', ') ?: '-') }}</strong>
             </td>
         </tr>
         <tr>
@@ -490,37 +490,24 @@
             <td>
                 Sebagai imbalan atas jasa Pihak II  kepada Pihak I, upah diberikan berdasarkan pembayaran bulanan, yang dibayarkan
                 setiap tanggal 25 bulan berjalan dengan rincian sebagai berikut :
+                @php
+                    $compItems = collect([
+                        ['label' => 'Upah Pokok', 'value' => $upahPokok, 'always' => true],
+                        ['label' => 'Tunjangan Allowance', 'value' => $tunjanganAllowance],
+                        ['label' => 'Uang Makan', 'value' => $uangMakan],
+                        ['label' => 'Uang Transport', 'value' => $uangTransport],
+                        ['label' => 'Uang Kehadiran', 'value' => $uangKehadiran],
+                        ['label' => 'Insentif Kinerja', 'value' => $insentifKinerja],
+                    ])->filter(fn($i) => ($i['always'] ?? false) || ($i['value'] ?? 0) > 0)->values();
+                @endphp
                 <table style="margin-top: 8px; margin-bottom: 8px; margin-left: 10px; width: 80%;">
+                    @foreach($compItems as $idx => $item)
                     <tr>
-                        <td style="width: 45%;">a.&nbsp; Upah Pokok</td>
+                        <td style="width: 45%;">{{ chr(97 + $idx) }}.&nbsp; {{ $item['label'] }}</td>
                         <td style="width: 5%;">:</td>
-                        <td>Rp. {{ number_format($upahPokok, 0, ',', '.') }}</td>
+                        <td>Rp. {{ number_format($item['value'], 0, ',', '.') }}</td>
                     </tr>
-                    <tr>
-                        <td>b.&nbsp; Tunjangan Allowance</td>
-                        <td>:</td>
-                        <td>Rp. {{ $tunjanganAllowance > 0 ? number_format($tunjanganAllowance, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td>c.&nbsp; Uang Makan</td>
-                        <td>:</td>
-                        <td>Rp. {{ $uangMakan > 0 ? number_format($uangMakan, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td>d.&nbsp; Uang Transport</td>
-                        <td>:</td>
-                        <td>Rp. {{ $uangTransport > 0 ? number_format($uangTransport, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td>e.&nbsp; Uang Kehadiran</td>
-                        <td>:</td>
-                        <td>Rp. {{ $uangKehadiran > 0 ? number_format($uangKehadiran, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td>f.&nbsp;&nbsp; Insentif Kinerja</td>
-                        <td>:</td>
-                        <td>Rp. {{ $insentifKinerja > 0 ? number_format($insentifKinerja, 0, ',', '.') : '' }}</td>
-                    </tr>
+                    @endforeach
                 </table>
                 Apabila Pihak II tidak masuk kerja, upah dipotong dengan perhitungan pemotongan upah per-hari yaitu 1 (satu) bulan
                 upah pokok dibagi 25 hari kerja, kecuali ijin sakit dengan dilengkapi surat keterangan dokter dan cuti (Prosedural), upah

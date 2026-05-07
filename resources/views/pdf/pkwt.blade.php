@@ -237,7 +237,7 @@
                     <tr>
                         <td style="width: 30%;">A. Lokasi</td>
                         <td style="width: 5%;">:</td>
-                        <td>{{ $contract->assignment->branch->name ?? '-' }}</td>
+                        <td>{{ $contract->assignment->branches->pluck('name')->implode(', ') ?: '-' }}</td>
                     </tr>
                     <tr>
                         <td>B. Jabatan</td>
@@ -389,6 +389,15 @@
     @php
         $upah = $contract->compensation?->base_salary ?? 0;
         $tunjangan = ($contract->compensation?->meal_allowance ?? 0) + ($contract->compensation?->transport_allowance ?? 0);
+
+        // Build dynamic compensation list — only show items with value > 0
+        $kompensasiItems = collect([
+            ['label' => 'Upah Pokok', 'value' => $upah, 'always' => true],
+            ['label' => 'Tunjangan Pengganti Fasilitas', 'value' => $tunjangan],
+            ['label' => 'BPJS Tenaga Kerja', 'value' => null, 'always' => true],
+            ['label' => 'BPJS Kesehatan', 'value' => null, 'always' => true],
+            ['label' => 'BPJS Pensiun', 'value' => null, 'always' => true],
+        ])->filter(fn($item) => ($item['always'] ?? false) || ($item['value'] ?? 0) > 0)->values();
     @endphp
 
     <table style="width:100%;">
@@ -396,26 +405,12 @@
             <td style="width: 5%;">1.</td>
             <td>Sebagai imbalan atas jasa <strong>Pihak Kedua</strong> kepada <strong>Pihak Pertama</strong>, upah diberikan berdasarkan pembayaran bulanan, yang dibayarkan setiap tanggal 25 (Dua Puluh Lima) bulan berikutnya dengan rincian sebagai berikut :
                 <table style="margin-top: 5px;">
+                    @foreach($kompensasiItems as $idx => $item)
                     <tr>
-                        <td style="width: 50%;">a. Upah Pokok</td>
-                        <td>: Rp. {{ number_format($upah, 0, ',', '.') }}</td>
+                        <td style="width: 50%;">{{ chr(97 + $idx) }}. {{ $item['label'] }}</td>
+                        <td>@if(!is_null($item['value'])): Rp. {{ number_format($item['value'], 0, ',', '.') }}@endif</td>
                     </tr>
-                    <tr>
-                        <td>b. Tunjangan Pengganti Fasilitas</td>
-                        <td>: Rp. {{ $tunjangan > 0 ? number_format($tunjangan, 0, ',', '.') : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td>c. BPJS Tenaga Kerja</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>d. BPJS Kesehatan</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>e. BPJS Pensiun</td>
-                        <td></td>
-                    </tr>
+                    @endforeach
                 </table>
                 <p style="margin: 0;">Apabila Pihak Kedua tidak masuk kerja tanpa pemberitahuan, upah dipotong sesuai jumlah hari tidak masuk kerja.</p>
             </td>
