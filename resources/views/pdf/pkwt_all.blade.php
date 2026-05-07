@@ -880,7 +880,7 @@
         </tr>
         <tr>
             <td class="sign-party-name">
-                <strong>({{ strtoupper($pihakPertama->name ?? '-') }})</strong>
+                <strong>({{ strtoupper($pihakPertama->name ?? 'Jumaga Tua Sinaga') }})</strong>
             </td>
             <td>&nbsp;</td>
             <td class="sign-party-name">

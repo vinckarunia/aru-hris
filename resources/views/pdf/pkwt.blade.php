@@ -700,7 +700,7 @@
             </td>
         </tr>
         <tr>
-            <td style="text-align: center;" class="text-13"><strong>({{ strtoupper($pihakPertama->name ?? '-') }})</strong></td>
+            <td style="text-align: center;" class="text-13"><strong>({{ strtoupper($pihakPertama->name ?? 'Jumaga Tua Sinaga') }})</strong></td>
             <td style="text-align: center;">&nbsp;</td>
             <td style="text-align: center;" class="text-13"><strong>({{ strtoupper($worker->name ?? '-') }})</strong></td>
         </tr>

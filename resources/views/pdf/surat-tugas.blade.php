@@ -165,8 +165,8 @@
         @else
             <br><br><br><br>
         @endif
-        <p><strong><u>{{ $pihakPertama->name ?? '-' }}</u></strong><br>
-        {{ $pihakPertama->position ?? '-' }}</p>
+        <p><strong><u>{{ strtoupper($pihakPertama->name ?? 'Jumaga Tua Sinaga') }}</u></strong><br>
+        {{ $pihakPertama->position ?? 'Head of Operation' }}</p>
     </div>
 </body>
 </html>
