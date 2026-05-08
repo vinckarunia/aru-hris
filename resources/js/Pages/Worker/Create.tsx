@@ -50,7 +50,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
 
     const { data, setData, post, processing, errors } = useForm({
         nik_aru: '', name: '', ktp_number: '', kk_number: '', birth_place: '',
-        birth_date: '', gender: '', phone: '', education: '', religion: '',
+        birth_date: '', gender: '', phone: '', email: '', education: '', religion: '',
         tax_status: '', address_ktp: '', address_domicile: '', mother_name: '',
         npwp: '', bpjs_kesehatan: '', bpjs_ketenagakerjaan: '', bank_name: '', bank_account_number: '',
         project_id: '',
@@ -307,10 +307,15 @@ export default function Create({ picProjects = [], validationDigits, validationE
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Kontak & Domisili</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="md:col-span-2">
+                        <div>
                             <InputLabel htmlFor="phone" value="Nomor WhatsApp / HP" />
-                            <TextInput id="phone" type="text" className="mt-1 block w-full md:w-1/2 font-mono" value={data.phone} onChange={e => setData('phone', e.target.value.replace(/\D/g, ''))} placeholder="08xxxxxxxxxx" />
+                            <TextInput id="phone" type="text" className="mt-1 block w-full font-mono" value={data.phone} onChange={e => setData('phone', e.target.value.replace(/\D/g, ''))} placeholder="08xxxxxxxxxx" />
                             <InputError message={errors.phone} className="mt-1" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="email" value="Email" />
+                            <TextInput id="email" type="email" className="mt-1 block w-full" value={data.email} onChange={e => setData('email', e.target.value)} placeholder="contoh@email.com" />
+                            <InputError message={errors.email} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="address_ktp" value="Alamat Sesuai KTP" />

@@ -303,6 +303,7 @@ class WorkerController extends Controller
             'birth_date' => 'nullable|date',
             'gender' => 'nullable|in:male,female',
             'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
             'education' => 'nullable|string|max:100',
             'religion' => 'nullable|string|max:50',
             'tax_status' => 'nullable|string|max:50',

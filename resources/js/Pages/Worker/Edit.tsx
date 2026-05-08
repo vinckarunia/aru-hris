@@ -12,7 +12,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
  */
 interface Worker {
     id: string; nik_aru: string | null; name: string; ktp_number: string; kk_number: string | null;
-    birth_place: string | null; birth_date: string | null; gender: 'male' | 'female' | null; phone: string | null;
+    birth_place: string | null; birth_date: string | null; gender: 'male' | 'female' | null; phone: string | null; email: string | null;
     education: string | null; religion: string | null; tax_status: string | null; address_ktp: string | null;
     address_domicile: string | null; mother_name: string | null; npwp: string | null; bpjs_kesehatan: string | null;
     bpjs_ketenagakerjaan: string | null; bank_name: string | null; bank_account_number: string | null;
@@ -43,7 +43,7 @@ export default function Edit({ worker, validationDigits, validationEnums }: Prop
     const { data, setData, put, processing, errors } = useForm({
         nik_aru: worker.nik_aru || '', name: worker.name || '', ktp_number: worker.ktp_number || '',
         kk_number: worker.kk_number || '', birth_place: worker.birth_place || '', birth_date: worker.birth_date || '',
-        gender: worker.gender || '', phone: worker.phone || '', education: worker.education || '',
+        gender: worker.gender || '', phone: worker.phone || '', email: worker.email || '', education: worker.education || '',
         religion: worker.religion || '', tax_status: worker.tax_status || '', address_ktp: worker.address_ktp || '',
         address_domicile: worker.address_domicile || '', mother_name: worker.mother_name || '', npwp: worker.npwp || '',
         bpjs_kesehatan: worker.bpjs_kesehatan || '', bpjs_ketenagakerjaan: worker.bpjs_ketenagakerjaan || '',
@@ -158,10 +158,15 @@ export default function Edit({ worker, validationDigits, validationEnums }: Prop
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Kontak & Domisili</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="md:col-span-2">
+                        <div>
                             <InputLabel htmlFor="phone" value="Nomor WhatsApp / HP" />
-                            <TextInput id="phone" type="text" className="mt-1 block w-full md:w-1/2 font-mono" value={data.phone} onChange={e => setData('phone', e.target.value.replace(/\D/g, ''))} placeholder="08xxxxxxxxxx" />
+                            <TextInput id="phone" type="text" className="mt-1 block w-full font-mono" value={data.phone} onChange={e => setData('phone', e.target.value.replace(/\D/g, ''))} placeholder="08xxxxxxxxxx" />
                             <InputError message={errors.phone} className="mt-1" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="email" value="Email" />
+                            <TextInput id="email" type="email" className="mt-1 block w-full" value={data.email} onChange={e => setData('email', e.target.value)} placeholder="contoh@email.com" />
+                            <InputError message={errors.email} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="address_ktp" value="Alamat Sesuai KTP" />

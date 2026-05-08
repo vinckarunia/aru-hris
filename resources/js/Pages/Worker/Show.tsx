@@ -74,7 +74,7 @@ const DEFAULT_DOC_ICON = 'solar:document-bold';
  */
 interface Worker {
     id: string; nik_aru: string | null; name: string; ktp_number: string; kk_number: string | null;
-    birth_place: string | null; birth_date: string | null; gender: 'male' | 'female' | null; phone: string | null;
+    birth_place: string | null; birth_date: string | null; gender: 'male' | 'female' | null; phone: string | null; email: string | null;
     education: string | null; religion: string | null; tax_status: string | null; address_ktp: string | null;
     address_domicile: string | null; mother_name: string | null; npwp: string | null; bpjs_kesehatan: string | null;
     bpjs_ketenagakerjaan: string | null; bank_name: string | null; bank_account_number: string | null;
@@ -267,6 +267,10 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                             <span className="flex items-center">NIK ARU: {worker.nik_aru || 'Belum Ada'}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             <span className="flex items-center gap-1.5"><iconify-icon icon="solar:phone-bold"></iconify-icon> {worker.phone || '-'}</span>
+                            {worker.email && (<>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span className="flex items-center gap-1.5"><iconify-icon icon="solar:letter-bold"></iconify-icon> {worker.email}</span>
+                            </>)}
                         </div>
                     </div>
                 </div>
@@ -363,6 +367,8 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                 <h3 className="font-bold text-slate-800 dark:text-white text-lg">Kontak & Lokasi</h3>
                             </div>
                             <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50 h-[calc(100%-2.5rem)]">
+                                <DetailItem label="Nomor HP / WhatsApp" value={worker.phone} isMono />
+                                <DetailItem label="Email" value={worker.email} />
                                 <DetailItem label="Alamat KTP" value={worker.address_ktp} />
                                 <DetailItem label="Alamat Domisili" value={worker.address_domicile} />
                             </div>
