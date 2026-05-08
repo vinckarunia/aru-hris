@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { PageProps, User } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -144,10 +144,13 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
     const [isPostApprovalOpen, setIsPostApprovalOpen] = useState(false);
     const [postApprovalData, setPostApprovalData] = useState<any>(null);  // single
     const [postApprovalList, setPostApprovalList] = useState<any[]>([]); // bulk
+    /** Prevents the flash-driven useEffect from re-opening the popup after user dismissal */
+    const postApprovalDismissed = useRef(false);
 
     // Detect flash props for post-approval popup
     const flash = (usePage().props as any).flash || {};
     useEffect(() => {
+        if (postApprovalDismissed.current) return;
         if (flash.post_approval) {
             setPostApprovalData(flash.post_approval);
             setPostApprovalList([]);
@@ -892,7 +895,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
             </Modal>
 
             {/* Post-Approval Popup */}
-            <Modal show={isPostApprovalOpen} onClose={() => setIsPostApprovalOpen(false)} maxWidth="lg">
+            <Modal show={isPostApprovalOpen} onClose={() => { postApprovalDismissed.current = true; setIsPostApprovalOpen(false); }} maxWidth="lg">
                 <div className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
@@ -930,7 +933,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
 
                             {postApprovalData.assignment_id && postApprovalData.request_type === 'new_data' && !postApprovalData.has_contract && (
                                 <div className="flex justify-end gap-3 pt-2">
-                                    <SecondaryButton onClick={() => setIsPostApprovalOpen(false)}>Nanti Saja</SecondaryButton>
+                                    <SecondaryButton onClick={() => { postApprovalDismissed.current = true; setIsPostApprovalOpen(false); }}>Nanti Saja</SecondaryButton>
                                     <Link
                                         href={route('contracts.create', { assignment_id: postApprovalData.assignment_id })}
                                         className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold flex items-center gap-2"
@@ -976,11 +979,9 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                         <p className="text-sm text-slate-500">Data berhasil diperbarui.</p>
                     )}
 
-                    {(postApprovalList.length > 0 || (postApprovalData && !postApprovalData.assignment_id)) && (
-                        <div className="flex justify-end pt-4">
-                            <SecondaryButton onClick={() => setIsPostApprovalOpen(false)}>Tutup</SecondaryButton>
-                        </div>
-                    )}
+                    <div className="flex justify-end pt-4">
+                        <SecondaryButton onClick={() => { postApprovalDismissed.current = true; setIsPostApprovalOpen(false); }}>Tutup</SecondaryButton>
+                    </div>
                 </div>
             </Modal>
 
