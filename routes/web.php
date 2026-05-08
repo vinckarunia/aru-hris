@@ -18,6 +18,7 @@ use App\Http\Controllers\PicController;
 use App\Http\Controllers\DataRequestController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\InternalEmployeeController;
+use App\Http\Controllers\ManualController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -92,6 +93,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/reminders/{reminder}/dismiss', [\App\Http\Controllers\ReminderController::class, 'dismiss'])->name('reminders.dismiss');
         Route::post('/reminders/{reminder}/restore', [\App\Http\Controllers\ReminderController::class, 'restore'])->name('reminders.restore');
         Route::post('/reminders/process', [\App\Http\Controllers\ReminderController::class, 'process'])->name('reminders.process');
+
+        // Manual / Help
+        Route::get('/manual', [ManualController::class, 'index'])->name('manual.index');
 
         // Document Generation
         Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');

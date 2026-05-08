@@ -300,9 +300,19 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
 
                         {/* User Profile Info & Logout */}
                         <div className="flex items-center gap-4 pl-2 ml-2">
+                            {/* Help / Manual Button */}
+                            <Link
+                                href={route('manual.index')}
+                                className="flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group"
+                                title="Panduan Penggunaan"
+                            >
+                                <iconify-icon icon="solar:book-minimalistic-bold-duotone" width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                            </Link>
+                            
                             <button onClick={toggleTheme} className="flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
                                 <iconify-icon icon={isDarkMode ? "solar:sun-bold-duotone" : "solar:moon-bold-duotone"} width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
                             </button>
+
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <span className="inline-flex rounded-md">

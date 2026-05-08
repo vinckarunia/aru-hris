@@ -404,7 +404,7 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                             className="py-1 pl-2 pr-7 rounded-lg border-slate-300 text-xs shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         >
                             {[10, 25, 50, 100].map(v => (
-                                <option key={v} value={v}>{v} / halaman</option>
+                                <option key={v} value={v}>{v}</option>
                             ))}
                         </select>
                     </div>

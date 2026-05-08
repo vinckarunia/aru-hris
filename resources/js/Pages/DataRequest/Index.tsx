@@ -562,7 +562,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                             className="py-1 pl-2 pr-7 rounded-lg border-slate-300 text-xs shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                         >
                             {[10, 25, 50, 100].map(v => (
-                                <option key={v} value={v}>{v} / halaman</option>
+                                <option key={v} value={v}>{v}</option>
                             ))}
                         </select>
                     </div>
@@ -578,7 +578,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                                         : link.url
                                             ? 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
                                             : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                    }`}
+                                        }`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />
                             ))}
