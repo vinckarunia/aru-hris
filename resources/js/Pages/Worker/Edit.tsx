@@ -128,7 +128,8 @@ export default function Edit({ worker, validationDigits, validationEnums }: Prop
                         </div>
                         <div>
                             <InputLabel htmlFor="gender" value="Jenis Kelamin" />
-                            <select id="gender" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.gender || 'male'} onChange={e => setData('gender', e.target.value as 'male' | 'female')}>
+                            <select id="gender" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.gender || ''} onChange={e => setData('gender', e.target.value as 'male' | 'female')}>
+                                <option value="">-- Pilih --</option>
                                 <option value="male">Laki-laki</option>
                                 <option value="female">Perempuan</option>
                             </select>

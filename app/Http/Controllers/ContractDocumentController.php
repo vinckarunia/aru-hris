@@ -107,7 +107,12 @@ class ContractDocumentController extends Controller
         
         $pdf = Pdf::loadView('pdf.surat-tugas', $data)
                   ->setPaper('a4', 'portrait')
-                  ->setOptions(['isPhpEnabled' => true]);
+                  ->setOptions([
+                      'isPhpEnabled' => true,
+                      'isRemoteEnabled' => true,
+                      'isFontSubsettingEnabled' => true,
+                      'chroot' => public_path()
+                  ]);
         $fileName = 'Surat Tugas - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
         
         return $pdf->download($fileName);

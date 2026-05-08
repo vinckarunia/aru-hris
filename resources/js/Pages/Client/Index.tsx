@@ -572,8 +572,8 @@ export default function Index({ clients, projects, workers }: Props) {
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
-                        <SecondaryButton onClick={closeModal} type="button" className="font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">Batal</SecondaryButton>
-                        <PrimaryButton disabled={processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm">
+                        <SecondaryButton onClick={closeModal} type="button">Batal</SecondaryButton>
+                        <PrimaryButton disabled={processing}>
                             {processing ? 'Menyimpan...' : 'Simpan'}
                         </PrimaryButton>
                     </div>

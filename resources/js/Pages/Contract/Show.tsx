@@ -41,7 +41,7 @@ export default function Show({ contract }: any) {
                             ? 'Harian'
                             : contract.pkwt_type === 'PKWTT'
                                 ? 'PKWTT'
-                                : contract.pkwt_number ? `PKWT-${contract.pkwt_number}` : 'PKWT'
+                                : (contract.pkwt_number && contract.pkwt_number !== "null") ? `PKWT-${contract.pkwt_number}` : 'PKWT'
                         }: {contract.assignment.worker.name}
                     </h2>
                     <p className="text-sm text-slate-500">{contract.assignment.project.name} - {contract.assignment.branches?.map((b: any) => b.name).join(', ') || '-'}</p>

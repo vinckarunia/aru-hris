@@ -54,12 +54,13 @@ class ContractController extends Controller
             $suggestedStartDate = \Carbon\Carbon::parse($latestContract->end_date)->addDay()->format('Y-m-d');
         }
 
-        // Suggest next pkwt_number if any previous contract had a non-null number
-        $maxPkwtNumber = \App\Models\Contract::where('assignment_id', $assignment->id)
-            ->whereNotNull('pkwt_number')
-            ->max('pkwt_number');
-        if ($maxPkwtNumber !== null) {
-            $suggestedPkwtNumber = (int) $maxPkwtNumber + 1;
+        // Suggest next pkwt_number based on the latest contract
+        $suggestedPkwtNumber = null;
+        if ($latestContract) {
+            if ($latestContract->pkwt_number !== null) {
+                $suggestedPkwtNumber = (int) $latestContract->pkwt_number + 1;
+            }
+            // If the latest contract had no pkwt_number, we leave it null
         }
 
         return Inertia::render('Contract/Create', [

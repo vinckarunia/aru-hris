@@ -198,6 +198,19 @@ export default function Index({ employees }: Props) {
                     <p className="text-sm text-slate-500">Kelola data karyawan internal PT. ARU</p>
                 </div>
                 <div className="flex gap-3">
+                    <a
+                        href={route('internal-employees.export')}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
+                        title="Export ke Excel"
+                    >
+                        <iconify-icon icon="solar:file-download-linear" width="20"></iconify-icon> Export Excel
+                    </a>
+                    <Link
+                        href={route('internal-employees.import.index')}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2 text-sm"
+                    >
+                        <iconify-icon icon="solar:import-linear" width="20"></iconify-icon> Import Data
+                    </Link>
                     <Link
                         href={route('internal-employees.create')}
                         className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 text-sm"

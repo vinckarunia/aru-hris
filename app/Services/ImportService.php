@@ -59,6 +59,7 @@ class ImportService
                 ['key' => 'birth_place', 'label' => 'Tempat Lahir'],
                 ['key' => 'birth_date', 'label' => 'Tanggal Lahir'],
                 ['key' => 'phone', 'label' => 'No Handphone'],
+                ['key' => 'email', 'label' => 'Email'],
                 ['key' => 'education', 'label' => 'Pendidikan Terakhir'],
                 ['key' => 'religion', 'label' => 'Agama'],
                 ['key' => 'tax_status', 'label' => 'Status Pajak/Tanggungan (PTKP)'],
@@ -733,6 +734,12 @@ class ImportService
             if (!$gender) {
                 $errors[] = "Jenis kelamin tidak valid: '{$genderRaw}'. Gunakan L/P.";
             }
+        }
+
+        // Email validation
+        $emailRaw = $c::extractField($row, $mapping, 'email');
+        if ($emailRaw && !filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Format email tidak valid (ditemukan: {$emailRaw}).";
         }
 
         return ['errors' => $errors, 'conflict' => $conflict];

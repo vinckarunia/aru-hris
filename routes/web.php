@@ -101,6 +101,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin & Super Admin Routes
     Route::middleware(['role:SUPER_ADMIN,ADMIN_ARU'])->group(function () {
         Route::resource('pics', PicController::class)->except(['create', 'show', 'edit']);
+        Route::prefix('internal-employees/import')->name('internal-employees.import.')->group(function () {
+            Route::get('/', [InternalEmployeeController::class, 'importIndex'])->name('index');
+            Route::get('/template', [InternalEmployeeController::class, 'downloadTemplate'])->name('template');
+            Route::post('/upload', [InternalEmployeeController::class, 'upload'])->name('upload');
+            Route::post('/validate', [InternalEmployeeController::class, 'validateImport'])->name('validate');
+            Route::post('/process', [InternalEmployeeController::class, 'process'])->name('process');
+            Route::get('/progress/{sessionId}', [InternalEmployeeController::class, 'progress'])->name('progress');
+        });
+        Route::get('internal-employees/export', [InternalEmployeeController::class, 'export'])->name('internal-employees.export');
         Route::resource('internal-employees', InternalEmployeeController::class);
         
         // System Settings

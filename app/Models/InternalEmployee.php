@@ -75,6 +75,64 @@ class InternalEmployee extends Model
     ];
 
     /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        // Normalize employee name on create and update
+        static::creating(function ($employee) {
+            if ($employee->name) {
+                $employee->name = static::normalizeName($employee->name);
+            }
+        });
+
+        static::updating(function ($employee) {
+            if ($employee->isDirty('name') && $employee->name) {
+                $employee->name = static::normalizeName($employee->name);
+            }
+        });
+    }
+
+    /**
+     * Normalize a person's name to Title Case with proper handling
+     * for Indonesian particles and Roman numerals.
+     *
+     * @param string $name The raw name string.
+     * @return string The normalized name in Title Case.
+     */
+    public static function normalizeName(string $name): string
+    {
+        // Collapse multiple spaces and trim
+        $name = preg_replace('/\s+/', ' ', trim($name));
+
+        // Indonesian name particles that should stay lowercase
+        $particles = ['bin', 'binti', 'van', 'von', 'de', 'del', 'della', 'di', 'el', 'al'];
+
+        // Roman numerals that should stay uppercase
+        $romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+        $words = explode(' ', mb_strtolower($name));
+
+        return implode(' ', array_map(function ($word, $index) use ($particles, $romanNumerals) {
+            $upper = mb_strtoupper($word);
+
+            // Keep Roman numerals uppercase
+            if (in_array($upper, $romanNumerals)) {
+                return $upper;
+            }
+
+            // Keep particles lowercase (but capitalize if first word)
+            if ($index > 0 && in_array($word, $particles)) {
+                return $word;
+            }
+
+            return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
+        }, $words, array_keys($words)));
+    }
+
+    /**
      * Get the user account associated with this internal employee.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasOne

@@ -71,7 +71,7 @@
         <tr>
             <td class="header-logo">
                 @if($logoBase64)
-                    <img src="{{ $logoBase64 }}" style="max-height: 60px; max-width: 80px; object-fit: contain;" alt="Logo">
+                    <img src="{{ $logoBase64 }}" width="80" alt="Logo">
                 @else
                     <div style="font-size: 30px; font-weight: bold; color: #660033; font-style: italic;">A<span style="color: #000;">R</span></div>
                 @endif
@@ -161,7 +161,7 @@
     <div class="signature-section">
         <p>Hormat kami,</p>
         @if($signatureBase64)
-            <img src="{{ $signatureBase64 }}" style="max-height: 80px; max-width: 160px; object-fit: contain; margin: 4px 0;" alt="Tanda Tangan">
+            <img src="{{ $signatureBase64 }}" width="160" style="margin: 4px 0;" alt="Tanda Tangan">
         @else
             <br><br><br><br>
         @endif

@@ -4,6 +4,8 @@ import { PageProps, User } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout';
 import WorkerLayout from '@/Layouts/WorkerLayout';
 import Modal from '@/Components/Modal';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 
 interface Worker {
     id: string;
@@ -842,9 +844,9 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                             )}
                         </div>
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 shrink-0">
-                            <button type="button" onClick={closeModal} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium">Tutup</button>
+                            <SecondaryButton onClick={closeModal}>Tutup</SecondaryButton>
                             {((reviewingRequest.pic_status === 'pending' && isPic) || (reviewingRequest.pic_status === 'approved' && reviewingRequest.status === 'pending' && !isWorker && !isPic)) && (
-                                <button type="submit" form="reviewRequestForm" disabled={processing} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium disabled:opacity-50">Kirim</button>
+                                <PrimaryButton type="submit" form="reviewRequestForm" disabled={processing}>Kirim</PrimaryButton>
                             )}
                         </div>
                     </div>
@@ -877,14 +879,14 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                         />
                     </div>
                     <div className="flex justify-end gap-3">
-                        <button type="button" onClick={() => setIsBulkConfirmOpen(false)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium">Batal</button>
-                        <button
+                        <SecondaryButton onClick={() => setIsBulkConfirmOpen(false)}>Batal</SecondaryButton>
+                        <PrimaryButton
                             onClick={submitBulkReview}
                             disabled={bulkProcessing}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 ${bulkAction === 'approved' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
+                            className={bulkAction === 'approved' ? '!bg-emerald-600 hover:!bg-emerald-700 shadow-emerald-500/30' : '!bg-rose-600 hover:!bg-rose-700 shadow-rose-500/30'}
                         >
                             {bulkProcessing ? 'Memproses...' : (bulkAction === 'approved' ? `Setujui ${selectedIds.length} Request` : `Tolak ${selectedIds.length} Request`)}
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </div>
             </Modal>
@@ -928,7 +930,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
 
                             {postApprovalData.assignment_id && postApprovalData.request_type === 'new_data' && !postApprovalData.has_contract && (
                                 <div className="flex justify-end gap-3 pt-2">
-                                    <button onClick={() => setIsPostApprovalOpen(false)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium">Nanti Saja</button>
+                                    <SecondaryButton onClick={() => setIsPostApprovalOpen(false)}>Nanti Saja</SecondaryButton>
                                     <Link
                                         href={route('contracts.create', { assignment_id: postApprovalData.assignment_id })}
                                         className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold flex items-center gap-2"
@@ -976,7 +978,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
 
                     {(postApprovalList.length > 0 || (postApprovalData && !postApprovalData.assignment_id)) && (
                         <div className="flex justify-end pt-4">
-                            <button onClick={() => setIsPostApprovalOpen(false)} className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium">Tutup</button>
+                            <SecondaryButton onClick={() => setIsPostApprovalOpen(false)}>Tutup</SecondaryButton>
                         </div>
                     )}
                 </div>

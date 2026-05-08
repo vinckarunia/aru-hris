@@ -100,7 +100,7 @@ class Worker extends Model
             if (($bpjsKesehatanChanged && $kosongSblmKesehatan) || ($bpjsKetenagakerjaanChanged && $kosongSblmKetenagakerjaan)) {
                 $recipientEmail = ($worker->user->email ?? null) ?: ($worker->email ?? null);
                 if ($recipientEmail) {
-                    \Illuminate\Support\Facades\Mail::to($recipientEmail)->send(new \App\Mail\BpjsReminderMail($worker));
+                    \Illuminate\Support\Facades\Mail::to($recipientEmail)->queue(new \App\Mail\BpjsReminderMail($worker));
                 }
             }
         });
