@@ -104,13 +104,14 @@ interface Props {
  * @param {Props} props - The component props containing the project data.
  */
 /** Number of assignments displayed per page. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 export default function Show({ project }: Props) {
     const { auth } = usePage<any>().props;
     const user = auth.user;
 
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
 
     /**
      * Deduplicate assignments so each worker appears only once.
@@ -238,9 +239,9 @@ export default function Show({ project }: Props) {
     const sortedAssignments = sortData(uniqueWorkerAssignments, sortConfigs);
 
     /** Slice of deduplicated assignments to display on the current page. */
-    const paginatedAssignments = sortedAssignments.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    const paginatedAssignments = sortedAssignments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     /** Global row offset for the current page. */
-    const rowOffset = (currentPage - 1) * PER_PAGE;
+    const rowOffset = (currentPage - 1) * itemsPerPage;
 
     return (
         <AdminLayout title={`Detail Project - ${project.name}`} header="Detail Project">
@@ -491,9 +492,10 @@ export default function Show({ project }: Props) {
                 </div>
                 <Pagination
                     totalItems={uniqueWorkerAssignments.length}
-                    itemsPerPage={PER_PAGE}
+                    itemsPerPage={itemsPerPage}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
+                    onItemsPerPageChange={(val) => { setItemsPerPage(val); setCurrentPage(1); }}
                 />
             </div>
         </AdminLayout>

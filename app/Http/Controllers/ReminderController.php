@@ -99,7 +99,8 @@ class ReminderController extends Controller
             $query->orderBy($sortBy, $sortDir === 'desc' ? 'desc' : 'asc');
         }
 
-        $reminders = $query->paginate(20)->withQueryString();
+        $perPage = min((int) $request->input('per_page', 10), 100);
+        $reminders = $query->paginate($perPage)->withQueryString();
 
         // Build type options for filter dropdown
         $typeOptions = array_map(fn (ReminderType $t) => [
@@ -116,6 +117,7 @@ class ReminderController extends Controller
                 'tab'      => $tab,
                 'sort_by'  => $sortBy,
                 'sort_dir' => $sortDir,
+                'per_page' => $perPage,
             ],
             'typeOptions' => $typeOptions,
         ]);

@@ -54,7 +54,7 @@ interface Project {
  * @param {Props} props - The component props containing lists of projects, clients, and branches.
  */
 /** Number of projects displayed per page. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 // Defining Pic interface 
 interface Pic {
@@ -81,6 +81,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
@@ -203,9 +204,9 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     });
 
     /** Slice of projects to display on the current page. */
-    const paginatedProjects = sortedProjects.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    const paginatedProjects = sortedProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     /** Global row offset for the current page. */
-    const rowOffset = (currentPage - 1) * PER_PAGE;
+    const rowOffset = (currentPage - 1) * itemsPerPage;
 
     /** Opens modal for adding a new project. */
     const openCreateModal = () => {
@@ -464,9 +465,10 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                 </div>
                 <Pagination
                     totalItems={filteredProjects.length}
-                    itemsPerPage={PER_PAGE}
+                    itemsPerPage={itemsPerPage}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
+                    onItemsPerPageChange={(val) => { setItemsPerPage(val); setCurrentPage(1); }}
                 />
             </div>
 

@@ -127,7 +127,7 @@ export default function Show({ assignment, picProjects = [] }: Props & { picProj
                                                             ? 'Harian'
                                                             : contract.pkwt_type === 'PKWTT'
                                                                 ? 'PKWTT'
-                                                                : `PKWT-${contract.pkwt_number}`
+                                                                : contract.pkwt_number ? `PKWT-${contract.pkwt_number}` : 'PKWT'
                                                         }
                                                         <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full uppercase">
                                                             {contract.contract_type}

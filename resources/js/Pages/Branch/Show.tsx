@@ -6,7 +6,7 @@ import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
 
 /** Number of items displayed per page. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 /**
  * Represents the parent client of a branch.
@@ -87,6 +87,7 @@ export default function Show({ branch, projects, workers }: Props) {
     const [activeTab, setActiveTab] = useState<'projects' | 'workers'>('projects');
     const [projPage, setProjPage] = useState<number>(1);
     const [workerPage, setWorkerPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [projSortConfigs, setProjSortConfigs] = useState<SortConfig[]>([]);
     const [workerSortConfigs, setWorkerSortConfigs] = useState<SortConfig[]>([]);
 
@@ -197,10 +198,10 @@ export default function Show({ branch, projects, workers }: Props) {
 
     const sortedProjs = sortData(projects, projSortConfigs);
     const sortedWorkers = sortData(workers, workerSortConfigs);
-    const paginatedProjs = sortedProjs.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
-    const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
-    const projOffset = (projPage - 1) * PER_PAGE;
-    const workerOffset = (workerPage - 1) * PER_PAGE;
+    const paginatedProjs = sortedProjs.slice((projPage - 1) * itemsPerPage, projPage * itemsPerPage);
+    const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * itemsPerPage, workerPage * itemsPerPage);
+    const projOffset = (projPage - 1) * itemsPerPage;
+    const workerOffset = (workerPage - 1) * itemsPerPage;
 
     return (
         <AdminLayout title={`Cabang - ${branch.name}`} header="Detail Cabang">
@@ -359,9 +360,10 @@ export default function Show({ branch, projects, workers }: Props) {
                         </div>
                         <Pagination
                             totalItems={projects.length}
-                            itemsPerPage={PER_PAGE}
+                            itemsPerPage={itemsPerPage}
                             currentPage={projPage}
                             onPageChange={setProjPage}
+                            onItemsPerPageChange={(val) => { setItemsPerPage(val); setProjPage(1); }}
                         />
                     </div>
                 )}
@@ -477,9 +479,10 @@ export default function Show({ branch, projects, workers }: Props) {
                         </div>
                         <Pagination
                             totalItems={workers.length}
-                            itemsPerPage={PER_PAGE}
+                            itemsPerPage={itemsPerPage}
                             currentPage={workerPage}
                             onPageChange={setWorkerPage}
+                            onItemsPerPageChange={(val) => { setItemsPerPage(val); setWorkerPage(1); }}
                         />
                     </div>
                 )}

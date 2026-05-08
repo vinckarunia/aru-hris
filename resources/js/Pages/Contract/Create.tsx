@@ -21,6 +21,7 @@ interface Assignment {
 interface Props {
     assignment: Assignment;
     suggestedStartDate?: string;
+    suggestedPkwtNumber?: number | null;
 }
 
 /**
@@ -29,13 +30,13 @@ interface Props {
  * @param {Props} props - The component props containing the assignment details.
  * @returns {JSX.Element} The rendered Create Contract form.
  */
-export default function Create({ assignment, suggestedStartDate }: Props) {
+export default function Create({ assignment, suggestedStartDate, suggestedPkwtNumber }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         assignment_id: assignment.id,
         // Contract Data
         contract_type: 'Kontrak',
         pkwt_type: 'PKWT',
-        pkwt_number: '',
+        pkwt_number: suggestedPkwtNumber != null ? suggestedPkwtNumber.toString() : '',
         start_date: suggestedStartDate || '',
         end_date: '',
         duration_months: '',
@@ -134,11 +135,12 @@ export default function Create({ assignment, suggestedStartDate }: Props) {
                 </Link>
             </div>
 
-            {suggestedStartDate && (
+            {(suggestedStartDate || suggestedPkwtNumber != null) && (
                 <div className="mb-4 p-4 bg-sky-50 dark:bg-sky-900/20 rounded-xl border border-sky-100 dark:border-sky-800/30 flex items-start gap-3 text-sky-600 dark:text-sky-400">
                     <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
                     <div className="text-sm font-medium">
-                        Tanggal mulai otomatis diisi berdasarkan kontrak sebelumnya (hari setelah berakhirnya kontrak terakhir).
+                        {suggestedStartDate && <p>Tanggal mulai otomatis diisi berdasarkan kontrak sebelumnya (hari setelah berakhirnya kontrak terakhir).</p>}
+                        {suggestedPkwtNumber != null && <p>Nomor PKWT otomatis dilanjutkan dari kontrak sebelumnya (PKWT ke-{suggestedPkwtNumber}).</p>}
                     </div>
                 </div>
             )}

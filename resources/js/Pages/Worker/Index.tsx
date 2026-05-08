@@ -79,7 +79,7 @@ interface Props {
  * Provides links to view details, edit, and a modal for deletion.
  */
 /** Number of workers displayed per page. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 export default function Index({ workers, clients }: Props) {
     const { auth } = usePage<PageProps>().props;
@@ -88,6 +88,7 @@ export default function Index({ workers, clients }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
     const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]); // For multi-select
@@ -222,8 +223,8 @@ export default function Index({ workers, clients }: Props) {
     });
 
     /** Slice of workers to display on the current page. */
-    const paginatedWorkers = sortedWorkers.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-    const rowOffset = (currentPage - 1) * PER_PAGE;
+    const paginatedWorkers = sortedWorkers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const rowOffset = (currentPage - 1) * itemsPerPage;
 
 
     /** Opens confirmation modal for deletion. */
@@ -586,9 +587,10 @@ export default function Index({ workers, clients }: Props) {
                 </div>
                 <Pagination
                     totalItems={filteredWorkers.length}
-                    itemsPerPage={PER_PAGE}
+                    itemsPerPage={itemsPerPage}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
+                    onItemsPerPageChange={(val) => { setItemsPerPage(val); setCurrentPage(1); }}
                 />
             </div>
 

@@ -51,7 +51,7 @@ interface PaginatedData {
 
 interface DataRequestIndexProps extends PageProps {
     dataRequests: PaginatedData;
-    filters?: { sort: string; direction: string; status?: string; type?: string; search?: string; project_id?: string; requester_id?: string };
+    filters?: { sort: string; direction: string; status?: string; type?: string; search?: string; project_id?: string; requester_id?: string; per_page?: number };
     filterOptions?: {
         projects?: Project[];
         requesters?: { id: number; name: string }[];
@@ -549,11 +549,22 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                 </div>
 
                 {/* Pagination */}
-                {dataRequests.last_page > 1 && (
-                    <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                    <div className="flex items-center gap-3">
                         <p className="text-xs text-slate-500">
-                            Menampilkan {dataRequests.from}–{dataRequests.to} dari {dataRequests.total} request
+                            Menampilkan {dataRequests.from ?? 0}–{dataRequests.to ?? 0} dari {dataRequests.total} request
                         </p>
+                        <select
+                            value={filters?.per_page || 10}
+                            onChange={(e) => router.get(route('data-requests.index'), { ...filters, per_page: Number(e.target.value), page: 1 }, { preserveState: true, preserveScroll: true })}
+                            className="py-1 pl-2 pr-7 rounded-lg border-slate-300 text-xs shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        >
+                            {[10, 25, 50, 100].map(v => (
+                                <option key={v} value={v}>{v} / halaman</option>
+                            ))}
+                        </select>
+                    </div>
+                    {dataRequests.last_page > 1 && (
                         <div className="flex items-center gap-1">
                             {dataRequests.links.map((link: any, i: number) => (
                                 <button
@@ -565,13 +576,13 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                                         : link.url
                                             ? 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
                                             : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                        }`}
+                                    }`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />
                             ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Review Modal */}

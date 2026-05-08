@@ -44,6 +44,7 @@ class ContractController extends Controller
 
         // Suggest start date from the latest contract's end_date + 1 day
         $suggestedStartDate = null;
+        $suggestedPkwtNumber = null;
         $latestContract = \App\Models\Contract::where('assignment_id', $assignment->id)
             ->whereNotNull('end_date')
             ->orderByDesc('end_date')
@@ -53,9 +54,18 @@ class ContractController extends Controller
             $suggestedStartDate = \Carbon\Carbon::parse($latestContract->end_date)->addDay()->format('Y-m-d');
         }
 
+        // Suggest next pkwt_number if any previous contract had a non-null number
+        $maxPkwtNumber = \App\Models\Contract::where('assignment_id', $assignment->id)
+            ->whereNotNull('pkwt_number')
+            ->max('pkwt_number');
+        if ($maxPkwtNumber !== null) {
+            $suggestedPkwtNumber = (int) $maxPkwtNumber + 1;
+        }
+
         return Inertia::render('Contract/Create', [
             'assignment' => $assignment,
             'suggestedStartDate' => $suggestedStartDate,
+            'suggestedPkwtNumber' => $suggestedPkwtNumber,
         ]);
     }
 

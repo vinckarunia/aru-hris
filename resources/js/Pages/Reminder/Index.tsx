@@ -40,6 +40,7 @@ interface Filters {
     tab: 'active' | 'dismissed';
     sort_by: string;
     sort_dir: 'asc' | 'desc';
+    per_page: number;
 }
 
 interface Props {
@@ -391,11 +392,22 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                 </div>
 
                 {/* Pagination */}
-                {reminders.last_page > 1 && (
-                    <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                         <div className="text-sm text-slate-500 dark:text-slate-400">
                             Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{reminders.data.length}</span> dari <span className="font-semibold text-slate-700 dark:text-slate-300">{reminders.total}</span> data
                         </div>
+                        <select
+                            value={filters.per_page || 10}
+                            onChange={(e) => applyFilters({ per_page: Number(e.target.value) })}
+                            className="py-1 pl-2 pr-7 rounded-lg border-slate-300 text-xs shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        >
+                            {[10, 25, 50, 100].map(v => (
+                                <option key={v} value={v}>{v} / halaman</option>
+                            ))}
+                        </select>
+                    </div>
+                    {reminders.last_page > 1 && (
                         <div className="flex gap-1">
                             {reminders.links.map((link, index) => {
                                 // Strip HTML entities like &laquo; and &raquo;
@@ -422,8 +434,9 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                                 );
                             })}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+
             </div>
 
             {/* Reminder Detail Modal */}

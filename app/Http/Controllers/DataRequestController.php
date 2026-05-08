@@ -75,7 +75,8 @@ class DataRequestController extends Controller
             $query->where('data_requests.status', $status);
         }
 
-        $dataRequests = $query->paginate(20)->withQueryString();
+        $perPage = min((int) $request->input('per_page', 10), 100);
+        $dataRequests = $query->paginate($perPage)->withQueryString();
 
         // Post-process: resolve FK IDs to human-readable names format requires iteration over Collection rather than Builder collection
         // However, using tap or through over pagination allows this
@@ -137,6 +138,7 @@ class DataRequestController extends Controller
                 'search' => $search,
                 'project_id' => $projectId,
                 'requester_id' => $requesterId,
+                'per_page' => $perPage,
             ],
         ]);
     }

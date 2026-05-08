@@ -80,7 +80,7 @@ interface Props {
  * @returns {JSX.Element} The rendered Client management page.
  */
 /** Number of clients displayed per page. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 export default function Index({ clients, projects, workers }: Props) {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -88,6 +88,7 @@ export default function Index({ clients, projects, workers }: Props) {
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
 
@@ -196,9 +197,9 @@ export default function Index({ clients, projects, workers }: Props) {
     });
 
     /** Slice of clients to display on the current page. */
-    const paginatedClients = sortedClients.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+    const paginatedClients = sortedClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     /** Global row offset for the current page. */
-    const rowOffset = (currentPage - 1) * PER_PAGE;
+    const rowOffset = (currentPage - 1) * itemsPerPage;
 
     /**
      * Opens the modal in "add" mode and resets form state.
@@ -502,9 +503,10 @@ export default function Index({ clients, projects, workers }: Props) {
                 </div>
                 <Pagination
                     totalItems={filteredClients.length}
-                    itemsPerPage={PER_PAGE}
+                    itemsPerPage={itemsPerPage}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
+                    onItemsPerPageChange={(val) => { setItemsPerPage(val); setCurrentPage(1); }}
                 />
             </div>
 

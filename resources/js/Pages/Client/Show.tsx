@@ -11,6 +11,7 @@ import DangerButton from '@/Components/DangerButton';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
+import { User } from '@/types';
 
 type SortDirection = 'asc' | 'desc';
 interface SortConfig {
@@ -107,7 +108,7 @@ interface Props {
  * @param {Props} props - The component props containing the client and workers data.
  */
 /** Number of items displayed per page in each tab table. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 export default function Show({ client, workers, pics }: Props) {
     const [activeTab, setActiveTab] = useState<'branches' | 'projects' | 'workers'>('branches');
@@ -124,6 +125,7 @@ export default function Show({ client, workers, pics }: Props) {
     const [branchPage, setBranchPage] = useState<number>(1);
     const [projPage, setProjPage] = useState<number>(1);
     const [workerPage, setWorkerPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
 
     // Sorting states
     const [branchSortConfigs, setBranchSortConfigs] = useState<SortConfig[]>([]);
@@ -239,14 +241,14 @@ export default function Show({ client, workers, pics }: Props) {
     const sortedProjs = sortData(client.projects, projSortConfigs);
     const sortedWorkers = sortData(workers, workerSortConfigs);
 
-    const paginatedBranchs = sortedBranches.slice((branchPage - 1) * PER_PAGE, branchPage * PER_PAGE);
-    const paginatedProjs = sortedProjs.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
-    const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * PER_PAGE, workerPage * PER_PAGE);
+    const paginatedBranchs = sortedBranches.slice((branchPage - 1) * itemsPerPage, branchPage * itemsPerPage);
+    const paginatedProjs = sortedProjs.slice((projPage - 1) * itemsPerPage, projPage * itemsPerPage);
+    const paginatedWorkers = sortedWorkers.slice((workerPage - 1) * itemsPerPage, workerPage * itemsPerPage);
 
     // Row offsets per tab
-    const branchOffset = (branchPage - 1) * PER_PAGE;
-    const projOffset = (projPage - 1) * PER_PAGE;
-    const workerOffset = (workerPage - 1) * PER_PAGE;
+    const branchOffset = (branchPage - 1) * itemsPerPage;
+    const projOffset = (projPage - 1) * itemsPerPage;
+    const workerOffset = (workerPage - 1) * itemsPerPage;
     // ==========================================
     // STATE & FORM FOR DEPARTMENT
     // ==========================================
@@ -481,9 +483,10 @@ export default function Show({ client, workers, pics }: Props) {
                         </div>
                         <Pagination
                             totalItems={client.branches.length}
-                            itemsPerPage={PER_PAGE}
+                            itemsPerPage={itemsPerPage}
                             currentPage={branchPage}
                             onPageChange={setBranchPage}
+                            onItemsPerPageChange={(val) => { setItemsPerPage(val); setBranchPage(1); }}
                         />
                     </div>
                 )}
@@ -554,9 +557,10 @@ export default function Show({ client, workers, pics }: Props) {
                         </div>
                         <Pagination
                             totalItems={client.projects.length}
-                            itemsPerPage={PER_PAGE}
+                            itemsPerPage={itemsPerPage}
                             currentPage={projPage}
                             onPageChange={setProjPage}
+                            onItemsPerPageChange={(val) => { setItemsPerPage(val); setProjPage(1); }}
                         />
                     </div>
                 )}
@@ -668,9 +672,10 @@ export default function Show({ client, workers, pics }: Props) {
                         </div>
                         <Pagination
                             totalItems={workers.length}
-                            itemsPerPage={PER_PAGE}
+                            itemsPerPage={itemsPerPage}
                             currentPage={workerPage}
                             onPageChange={setWorkerPage}
+                            onItemsPerPageChange={(val) => { setItemsPerPage(val); setWorkerPage(1); }}
                         />
                     </div>
                 )}

@@ -39,7 +39,7 @@ interface Props {
 }
 
 /** Number of employees displayed per page. */
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 /**
  * Internal Employee Index Page Component
@@ -51,6 +51,7 @@ export default function Index({ employees }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [selectedEmployee, setSelectedEmployee] = useState<InternalEmployee | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
     const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -125,8 +126,8 @@ export default function Index({ employees }: Props) {
         return 0;
     });
 
-    const paginatedEmployees = sortedEmployees.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-    const rowOffset = (currentPage - 1) * PER_PAGE;
+    const paginatedEmployees = sortedEmployees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const rowOffset = (currentPage - 1) * itemsPerPage;
 
     const openDeleteModal = (emp: InternalEmployee) => {
         setSelectedEmployee(emp);
@@ -143,6 +144,7 @@ export default function Index({ employees }: Props) {
 
     /** Calculates the age of an employee based on their birth date. */
     const calculateAge = (employee: InternalEmployee) => {
+        if (!employee.birth_date) return '-';
         const today = new Date();
         const birthDateObj = new Date(employee.birth_date);
         const age = today.getFullYear() - birthDateObj.getFullYear();
@@ -365,9 +367,10 @@ export default function Index({ employees }: Props) {
                 </div>
                 <Pagination
                     totalItems={filteredEmployees.length}
-                    itemsPerPage={PER_PAGE}
+                    itemsPerPage={itemsPerPage}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}
+                    onItemsPerPageChange={(val) => { setItemsPerPage(val); setCurrentPage(1); }}
                 />
             </div>
 
