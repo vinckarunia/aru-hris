@@ -216,7 +216,7 @@ class AssignmentController extends Controller
             abort(403);
         }
 
-        $assignment->load('worker');
+        $assignment->load(['worker', 'branches']);
 
         return Inertia::render('Assignment/Edit', [
             'assignment' => $assignment,
@@ -252,6 +252,7 @@ class AssignmentController extends Controller
                 'position'         => 'nullable|string|max:255',
                 'hire_date'        => 'nullable|date',
                 'status'           => 'nullable|in:active,contract expired,resign,fired,project closed,other',
+                'equipment_returned' => 'nullable|boolean',
                 'termination_date' => 'nullable|date|after_or_equal:hire_date',
             ];
 
@@ -368,6 +369,46 @@ class AssignmentController extends Controller
 
         return redirect()->route('workers.show', $worker)
             ->with('message', 'Penempatan berhasil dihapus.');
+    }
+
+    /**
+     * Toggle the equipment returned status for an assignment.
+     *
+     * This is a direct action (no DataRequest flow) since it is purely
+     * a PIC operational concern that Admin reads for visibility.
+     *
+     * @param Request $request
+     * @param Assignment $assignment
+     * @return RedirectResponse
+     */
+    public function toggleEquipmentReturned(Request $request, Assignment $assignment): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->isWorker()) abort(403, 'Akses ditolak.');
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403, 'Akses ditolak.');
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Penempatan ini di luar wewenang project Anda.');
+            }
+        }
+
+        $validated = $request->validate([
+            'equipment_returned' => 'required|boolean',
+        ]);
+
+        $assignment->update(['equipment_returned' => $validated['equipment_returned']]);
+
+        $worker = Worker::find($assignment->worker_id);
+        \App\Models\AuditLog::log(
+            'update',
+            'assignment',
+            "Mengubah status pengembalian perangkat kerja penempatan #{$assignment->id} untuk karyawan: {$worker->name} menjadi " . ($validated['equipment_returned'] ? 'Sudah' : 'Belum'),
+            ['assignment_id' => $assignment->id, 'equipment_returned' => $validated['equipment_returned']]
+        );
+
+        return redirect()->back()->with('message', 'Status pengembalian perangkat kerja berhasil diperbarui.');
     }
 
     /**

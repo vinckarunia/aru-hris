@@ -40,6 +40,7 @@ const ACTION_COLORS: Record<string, string> = {
     settings: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     upload: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
     download: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+    email: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -55,6 +56,7 @@ const ACTION_LABELS: Record<string, string> = {
     settings: 'Pengaturan',
     upload: 'Upload',
     download: 'Download',
+    email: 'Email',
 };
 
 /**

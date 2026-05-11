@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
@@ -19,6 +19,7 @@ interface Branch {
 interface Assignment {
     id: string; worker_id: string; employee_id: string | null; position: string | null;
     hire_date: string; termination_date: string | null; status: string;
+    equipment_returned: boolean | null;
     project_id: string;
     worker: { id: string; name: string; nik_aru: string; };
     project: { id: string; name: string; prefix: string; branches?: Branch[] } | null;
@@ -39,6 +40,13 @@ export default function Show({ assignment, picProjects = [] }: Props & { picProj
     const { auth } = usePage<PageProps>().props;
     const isPic = auth.user.role === 'PIC';
     const isAdmin = !isPic; // Simplified: non-PIC users here are Admin/SuperAdmin
+
+    const isNotActive = assignment.status !== 'active';
+
+    /** Toggle hardcopy received status for a specific contract */
+    const handleHardcopyToggle = (contractId: string) => {
+        router.post(route('contracts.toggle-hardcopy', contractId), {}, { preserveScroll: true });
+    };
 
     return (
         <AdminLayout title={`Detail Penempatan - ${assignment.worker.name}`} header="Detail Penempatan">
@@ -132,15 +140,34 @@ export default function Show({ assignment, picProjects = [] }: Props & { picProj
                                                         <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full uppercase">
                                                             {contract.contract_type}
                                                         </span>
+                                                        {contract.hardcopy_received_at && (
+                                                            <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center gap-1" title="Hardcopy diterima">
+                                                                <iconify-icon icon="solar:verified-check-bold" width="12"></iconify-icon> Hardcopy
+                                                            </span>
+                                                        )}
                                                     </h4>
                                                     <p className="text-xs text-slate-500 mt-1">
                                                         Periode: {contract.start_date} s/d {contract.end_date || '-'}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <Link href={route('contracts.show', contract.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
-                                                Lihat Detail
-                                            </Link>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleHardcopyToggle(contract.id)}
+                                                    className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors border flex items-center gap-2 ${
+                                                        contract.hardcopy_received_at 
+                                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/40' 
+                                                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700'
+                                                    }`}
+                                                    title={contract.hardcopy_received_at ? 'Batalkan Konfirmasi Hardcopy' : 'Konfirmasi Hardcopy Diterima'}
+                                                >
+                                                    <iconify-icon icon={contract.hardcopy_received_at ? "solar:verified-check-bold" : "solar:verified-check-linear"} width="16"></iconify-icon>
+                                                    Hardcopy
+                                                </button>
+                                                <Link href={route('contracts.show', contract.id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
+                                                    Lihat Detail
+                                                </Link>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

@@ -80,7 +80,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Assignment and Contract Routes
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);
+    Route::post('/assignments/{assignment}/toggle-equipment', [App\Http\Controllers\AssignmentController::class, 'toggleEquipmentReturned'])->name('assignments.toggle-equipment');
     Route::resource('contracts', App\Http\Controllers\ContractController::class)->except(['index']);
+    Route::post('/contracts/{contract}/toggle-hardcopy', [App\Http\Controllers\ContractController::class, 'toggleHardcopy'])->name('contracts.toggle-hardcopy');
 
     // Super Admin Only Routes
     Route::middleware(['role:SUPER_ADMIN'])->group(function () {

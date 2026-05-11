@@ -37,7 +37,21 @@ class Contract extends Model
         'duration_months',
         'evaluation_notes',
         'file_path',
+        'hardcopy_received_at',
+        'hardcopy_received_by',
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'hardcopy_received_at' => 'datetime',
+        ];
+    }
 
     public function assignment()
     {
@@ -47,5 +61,15 @@ class Contract extends Model
     public function compensation()
     {
         return $this->hasOne(ContractCompensation::class);
+    }
+
+    /**
+     * Get the user who confirmed hardcopy receipt.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function hardcopyReceivedByUser()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'hardcopy_received_by');
     }
 }

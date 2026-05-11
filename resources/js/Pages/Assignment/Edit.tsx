@@ -9,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 
 interface Branch { id: string; name: string; }
 interface Project { id: string; name: string; prefix: string; branches: Branch[]; }
-interface Assignment { id: string; worker_id: string; project_id: string; branches: Branch[]; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; worker: { id: string, name: string; nik_aru: string | null; } }
+interface Assignment { id: string; worker_id: string; project_id: string; branches: Branch[]; employee_id: string | null; position: string | null; hire_date: string; termination_date: string | null; status: string; equipment_returned: boolean | null; worker: { id: string, name: string; nik_aru: string | null; } }
 
 interface Props { assignment: Assignment; projects: Project[]; }
 
@@ -28,6 +28,7 @@ export default function Edit({ assignment, projects }: Props) {
         hire_date: assignment.hire_date || '',
         termination_date: assignment.termination_date || '',
         status: assignment.status || 'active',
+        equipment_returned: assignment.equipment_returned,
         notes: '',
     });
 
@@ -154,6 +155,23 @@ export default function Edit({ assignment, projects }: Props) {
                             </select>
                             <InputError message={errors.status} className="mt-1" />
                         </div>
+
+                        {data.status !== 'active' && (
+                            <div className={`md:col-span-${isPic ? '1' : '2'} bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700`}>
+                                <InputLabel value="Pengembalian Perangkat Kerja" className="mb-2" />
+                                <div className="flex items-center gap-3">
+                                    <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors border ${data.equipment_returned === true || data.equipment_returned === 1 as any ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400' : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400'}`}>
+                                        <input type="radio" name="equipment" className="text-emerald-500 focus:ring-emerald-500" checked={data.equipment_returned === true || data.equipment_returned === 1 as any} onChange={() => setData('equipment_returned', true)} />
+                                        <span className="text-sm font-semibold">Sudah</span>
+                                    </label>
+                                    <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors border ${data.equipment_returned === false || data.equipment_returned === 0 as any ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400' : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400'}`}>
+                                        <input type="radio" name="equipment" className="text-red-500 focus:ring-red-500" checked={data.equipment_returned === false || data.equipment_returned === 0 as any} onChange={() => setData('equipment_returned', false)} />
+                                        <span className="text-sm font-semibold">Belum</span>
+                                    </label>
+                                </div>
+                                <InputError message={errors.equipment_returned} className="mt-1" />
+                            </div>
+                        )}
                         {isPic && (
                             <div className="md:col-span-2">
                                 <InputLabel htmlFor="notes" value="Catatan / Alasan Perubahan" />

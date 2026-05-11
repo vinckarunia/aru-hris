@@ -37,5 +37,25 @@ class AppServiceProvider extends ServiceProvider
                 \App\Models\AuditLog::log('logout', 'auth', "User {$event->user->name} berhasil logout", null, $event->user->id);
             }
         });
+
+        // SMTP Logging — log all outgoing mail events for audit trail
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSent::class, function ($event) {
+            try {
+                $message = $event->message;
+                $to = array_map(fn($a) => $a->getAddress(), $message->getTo());
+                $cc = $message->getCc() ? array_map(fn($a) => $a->getAddress(), $message->getCc()) : [];
+                $subject = $message->getSubject();
+
+                \App\Models\AuditLog::log('email', 'settings', "Email berhasil dikirim: \"{$subject}\"", [
+                    'to' => $to,
+                    'cc' => $cc,
+                    'subject' => $subject,
+                    'smtp_status' => 'sent',
+                    'debug' => $event->data['__laravel_notification'] ?? null,
+                ]);
+            } catch (\Throwable $e) {
+                // Silently ignore logging failures
+            }
+        });
     }
 }

@@ -700,4 +700,70 @@ class DataRequestController extends Controller
 
         return $worker;
     }
+
+    /**
+     * Send contract approval notification email to worker with CC to PIC.
+     *
+     * Wrapped in try/catch so email failures never block the approval flow.
+     * Logs the email attempt (success or failure) to AuditLog.
+     *
+     * @param Worker     $worker     The worker the contract belongs to.
+     * @param \App\Models\Contract   $contract   The approved contract.
+     * @param \App\Models\Assignment $assignment The related assignment.
+     * @return void
+     */
+    private function sendContractApprovalEmail($worker, $contract, $assignment): void
+    {
+        try {
+            $assignment->load('project');
+
+            // Determine worker's email address
+            $recipientEmail = ($worker->user->email ?? null) ?: ($worker->email ?? null);
+            if (!$recipientEmail) {
+                \App\Models\AuditLog::log('email', 'contract', "Gagal mengirim email kontrak: karyawan {$worker->name} tidak memiliki email", [
+                    'contract_id' => $contract->id,
+                    'worker_name' => $worker->name,
+                    'status' => 'skipped_no_email',
+                ]);
+                return;
+            }
+
+            // Find PIC email(s) for the project
+            $ccEmails = [];
+            if ($assignment->project_id) {
+                $picUsers = \App\Models\Pic::whereHas('projects', function ($q) use ($assignment) {
+                    $q->where('projects.id', $assignment->project_id);
+                })->with('user')->get();
+
+                foreach ($picUsers as $pic) {
+                    if ($pic->user && $pic->user->email) {
+                        $ccEmails[] = $pic->user->email;
+                    }
+                }
+            }
+
+            $mail = \Illuminate\Support\Facades\Mail::to($recipientEmail);
+            if (!empty($ccEmails)) {
+                $mail->cc($ccEmails);
+            }
+
+            $mail->send(new \App\Mail\ContractApprovedMail($worker, $contract, $assignment));
+
+            \App\Models\AuditLog::log('email', 'contract', "Email pemberitahuan kontrak berhasil dikirim ke karyawan: {$worker->name}", [
+                'contract_id' => $contract->id,
+                'worker_name' => $worker->name,
+                'recipient' => $recipientEmail,
+                'cc' => $ccEmails,
+                'subject' => 'Pemberitahuan Kontrak Kerja — PT. Alfa Reka Usaha',
+                'status' => 'sent',
+            ]);
+        } catch (\Exception $e) {
+            \App\Models\AuditLog::log('email', 'contract', "Gagal mengirim email kontrak untuk karyawan: {$worker->name} — {$e->getMessage()}", [
+                'contract_id' => $contract->id,
+                'worker_name' => $worker->name,
+                'error' => $e->getMessage(),
+                'status' => 'failed',
+            ]);
+        }
+    }
 }

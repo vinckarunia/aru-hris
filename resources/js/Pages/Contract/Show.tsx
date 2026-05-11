@@ -1,6 +1,6 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import Modal from '@/Components/Modal';
 import DangerButton from '@/Components/DangerButton';
@@ -31,6 +31,13 @@ export default function Show({ contract }: any) {
     const confirmDelete = () => {
         destroy(route('contracts.destroy', contract.id));
     };
+
+    /** Toggle hardcopy received status */
+    const handleHardcopyToggle = () => {
+        router.post(route('contracts.toggle-hardcopy', contract.id), {}, { preserveScroll: true });
+    };
+
+    const isHardcopyReceived = !!contract.hardcopy_received_at;
 
     return (
         <AdminLayout title={`Detail Kontrak - ${contract.assignment.worker.name}`} header="Detail Kontrak">
@@ -64,6 +71,49 @@ export default function Show({ contract }: any) {
             </div>
 
             <div className="grid grid-cols-1 gap-6 mb-10">
+
+                {/* Hardcopy Received Toggle */}
+                <div className={`rounded-2xl border shadow-sm p-5 transition-all ${
+                    isHardcopyReceived
+                        ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30'
+                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'
+                }`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
+                                isHardcopyReceived
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                            }`}>
+                                <iconify-icon icon={isHardcopyReceived ? "solar:verified-check-bold" : "solar:document-text-bold"} width="24"></iconify-icon>
+                            </div>
+                            <div>
+                                <p className={`text-sm font-bold ${isHardcopyReceived ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    Hardcopy kontrak {isHardcopyReceived ? 'sudah' : 'belum'} diterima dari <span className="underline decoration-dotted">{contract.assignment.worker.name}</span>
+                                </p>
+                                {isHardcopyReceived && contract.hardcopy_received_by_user && (
+                                    <p className="text-xs text-emerald-600/70 dark:text-emerald-500/70 mt-0.5">
+                                        Dikonfirmasi oleh {contract.hardcopy_received_by_user.name} pada {new Date(contract.hardcopy_received_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleHardcopyToggle}
+                            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                                isHardcopyReceived ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-600'
+                            }`}
+                            role="switch"
+                            aria-checked={isHardcopyReceived}
+                        >
+                            <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                isHardcopyReceived ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                        </button>
+                    </div>
+                </div>
+
                 {/* Contract Info */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-slate-700 pb-3">

@@ -67,6 +67,14 @@ class ContractDocumentController extends Controller
             default => 'pdf.pkwt', // vdi
         };
         
+        // Audit log for PKWT download
+        $workerName = $contract->assignment->worker->name ?? 'Unknown';
+        \App\Models\AuditLog::log('download', 'contract', "Mengunduh PKWT untuk karyawan: {$workerName}", [
+            'contract_id' => $contract->id,
+            'document_type' => 'PKWT',
+            'worker_name' => $workerName,
+        ]);
+
         return $this->generatePkwtPdf($data, $viewName);
     }
 
@@ -114,7 +122,15 @@ class ContractDocumentController extends Controller
                       'chroot' => public_path()
                   ]);
         $fileName = 'Surat Tugas - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
-        
+
+        // Audit log for Surat Tugas download
+        $workerName = $contract->assignment->worker->name ?? 'Unknown';
+        \App\Models\AuditLog::log('download', 'contract', "Mengunduh Surat Tugas untuk karyawan: {$workerName}", [
+            'contract_id' => $contract->id,
+            'document_type' => 'Surat Tugas',
+            'worker_name' => $workerName,
+        ]);
+
         return $pdf->download($fileName);
     }
 

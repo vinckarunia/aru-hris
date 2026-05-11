@@ -160,7 +160,7 @@ class ContractController extends Controller
             abort(403, 'Akses ditolak. Detail kontrak dan kompensasi hanya dapat diakses oleh Admin.');
         }
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branches']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project', 'assignment.branches', 'hardcopyReceivedByUser']);
 
         return Inertia::render('Contract/Show', [
             'contract' => $contract
@@ -308,6 +308,60 @@ class ContractController extends Controller
         $contract->delete();
         
         return redirect()->route('assignments.show', \App\Models\Assignment::encodeHashid($assignmentId))->with('message', 'Kontrak berhasil dihapus.');
+    }
+
+    /**
+     * Toggle the hardcopy received status for a contract.
+     *
+     * Allows PIC or Admin to mark whether the physical contract
+     * hardcopy has been received from the worker.
+     *
+     * @param Request $request
+     * @param Contract $contract
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function toggleHardcopy(Request $request, Contract $contract): \Illuminate\Http\RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->isWorker()) abort(403, 'Akses ditolak.');
+        if (!$user->isAdminOrAbove() && !$user->isPic()) abort(403, 'Akses ditolak.');
+
+        $contract->load('assignment.worker');
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!$contract->assignment || !in_array($contract->assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Kontrak ini di luar wewenang project Anda.');
+            }
+        }
+
+        $isCurrentlyReceived = !is_null($contract->hardcopy_received_at);
+        $workerName = $contract->assignment->worker->name ?? 'Unknown';
+
+        if ($isCurrentlyReceived) {
+            // Un-toggle: clear the fields
+            $contract->update([
+                'hardcopy_received_at' => null,
+                'hardcopy_received_by' => null,
+            ]);
+            $logMessage = "Membatalkan konfirmasi penerimaan hardcopy kontrak #{$contract->id} dari karyawan: {$workerName}";
+        } else {
+            // Toggle on: set the fields
+            $contract->update([
+                'hardcopy_received_at' => now(),
+                'hardcopy_received_by' => $user->id,
+            ]);
+            $logMessage = "Mengkonfirmasi penerimaan hardcopy kontrak #{$contract->id} dari karyawan: {$workerName}";
+        }
+
+        \App\Models\AuditLog::log('update', 'contract', $logMessage, [
+            'contract_id' => $contract->id,
+            'hardcopy_received' => !$isCurrentlyReceived,
+        ]);
+
+        return redirect()->back()->with('message', $isCurrentlyReceived
+            ? 'Konfirmasi penerimaan hardcopy dibatalkan.'
+            : 'Hardcopy kontrak dikonfirmasi sudah diterima.');
     }
 
     /**

@@ -52,6 +52,7 @@ class Assignment extends Model
         'hire_date',
         'termination_date',
         'status',
+        'equipment_returned',
     ];
 
     /**

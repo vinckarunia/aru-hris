@@ -125,7 +125,7 @@
         $pkwtNumFormatted = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
         $romanMonths  = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
         $contractDate = \Carbon\Carbon::parse($contract->start_date ?? now());
-        $issueDate    = now();
+        $issueDate    = $contract->start_date ? \Carbon\Carbon::parse($contract->start_date) : now();
         $romanMonth   = $romanMonths[$issueDate->month] ?? 'I';
         $year         = $issueDate->year;
         $pkwt_formatted = sprintf('%s/ARU/PKWT-%s/%s/%s', $seqFormatted, $pkwtNumFormatted, $romanMonth, $year);
