@@ -4,15 +4,15 @@ $app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$user = \App\Models\User::where('role', 'pic')->first();
-$user->pic->projects()->sync([]); // remove all projects
-
+$user = \App\Models\User::first();
+if (!$user) { echo "No Admin user found\n"; exit; }
+echo "Found User: " . $user->email . "\n";
 auth()->login($user);
 
 $controller = new \App\Http\Controllers\DashboardController();
 try {
     $controller->index();
-    echo "Dashboard PIC Success (No Projects)\n";
+    echo "Dashboard Admin Success\n";
 } catch (\Exception $e) {
     echo "Error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine() . "\n";
 }

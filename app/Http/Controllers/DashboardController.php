@@ -30,7 +30,7 @@ class DashboardController extends Controller
      * 
      * @return Response
      */
-    public function index(): Response
+    public function index()
     {
         $cacheTtl = 15; // 15 seconds cache
 
@@ -120,79 +120,93 @@ class DashboardController extends Controller
                 $demographicsQuery->whereIn('assignments.project_id', $picProjectIds);
             }
 
+            // Fix for SQL strict mode grouping: aggregate in PHP
             $employmentDemographics = $demographicsQuery
-                ->select(DB::raw("COALESCE(NULLIF(contracts.pkwt_type, ''), contracts.contract_type) as status"), DB::raw('count(contracts.id) as count'))
-                ->groupBy(DB::raw("COALESCE(NULLIF(contracts.pkwt_type, ''), contracts.contract_type)"))
-                ->get();
+                ->select(
+                    'contracts.pkwt_type',
+                    'contracts.contract_type',
+                    DB::raw('count(contracts.id) as count')
+                )
+                ->groupBy('contracts.pkwt_type', 'contracts.contract_type')
+                ->get()
+                ->map(function ($row) {
+                    $status = !empty($row->pkwt_type) ? $row->pkwt_type : $row->contract_type;
+                    return ['status' => $status, 'count' => $row->count];
+                })
+                ->groupBy('status')
+                ->map(function ($group, $status) {
+                    return ['status' => $status, 'count' => $group->sum('count')];
+                })
+                ->values();
 
-            // FR-DASH-04: Data Grid (Recent Assignments)
-            $recentAssignmentsQuery = Assignment::with(['worker', 'project.client', 'branches'])
-                ->orderBy('hire_date', 'desc');
-            
-            if ($isPic) {
-                $recentAssignmentsQuery->whereIn('project_id', $picProjectIds);
-            }
+                // FR-DASH-04: Data Grid (Recent Assignments)
+                $recentAssignmentsQuery = Assignment::with(['worker', 'project.client', 'branches'])
+                    ->orderBy('hire_date', 'desc');
+                
+                if ($isPic) {
+                    $recentAssignmentsQuery->whereIn('project_id', $picProjectIds);
+                }
 
-            $recentAssignments = $recentAssignmentsQuery
-                ->take(10)
-                ->get();
-            
-            // Pending Edit Requests Count
-            $pendingDataRequestsCount = 0;
-            if ($isPic) {
-                // PIC needs to review requests submitted by workers in their projects
-                $pendingDataRequestsCount = DataRequest::where('pic_status', 'pending')
-                    ->whereIn('project_id', $picProjectIds)
-                    ->count();
-            } else {
-                // Admins need to review requests that are either approved by PIC or bypass PIC
-                $pendingDataRequestsCount = DataRequest::where('status', 'pending')
-                    ->where(function ($q) {
-                        $q->where('pic_status', 'approved')
-                          ->orWhereNull('pic_status');
-                    })
-                    ->count();
-            }
-
-            // Unverified Documents (Admins only)
-            $unverifiedDocuments = [];
-            if (!$isPic) {
-                $unverifiedDocuments = Document::with('worker')
-                    ->whereNull('verified_at')
-                    ->orderBy('created_at', 'desc')
-                    ->take(5)
+                $recentAssignments = $recentAssignmentsQuery
+                    ->take(10)
                     ->get();
+                
+                // Pending Edit Requests Count
+                $pendingDataRequestsCount = 0;
+                if ($isPic) {
+                    // PIC needs to review requests submitted by workers in their projects
+                    $pendingDataRequestsCount = DataRequest::where('pic_status', 'pending')
+                        ->whereIn('project_id', $picProjectIds)
+                        ->count();
+                } else {
+                    // Admins need to review requests that are either approved by PIC or bypass PIC
+                    $pendingDataRequestsCount = DataRequest::where('status', 'pending')
+                        ->where(function ($q) {
+                            $q->where('pic_status', 'approved')
+                              ->orWhereNull('pic_status');
+                        })
+                        ->count();
+                }
+
+                // Unverified Documents (Admins only)
+                $unverifiedDocuments = [];
+                if (!$isPic) {
+                    $unverifiedDocuments = Document::with('worker')
+                        ->whereNull('verified_at')
+                        ->orderBy('created_at', 'desc')
+                        ->take(5)
+                        ->get();
+                }
+
+                return [
+                    'quick_stats' => [
+                        'active_workers' => $totalActiveWorkers,
+                        'active_clients' => $totalActiveClients,
+                        'ongoing_projects' => $totalOngoingProjects,
+                        'idle_workers' => $totalIdleWorkers,
+                    ],
+                    'alerts' => [
+                        'idle_workers' => $idleWorkers,
+                        'pending_data_requests' => $pendingDataRequestsCount,
+                        'unverified_documents' => $unverifiedDocuments,
+                    ],
+                    'charts' => [
+                        'worker_distribution' => $workerDistribution,
+                        'employment_demographics' => $employmentDemographics,
+                    ],
+                    'recent_assignments' => $recentAssignments,
+                ];
+            });
+
+            // FR-DASH-X: Reminders Summary
+            $remindersSummary = [];
+            if (!$isPic) {
+                $remindersSummary = ReminderService::getDashboardSummary();
             }
 
-            return [
-                'quick_stats' => [
-                    'active_workers' => $totalActiveWorkers,
-                    'active_clients' => $totalActiveClients,
-                    'ongoing_projects' => $totalOngoingProjects,
-                    'idle_workers' => $totalIdleWorkers,
-                ],
-                'alerts' => [
-                    'idle_workers' => $idleWorkers,
-                    'pending_data_requests' => $pendingDataRequestsCount,
-                    'unverified_documents' => $unverifiedDocuments,
-                ],
-                'charts' => [
-                    'worker_distribution' => $workerDistribution,
-                    'employment_demographics' => $employmentDemographics,
-                ],
-                'recent_assignments' => $recentAssignments,
-            ];
-        });
-
-        // FR-DASH-X: Reminders Summary
-        $remindersSummary = [];
-        if (!$isPic) {
-            $remindersSummary = ReminderService::getDashboardSummary();
-        }
-
-        return Inertia::render('Dashboard', [
-            'dashboardData' => $dashboardData,
-            'remindersSummary' => $remindersSummary,
-        ]);
+            return Inertia::render('Dashboard', [
+                'dashboardData' => $dashboardData,
+                'remindersSummary' => $remindersSummary,
+            ]);
     }
 }
