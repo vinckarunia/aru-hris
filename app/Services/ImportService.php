@@ -1310,6 +1310,11 @@ class ImportService
         $sheet->freezePane('A2');
 
         $filePath = 'templates/import_template_karyawan.xlsx';
+        
+        if (!Storage::disk('local')->exists('templates')) {
+            Storage::disk('local')->makeDirectory('templates');
+        }
+
         $fullPath = Storage::disk('local')->path($filePath);
         
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);

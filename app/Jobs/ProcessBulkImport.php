@@ -336,6 +336,41 @@ class ProcessBulkImport implements ShouldQueue
                         if (!$hasAssignmentMapping) $assignmentData = [];
                         if (!$hasContractMapping) $contractsData = [];
                         if (!$hasCompensationMapping) $compData = [];
+
+                        // Filter out unmapped worker fields
+                        foreach ($workerData as $k => $v) {
+                            if (!array_key_exists($k, $this->mapping)) {
+                                unset($workerData[$k]);
+                            }
+                        }
+
+                        // Filter out unmapped assignment fields
+                        if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
+                        if (!array_key_exists('branch_name', $this->mapping) && empty($this->globalSettings['branch_ids'])) unset($assignmentData['branch_ids']);
+                        if (!array_key_exists('nik_tlj', $this->mapping)) unset($assignmentData['nik_tlj']);
+                        if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
+                        if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
+                            unset($assignmentData['status']);
+                            unset($assignmentData['termination_date']);
+                        }
+                        if (!array_key_exists('hire_date', $this->mapping)) unset($assignmentData['hire_date']);
+
+                        // Filter out unmapped contract fields
+                        foreach ($contractsData as &$contractData) {
+                            if (!array_key_exists('raw_contract_type', $this->mapping)) {
+                                unset($contractData['contract_type'], $contractData['pkwt_type'], $contractData['pkwt_number']);
+                            }
+                            if (!array_key_exists('contract_start', $this->mapping)) unset($contractData['start_date']);
+                            if (!array_key_exists('contract_end', $this->mapping)) unset($contractData['end_date'], $contractData['duration_months']);
+                            if (!array_key_exists('evaluation_notes', $this->mapping)) unset($contractData['evaluation_notes']);
+                        }
+                        unset($contractData);
+
+                        // Filter out unmapped compensation fields
+                        $compFields = ['base_salary', 'meal_allowance', 'transport_allowance', 'attendance_allowance', 'allowance', 'performance_bonus', 'overtime_weekday', 'overtime_holiday'];
+                        foreach ($compFields as $field) {
+                            if (!array_key_exists($field, $this->mapping)) unset($compData[$field]);
+                        }
                     }
 
                     $payload = array_merge($workerData, $assignmentData, [
@@ -369,7 +404,12 @@ class ProcessBulkImport implements ShouldQueue
 
                 // --- Admin path: create records directly ---
                 if ($isUpdate) {
-                    // Update existing worker data (only non-null fields from CSV)
+                    // Update existing worker data
+                    foreach ($workerData as $k => $v) {
+                        if (!array_key_exists($k, $this->mapping)) {
+                            unset($workerData[$k]);
+                        }
+                    }
                     $updateData = array_filter($workerData, fn($v) => $v !== null && $v !== '');
                     unset($updateData['ktp_number']); // Don't update the KTP itself
                     $existingWorker->update($updateData);
@@ -391,6 +431,15 @@ class ProcessBulkImport implements ShouldQueue
                     $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
                     if ($existingAssignment) {
                         if ($hasAssignmentMapping) {
+                            if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
+                            if (!array_key_exists('nik_tlj', $this->mapping)) unset($assignmentData['nik_tlj']);
+                            if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
+                            if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
+                                unset($assignmentData['status']);
+                                unset($assignmentData['termination_date']);
+                            }
+                            if (!array_key_exists('hire_date', $this->mapping)) unset($assignmentData['hire_date']);
+
                             $assignmentUpdateData = array_filter($assignmentData, fn($v) => $v !== null && $v !== '');
                             $existingAssignment->update($assignmentUpdateData);
                             if (!empty($rowBranchIds)) {
@@ -435,6 +484,13 @@ class ProcessBulkImport implements ShouldQueue
                         $contractData['assignment_id'] = $assignment->id;
                         
                         if ($isUpdate) {
+                            if (!array_key_exists('raw_contract_type', $this->mapping)) {
+                                unset($contractData['contract_type'], $contractData['pkwt_type'], $contractData['pkwt_number']);
+                            }
+                            if (!array_key_exists('contract_start', $this->mapping)) unset($contractData['start_date']);
+                            if (!array_key_exists('contract_end', $this->mapping)) unset($contractData['end_date'], $contractData['duration_months']);
+                            if (!array_key_exists('evaluation_notes', $this->mapping)) unset($contractData['evaluation_notes']);
+
                             $contractUpdateData = array_filter($contractData, fn($v) => $v !== null && $v !== '');
                             $contract = Contract::updateOrCreate(
                                 [
@@ -474,6 +530,11 @@ class ProcessBulkImport implements ShouldQueue
                         $compData['contract_id'] = $latestContractId;
                         
                         if ($isUpdate) {
+                            $compFields = ['base_salary', 'meal_allowance', 'transport_allowance', 'attendance_allowance', 'allowance', 'performance_bonus', 'overtime_weekday', 'overtime_holiday'];
+                            foreach ($compFields as $field) {
+                                if (!array_key_exists($field, $this->mapping)) unset($compData[$field]);
+                            }
+                            
                             $compUpdateData = array_filter($compData, fn($v) => $v !== null && $v !== '');
                             ContractCompensation::updateOrCreate(
                                 ['contract_id' => $latestContractId],

@@ -185,34 +185,8 @@ class DashboardController extends Controller
         });
 
         // FR-DASH-X: Reminders Summary
-        if ($isPic) {
-            // PIC: scope reminders to their assigned projects
-            $remindersSummary = \App\Models\Reminder::active()
-                ->where(function ($q) use ($picProjectIds) {
-                    $q->where(function ($sub) use ($picProjectIds) {
-                        $sub->where('related_type', \App\Models\Contract::class)
-                            ->whereIn('related_id', function ($sq) use ($picProjectIds) {
-                                $sq->select('contracts.id')
-                                   ->from('contracts')
-                                   ->join('assignments', 'contracts.assignment_id', '=', 'assignments.id')
-                                   ->whereIn('assignments.project_id', $picProjectIds);
-                            });
-                    })
-                    ->orWhere(function ($sub) use ($picProjectIds) {
-                        $sub->where('related_type', \App\Models\Worker::class)
-                            ->whereIn('related_id', function ($sq) use ($picProjectIds) {
-                                $sq->select('workers.id')
-                                   ->from('workers')
-                                   ->join('assignments', 'assignments.worker_id', '=', 'workers.id')
-                                   ->whereIn('assignments.project_id', $picProjectIds);
-                            });
-                    });
-                })
-                ->selectRaw('status, COUNT(*) as count')
-                ->groupBy('status')
-                ->pluck('count', 'status')
-                ->toArray();
-        } else {
+        $remindersSummary = [];
+        if (!$isPic) {
             $remindersSummary = ReminderService::getDashboardSummary();
         }
 
