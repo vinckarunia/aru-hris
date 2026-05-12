@@ -108,7 +108,7 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)
             ],
-            'pkwt_type' => 'required|string|in:vdi,cj,all',
+            'pkwt_type' => 'required|string|in:vdi,cj,tlj,all',
             'prefix' => 'required|string|max:' . \App\Http\Controllers\SettingController::getValidationDigits()['prefix_max'],
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',
@@ -153,7 +153,7 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)->ignore($project->id)
             ],
-            'pkwt_type' => 'required|string|in:vdi,cj,all',
+            'pkwt_type' => 'required|string|in:vdi,cj,tlj,all',
             'prefix' => 'required|string|max:' . \App\Http\Controllers\SettingController::getValidationDigits()['prefix_max'],
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',

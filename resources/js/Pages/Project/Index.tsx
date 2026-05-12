@@ -42,7 +42,7 @@ interface Project {
     id: string;
     client_id: string;
     name: string;
-    pkwt_type: 'vdi' | 'cj' | 'all';
+    pkwt_type: 'vdi' | 'cj' | 'tlj' | 'all';
     prefix: string;
     id_running_number: number;
     client?: Client;
@@ -562,6 +562,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                 <option value="all">PKWT All (Default)</option>
                                 <option value="vdi">PKWT VDI</option>
                                 <option value="cj">PKWT CJ</option>
+                                <option value="tlj">PKWT TLJ</option>
                             </select>
                             <InputError message={errors.pkwt_type as string} className="mt-2" />
                         </div>

@@ -63,6 +63,7 @@ class ContractDocumentController extends Controller
         $pkwtType = $contract->assignment->project->pkwt_type ?? 'vdi';
         $viewName = match ($pkwtType) {
             'cj'  => 'pdf.pkwt_cj',
+            'tlj' => 'pdf.pkwt_tlj',
             'all' => 'pdf.pkwt_all',
             default => 'pdf.pkwt', // vdi
         };
