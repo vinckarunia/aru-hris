@@ -318,6 +318,10 @@ class ProcessBulkImport implements ShouldQueue
                     }
                 }
 
+                $hasAssignmentMapping = !empty(array_intersect(array_keys($this->mapping), ['project_name', 'branch_name', 'nik_tlj', 'position', 'hire_date', 'termination_date', 'status']));
+                $hasContractMapping = !empty(array_intersect(array_keys($this->mapping), ['raw_contract_type', 'contract_start', 'contract_end', 'evaluation_notes']));
+                $hasCompensationMapping = !empty(array_intersect(array_keys($this->mapping), ['base_salary', 'meal_allowance', 'transport_allowance', 'attendance_allowance', 'allowance', 'performance_bonus', 'overtime_weekday', 'overtime_holiday']));
+
                 // --- PIC Interception: create DataRequest INSTEAD of writing to DB ---
                 $user = \App\Models\User::find($this->userId);
                 $isPic = $user && $user->isPic();
@@ -327,6 +331,12 @@ class ProcessBulkImport implements ShouldQueue
                     $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
                     $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
                     $familyData = $importService->buildFamilyMembersData($row, $this->mapping);
+
+                    if ($isUpdate) {
+                        if (!$hasAssignmentMapping) $assignmentData = [];
+                        if (!$hasContractMapping) $contractsData = [];
+                        if (!$hasCompensationMapping) $compData = [];
+                    }
 
                     $payload = array_merge($workerData, $assignmentData, [
                         'contracts' => $contractsData,
@@ -368,85 +378,110 @@ class ProcessBulkImport implements ShouldQueue
                     $worker = Worker::create($workerData);
                 }
 
+
+
                 // 2. Create or update Assignment
                 $assignmentData = $importService->buildAssignmentData($row, $this->mapping, $this->globalSettings);
-                // branch_id is no longer in assignment table, handled via branches()
+                // branch_ids is no longer in assignment table, handled via branches()
+                $rowBranchIds = $assignmentData['branch_ids'] ?? [];
                 unset($assignmentData['branch_id']);
+                unset($assignmentData['branch_ids']);
                 
                 if ($isUpdate) {
-                    // Update existing assignment if exists, otherwise create new
                     $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
                     if ($existingAssignment) {
-                        $assignmentUpdateData = array_filter($assignmentData, fn($v) => $v !== null && $v !== '');
-                        $existingAssignment->update($assignmentUpdateData);
+                        if ($hasAssignmentMapping) {
+                            $assignmentUpdateData = array_filter($assignmentData, fn($v) => $v !== null && $v !== '');
+                            $existingAssignment->update($assignmentUpdateData);
+                            if (!empty($rowBranchIds)) {
+                                $existingAssignment->branches()->sync($rowBranchIds);
+                            }
+                        }
                         $assignment = $existingAssignment;
                     } else {
                         $assignmentData['worker_id'] = $worker->id;
                         $assignment = Assignment::create($assignmentData);
+                        if (!empty($rowBranchIds)) {
+                            $assignment->branches()->sync($rowBranchIds);
+                        }
                     }
                 } else {
                     $assignmentData['worker_id'] = $worker->id;
                     $assignment = Assignment::create($assignmentData);
-                }
-
-                if (!empty($this->globalSettings['branch_ids'])) {
-                    $assignment->branches()->sync($this->globalSettings['branch_ids']);
+                    if (!empty($rowBranchIds)) {
+                        $assignment->branches()->sync($rowBranchIds);
+                    }
                 }
 
                 // Auto-generate NIK ARU — always fresh per assignment (reflects the active project).
                 $this->generateNikAru($worker, $assignment);
 
                 // 4. Create Contracts (PKWT 1-8, PKWTT)
-                $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
                 $latestContractId = null;
-                $latestEndDate = null;
-
-                foreach ($contractsData as $contractData) {
-                    $contractData['assignment_id'] = $assignment->id;
-                    
-                    if ($isUpdate) {
-                        $contractUpdateData = array_filter($contractData, fn($v) => $v !== null && $v !== '');
-                        $contract = Contract::updateOrCreate(
-                            [
-                                'assignment_id' => $assignment->id,
-                                'contract_type' => $contractData['contract_type'] ?? 'Kontrak',
-                                'pkwt_type' => $contractData['pkwt_type'] ?? null,
-                                'pkwt_number' => $contractData['pkwt_number'] ?? null,
-                            ],
-                            $contractUpdateData
-                        );
-                    } else {
-                        $contract = Contract::create($contractData);
+                
+                if ($isUpdate && !$hasContractMapping) {
+                    // Skip updating contracts if not mapped, just fetch the latest for compensation
+                    $latestContract = Contract::where('assignment_id', $assignment->id)
+                        ->orderByRaw('end_date IS NULL DESC, end_date DESC')
+                        ->first();
+                    if ($latestContract) {
+                        $latestContractId = $latestContract->id;
                     }
+                } else {
+                    $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
+                    $latestEndDate = null;
 
-                    // Track the latest contract for compensation attachment
-                    $endDate = $contractData['end_date'];
-                    if ($contractData['pkwt_type'] === 'PKWTT') {
-                        // PKWTT is always the latest
-                        $latestContractId = $contract->id;
-                        $latestEndDate = null;
-                    } elseif (
-                        is_null($latestEndDate) ||
-                        ($endDate && Carbon::parse($endDate)->gt(Carbon::parse($latestEndDate)))
-                    ) {
-                        $latestEndDate = $endDate;
-                        $latestContractId = $contract->id;
+                    foreach ($contractsData as $contractData) {
+                        $contractData['assignment_id'] = $assignment->id;
+                        
+                        if ($isUpdate) {
+                            $contractUpdateData = array_filter($contractData, fn($v) => $v !== null && $v !== '');
+                            $contract = Contract::updateOrCreate(
+                                [
+                                    'assignment_id' => $assignment->id,
+                                    'contract_type' => $contractData['contract_type'] ?? 'Kontrak',
+                                    'pkwt_type' => $contractData['pkwt_type'] ?? null,
+                                    'pkwt_number' => $contractData['pkwt_number'] ?? null,
+                                ],
+                                $contractUpdateData
+                            );
+                        } else {
+                            $contract = Contract::create($contractData);
+                        }
+
+                        // Track the latest contract for compensation attachment
+                        $endDate = $contractData['end_date'];
+                        if ($contractData['pkwt_type'] === 'PKWTT') {
+                            // PKWTT is always the latest
+                            $latestContractId = $contract->id;
+                            $latestEndDate = null;
+                        } elseif (
+                            is_null($latestEndDate) ||
+                            ($endDate && Carbon::parse($endDate)->gt(Carbon::parse($latestEndDate)))
+                        ) {
+                            $latestEndDate = $endDate;
+                            $latestContractId = $contract->id;
+                        }
                     }
                 }
 
                 // 5. Attach Compensation to the latest contract
                 if ($latestContractId) {
-                    $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
-                    $compData['contract_id'] = $latestContractId;
-                    
-                    if ($isUpdate) {
-                        $compUpdateData = array_filter($compData, fn($v) => $v !== null && $v !== '');
-                        ContractCompensation::updateOrCreate(
-                            ['contract_id' => $latestContractId],
-                            $compUpdateData
-                        );
+                    if ($isUpdate && !$hasCompensationMapping) {
+                        // Skip updating compensation if not mapped
                     } else {
-                        ContractCompensation::create($compData);
+                        $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
+                        $compData['contract_id'] = $latestContractId;
+                        
+                        if ($isUpdate) {
+                            $compUpdateData = array_filter($compData, fn($v) => $v !== null && $v !== '');
+                            ContractCompensation::updateOrCreate(
+                                ['contract_id' => $latestContractId],
+                                $compUpdateData
+                            );
+                        } else {
+                            ContractCompensation::create($compData);
+                        }
                     }
                 }
 

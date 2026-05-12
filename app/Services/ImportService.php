@@ -829,11 +829,8 @@ class ImportService
         $branchName = ImportDataCleaner::extractField($row, $mapping, 'branch_name');
         $branchResolved = $this->resolveBranchIds($row, $mapping, $globalSettings, $projectResolved);
         
-        if (!$branchResolved) {
-            // If branch not found but client_id is set and branchName is in CSV, it will be auto-created
-            if (empty($globalSettings['client_id']) || empty($branchName)) {
-                $errors[] = 'Cabang tidak ditemukan. Pastikan nama cabang di benar atau pilih di pengaturan global.';
-            }
+        if (!empty($branchName) && !$branchResolved && empty($globalSettings['client_id'])) {
+            $errors[] = "Cabang '{$branchName}' tidak ditemukan. Silakan pilih Client di pengaturan global agar sistem dapat membuatkannya otomatis.";
         }
 
         // Hire date
@@ -1063,9 +1060,6 @@ class ImportService
         }
 
         $branchIds = $this->resolveBranchIds($row, $mapping, $globalSettings, $projectId);
-        if (empty($branchIds)) {
-            throw new \Exception('Cabang tidak ditemukan. Pastikan nama cabang di benar atau pilih cabang di pengaturan global.');
-        }
 
         return [
             'project_id' => $projectId,
