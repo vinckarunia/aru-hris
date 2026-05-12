@@ -286,7 +286,7 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
 
     /** Enum labels for known enum values */
     const enumLabels: Record<string, Record<string, string>> = {
-        contract_type: { 'Kontrak': 'Contract', 'Harian': 'Harian' },
+        contract_type: { 'Kontrak': 'Kontrak', 'Harian': 'Harian', 'Part-time': 'Part-time' },
         salary_rate: { hourly: 'Per Jam', daily: 'Harian', monthly: 'Bulanan', yearly: 'Tahunan' },
         allowance_rate: { hourly: 'Per Jam', daily: 'Harian', monthly: 'Bulanan', yearly: 'Tahunan' },
         overtime_rate: { hourly: 'Per Jam', daily: 'Harian', monthly: 'Bulanan', yearly: 'Tahunan' },

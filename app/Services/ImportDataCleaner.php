@@ -623,6 +623,10 @@ class ImportDataCleaner
             return 'Harian';
         }
 
+        if (str_contains($lower, 'part-time') || str_contains($lower, 'part time') || str_contains($lower, 'parttime')) {
+            return 'Part-time';
+        }
+
         return 'Kontrak';
     }
 

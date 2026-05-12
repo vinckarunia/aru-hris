@@ -625,14 +625,15 @@ class DataRequestController extends Controller
 
                         // 2. Update/Create Assignment
                         $assignmentFillable = array_intersect_key($dataRequest->requested_data, array_flip((new \App\Models\Assignment)->getFillable()));
-                        if (!empty($assignmentFillable)) {
+                        $assignmentUpdateData = array_filter($assignmentFillable, fn($v) => $v !== null && $v !== '');
+                        if (!empty($assignmentUpdateData)) {
                             $existingAssignment = \App\Models\Assignment::where('worker_id', $worker->id)->first();
                             if ($existingAssignment) {
-                                $existingAssignment->update($assignmentFillable);
+                                $existingAssignment->update($assignmentUpdateData);
                                 $assignment = $existingAssignment;
                             } else {
-                                $assignmentFillable['worker_id'] = $worker->id;
-                                $assignment = \App\Models\Assignment::create($assignmentFillable);
+                                $assignmentUpdateData['worker_id'] = $worker->id;
+                                $assignment = \App\Models\Assignment::create($assignmentUpdateData);
                                 
                                 $project = \App\Models\Project::find($assignmentFillable['project_id'] ?? null);
                                 if ($project && empty($worker->nik_aru)) {
@@ -649,7 +650,8 @@ class DataRequestController extends Controller
                             $latestContractId = null;
                             if (!empty($dataRequest->requested_data['contracts'])) {
                                 foreach ($dataRequest->requested_data['contracts'] as $c) {
-                                    $c['assignment_id'] = $assignment->id;
+                                    $contractUpdateData = array_filter($c, fn($v) => $v !== null && $v !== '');
+                                    $contractUpdateData['assignment_id'] = $assignment->id;
                                     $contract = \App\Models\Contract::updateOrCreate(
                                         [
                                             'assignment_id' => $assignment->id,
@@ -657,7 +659,7 @@ class DataRequestController extends Controller
                                             'pkwt_type' => $c['pkwt_type'] ?? null,
                                             'pkwt_number' => $c['pkwt_number'] ?? null,
                                         ],
-                                        $c
+                                        $contractUpdateData
                                     );
                                     if (($c['pkwt_type'] ?? '') === 'PKWTT') {
                                         $latestContractId = $contract->id;
@@ -670,10 +672,11 @@ class DataRequestController extends Controller
                             // 4. Compensation
                             if ($latestContractId && !empty($dataRequest->requested_data['compensation'])) {
                                 $compData = $dataRequest->requested_data['compensation'];
-                                $compData['contract_id'] = $latestContractId;
+                                $compUpdateData = array_filter($compData, fn($v) => $v !== null && $v !== '');
+                                $compUpdateData['contract_id'] = $latestContractId;
                                 \App\Models\ContractCompensation::updateOrCreate(
                                     ['contract_id' => $latestContractId],
-                                    $compData
+                                    $compUpdateData
                                 );
                             }
                         }

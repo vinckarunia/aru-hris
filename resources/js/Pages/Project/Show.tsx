@@ -189,7 +189,7 @@ export default function Show({ project }: Props) {
             case 'contract':
                 if (obj.contracts && obj.contracts.length > 0) {
                     const c = obj.contracts[0];
-                    const label = c.pkwt_type ?? c.contract_type;
+                    const label = c.pkwt_type || c.contract_type;
                     const isPkwtt = c.pkwt_type === 'PKWTT';
                     return `${label} ${!isPkwtt && c.pkwt_number ? c.pkwt_number : ''}`.toLowerCase();
                 }
@@ -458,7 +458,7 @@ export default function Show({ project }: Props) {
                                         <td className="px-6 py-4">
                                             {assignment.contracts && assignment.contracts.length > 0 ? (() => {
                                                 const c = assignment.contracts[0];
-                                                const label = c.pkwt_type ?? c.contract_type;
+                                                const label = c.pkwt_type || c.contract_type;
                                                 const isPkwtt = c.pkwt_type === 'PKWTT';
                                                 return (
                                                     <span className="px-2 py-1 text-sm font-medium   text-slate-800 dark:text-slate-200">

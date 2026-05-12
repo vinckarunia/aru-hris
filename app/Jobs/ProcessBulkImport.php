@@ -377,7 +377,8 @@ class ProcessBulkImport implements ShouldQueue
                     // Update existing assignment if exists, otherwise create new
                     $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
                     if ($existingAssignment) {
-                        $existingAssignment->update($assignmentData);
+                        $assignmentUpdateData = array_filter($assignmentData, fn($v) => $v !== null && $v !== '');
+                        $existingAssignment->update($assignmentUpdateData);
                         $assignment = $existingAssignment;
                     } else {
                         $assignmentData['worker_id'] = $worker->id;
@@ -402,7 +403,21 @@ class ProcessBulkImport implements ShouldQueue
 
                 foreach ($contractsData as $contractData) {
                     $contractData['assignment_id'] = $assignment->id;
-                    $contract = Contract::create($contractData);
+                    
+                    if ($isUpdate) {
+                        $contractUpdateData = array_filter($contractData, fn($v) => $v !== null && $v !== '');
+                        $contract = Contract::updateOrCreate(
+                            [
+                                'assignment_id' => $assignment->id,
+                                'contract_type' => $contractData['contract_type'] ?? 'Kontrak',
+                                'pkwt_type' => $contractData['pkwt_type'] ?? null,
+                                'pkwt_number' => $contractData['pkwt_number'] ?? null,
+                            ],
+                            $contractUpdateData
+                        );
+                    } else {
+                        $contract = Contract::create($contractData);
+                    }
 
                     // Track the latest contract for compensation attachment
                     $endDate = $contractData['end_date'];
@@ -423,7 +438,16 @@ class ProcessBulkImport implements ShouldQueue
                 if ($latestContractId) {
                     $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
                     $compData['contract_id'] = $latestContractId;
-                    ContractCompensation::create($compData);
+                    
+                    if ($isUpdate) {
+                        $compUpdateData = array_filter($compData, fn($v) => $v !== null && $v !== '');
+                        ContractCompensation::updateOrCreate(
+                            ['contract_id' => $latestContractId],
+                            $compUpdateData
+                        );
+                    } else {
+                        ContractCompensation::create($compData);
+                    }
                 }
 
                 // 6. Create Family Members

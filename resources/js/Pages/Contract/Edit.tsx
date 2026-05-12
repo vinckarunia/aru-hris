@@ -67,7 +67,7 @@ export default function Edit({ contract }: Props) {
             lastEditedBy.current = null;
             return;
         }
-        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
 
@@ -98,7 +98,7 @@ export default function Edit({ contract }: Props) {
             lastEditedBy.current = null;
             return;
         }
-        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
             const months = parseInt(data.duration_months, 10);
             if (!isNaN(months) && months > 0) {
                 const start = new Date(data.start_date);
@@ -172,17 +172,8 @@ export default function Edit({ contract }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_type" value="Status Ketenagakerjaan" />
-                            <select
-                                id="pkwt_type"
-                                className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
-                                value={data.pkwt_type}
-                                onChange={e => {
-                                    setData('pkwt_type', e.target.value);
-                                    if (e.target.value === 'PKWTT') setData('end_date', '');
-                                }}
-                                disabled={data.contract_type === 'Harian'}
-                            >
-                                <option value="" disabled={data.contract_type !== 'Harian'}>Harian</option>
+                            <select id="pkwt_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_type} onChange={e => { setData('pkwt_type', e.target.value); if (e.target.value === 'PKWTT') setData('end_date', ''); }} disabled={data.contract_type !== 'Kontrak'}>
+                                <option value="" disabled={data.contract_type === 'Kontrak'}>{data.contract_type !== 'Kontrak' ? data.contract_type : 'Pilih...'}</option>
                                 <option value="PKWT">PKWT</option>
                                 <option value="PKWTT">PKWTT</option>
                             </select>
@@ -190,17 +181,17 @@ export default function Edit({ contract }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_number" value="PKWT Ke-" />
-                            <TextInput id="pkwt_number" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_number} onChange={e => setData('pkwt_number', e.target.value)} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} placeholder="Opsional — Contoh: 1" />
+                            <TextInput id="pkwt_number" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_number} onChange={e => setData('pkwt_number', e.target.value)} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} placeholder="Opsional — Contoh: 1" />
                             <InputError message={errors.pkwt_number} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
-                            <TextInput id="start_date" type="date" className="mt-1 block w-full" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required />
+                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak {data.contract_type === 'Kontrak' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                            <TextInput id="start_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required={data.contract_type === 'Kontrak'} />
                             <InputError message={errors.start_date} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
+                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} />
                             <p className="text-xs text-slate-500 mt-1">Kosongkan jika PKWTT.</p>
                             <InputError message={errors.end_date} className="mt-1" />
                         </div>
@@ -212,7 +203,7 @@ export default function Edit({ contract }: Props) {
                                 className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                                 value={data.duration_months}
                                 onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }}
-                                disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'}
+                                disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'}
                                 placeholder="Contoh: 3"
                                 min="1"
                             />

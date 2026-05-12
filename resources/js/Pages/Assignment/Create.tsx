@@ -58,7 +58,7 @@ export default function Create({ worker, projects }: Props) {
     /** Effect A: manual end_date change → auto-calculate duration_months */
     useEffect(() => {
         if (lastEditedBy.current === 'duration') { lastEditedBy.current = null; return; }
-        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
             if (end >= start) {
@@ -80,7 +80,7 @@ export default function Create({ worker, projects }: Props) {
     /** Effect B: duration_months change → auto-calculate end_date */
     useEffect(() => {
         if (lastEditedBy.current === 'dates') { lastEditedBy.current = null; return; }
-        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type !== 'Harian') {
+        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
             const months = parseInt(data.duration_months, 10);
             if (!isNaN(months) && months > 0) {
                 const start = new Date(data.start_date);
@@ -208,8 +208,8 @@ export default function Create({ worker, projects }: Props) {
 
                         {/* Dates & Status */}
                         <div>
-                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date) {data.contract_type !== 'Harian' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
-                            <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required={data.contract_type !== 'Harian'} />
+                            <InputLabel htmlFor="hire_date">Tanggal Bergabung (Hire Date) {data.contract_type === 'Kontrak' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                            <TextInput id="hire_date" type="date" className="mt-1 block w-full" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} required={data.contract_type === 'Kontrak'} />
                             <InputError message={errors.hire_date} className="mt-1" />
                         </div>
                         <div>
@@ -243,16 +243,17 @@ export default function Create({ worker, projects }: Props) {
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <div>
                             <InputLabel htmlFor="contract_type" value="Jenis Kontrak" />
-                            <select id="contract_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700" value={data.contract_type} onChange={e => { const t = e.target.value; setData('contract_type', t); if (t === 'Harian') setData('pkwt_type', ''); else if (!data.pkwt_type) setData('pkwt_type', 'PKWT'); }}>
-                                <option value="Kontrak">Contract</option>
+                            <select id="contract_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700" value={data.contract_type} onChange={e => { const t = e.target.value; setData('contract_type', t); if (t !== 'Kontrak') setData('pkwt_type', ''); else if (!data.pkwt_type) setData('pkwt_type', 'PKWT'); }}>
+                                <option value="Kontrak">Kontrak</option>
                                 <option value="Harian">Harian</option>
+                                <option value="Part-time">Part-time</option>
                             </select>
                             <InputError message={errors.contract_type} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_type" value="Status Ketenagakerjaan" />
-                            <select id="pkwt_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_type} onChange={e => setData('pkwt_type', e.target.value)} disabled={data.contract_type === 'Harian'}>
-                                <option value="" disabled={data.contract_type !== 'Harian'}>Harian</option>
+                            <select id="pkwt_type" className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_type} onChange={e => setData('pkwt_type', e.target.value)} disabled={data.contract_type !== 'Kontrak'}>
+                                <option value="" disabled={data.contract_type === 'Kontrak'}>{data.contract_type !== 'Kontrak' ? data.contract_type : 'Pilih...'}</option>
                                 <option value="PKWT">PKWT</option>
                                 <option value="PKWTT">PKWTT</option>
                             </select>
@@ -260,23 +261,23 @@ export default function Create({ worker, projects }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="pkwt_number" value="PKWT Ke-" />
-                            <TextInput id="pkwt_number" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_number} onChange={e => setData('pkwt_number', e.target.value)} disabled={data.contract_type === 'PKWTT' || data.contract_type === 'Harian'} placeholder="Opsional — Contoh: 1" />
+                            <TextInput id="pkwt_number" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.pkwt_number} onChange={e => setData('pkwt_number', e.target.value)} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} placeholder="Opsional — Contoh: 1" />
                             <InputError message={errors.pkwt_number} className="mt-1" />
                         </div>
                         <div>
-                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak {data.contract_type !== 'Harian' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
-                            <TextInput id="start_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required={data.contract_type !== 'Harian'} />
+                            <InputLabel htmlFor="start_date">Tanggal Mulai Kontrak {data.contract_type === 'Kontrak' && <span className="text-red-500 font-bold ml-1">*</span>}</InputLabel>
+                            <TextInput id="start_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.start_date} onChange={e => setData('start_date', e.target.value)} required={data.contract_type === 'Kontrak'} />
                             <InputError message={errors.start_date} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} />
+                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} />
                             <p className="text-xs text-slate-500 mt-1">Kosongkan jika PKWTT</p>
                             <InputError message={errors.end_date} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
-                            <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.pkwt_type === 'PKWTT' || data.contract_type === 'Harian'} placeholder="Contoh: 3" min="1" />
+                            <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} placeholder="Contoh: 3" min="1" />
                             <p className="text-xs text-slate-500 mt-1">Isi bulan untuk auto-hitung tanggal berakhir</p>
                             <InputError message={errors.duration_months} className="mt-1" />
                         </div>

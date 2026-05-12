@@ -538,7 +538,7 @@ export default function Index({ workers, clients }: Props) {
                                                             <StatusBadge status={latestAssignment.status} />
                                                             {latestAssignment.contracts && latestAssignment.contracts.length > 0 && (() => {
                                                                 const c = latestAssignment.contracts[0];
-                                                                const label = c.pkwt_type ?? c.contract_type;
+                                                                const label = c.pkwt_type || c.contract_type;
                                                                 const isPkwtt = c.pkwt_type === 'PKWTT';
                                                                 return (
                                                                     <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold border ${isPkwtt

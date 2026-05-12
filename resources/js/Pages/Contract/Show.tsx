@@ -44,8 +44,8 @@ export default function Show({ contract }: any) {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                        {contract.contract_type === 'Harian'
-                            ? 'Harian'
+                        {contract.contract_type !== 'Kontrak'
+                            ? contract.contract_type
                             : contract.pkwt_type === 'PKWTT'
                                 ? 'PKWTT'
                                 : (contract.pkwt_number && contract.pkwt_number !== "null") ? `PKWT-${contract.pkwt_number}` : 'PKWT'

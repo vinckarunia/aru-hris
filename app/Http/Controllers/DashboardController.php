@@ -121,8 +121,8 @@ class DashboardController extends Controller
             }
 
             $employmentDemographics = $demographicsQuery
-                ->select(DB::raw('COALESCE(contracts.pkwt_type, contracts.contract_type) as status'), DB::raw('count(contracts.id) as count'))
-                ->groupBy(DB::raw('COALESCE(contracts.pkwt_type, contracts.contract_type)'))
+                ->select(DB::raw("COALESCE(NULLIF(contracts.pkwt_type, ''), contracts.contract_type) as status"), DB::raw('count(contracts.id) as count'))
+                ->groupBy(DB::raw("COALESCE(NULLIF(contracts.pkwt_type, ''), contracts.contract_type)"))
                 ->get();
 
             // FR-DASH-04: Data Grid (Recent Assignments)

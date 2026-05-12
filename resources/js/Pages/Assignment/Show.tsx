@@ -131,8 +131,8 @@ export default function Show({ assignment, picProjects = [] }: Props & { picProj
                                                 </div>
                                                 <div>
                                                     <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                                        {contract.contract_type === 'Harian'
-                                                            ? 'Harian'
+                                                        {contract.contract_type !== 'Kontrak'
+                                                            ? contract.contract_type
                                                             : contract.pkwt_type === 'PKWTT'
                                                                 ? 'PKWTT'
                                                                 : (contract.pkwt_number && contract.pkwt_number !== "null") ? `PKWT-${contract.pkwt_number}` : 'PKWT'
