@@ -354,16 +354,10 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
             alert('Silakan pilih Project di pengaturan global, atau mapping kolom "Nama Project" dari file.');
             return;
         }
-        if (!hasBranchMapping && globalSettings.branch_ids.length === 0) {
-            alert('Silakan pilih setidaknya satu Cabang di pengaturan global, atau mapping kolom "Nama Cabang" dari file.');
-            return;
-        }
-
-        // If they mapped the project/branch name but didn't pick global Project/Branch ID,
+        // If they mapped the project name but didn't pick global Project ID,
         // they MUST pick a Client to allow auto-creation.
-        if ((hasProjectMapping && !globalSettings.project_id && !globalSettings.client_id) ||
-            (hasBranchMapping && globalSettings.branch_ids.length === 0 && !globalSettings.client_id)) {
-            alert('Jika Anda melakukan mapping nama Project/Cabang dari CSV, silakan pilih setidaknya "Client" di Pengaturan Global agar sistem dapat membuatkannya secara otomatis jika tidak ditemukan.');
+        if (hasProjectMapping && !globalSettings.project_id && !globalSettings.client_id) {
+            alert('Jika Anda melakukan mapping nama Project dari CSV, silakan pilih setidaknya "Client" di Pengaturan Global agar sistem dapat membuatkannya secara otomatis jika tidak ditemukan.');
             return;
         }
 
@@ -709,7 +703,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                             {/* Client */}
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Client {((mapping['project_name'] !== undefined || mapping['branch_name'] !== undefined) && !globalSettings.project_id && globalSettings.branch_ids.length === 0) ? <span className="text-red-500">*</span> : ''}
+                                    Client {((mapping['project_name'] !== undefined) && !globalSettings.project_id) ? <span className="text-red-500">*</span> : ''}
                                 </label>
                                 <select
                                     value={globalSettings.client_id ?? ''}
@@ -745,7 +739,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                             {/* Branch (cascading) */}
                             <div className="lg:col-span-2">
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    Cabang {mapping['branch_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari file)</span> : <span className="text-red-500">*</span>}
+                                    Cabang {mapping['branch_name'] !== undefined ? <span className="text-emerald-500 normal-case">(dari file)</span> : ''}
                                 </label>
                                 <select
                                     value={globalSettings.branch_ids[0] ?? ''}
