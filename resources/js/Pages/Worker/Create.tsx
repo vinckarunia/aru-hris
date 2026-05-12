@@ -88,7 +88,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
     useEffect(() => {
         if (!isPic) return;
         if (lastEditedBy.current === 'duration') { lastEditedBy.current = null; return; }
-        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
+        if (data.start_date && data.end_date && data.pkwt_type !== 'PKWTT') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
             if (end >= start) {
@@ -104,7 +104,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
     useEffect(() => {
         if (!isPic) return;
         if (lastEditedBy.current === 'dates') { lastEditedBy.current = null; return; }
-        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
+        if (data.start_date && data.duration_months && data.pkwt_type !== 'PKWTT') {
             const m = parseInt(data.duration_months, 10);
             if (!isNaN(m) && m > 0) {
                 const s = new Date(data.start_date);
@@ -446,12 +446,12 @@ export default function Create({ picProjects = [], validationDigits, validationE
                             </div>
                             <div>
                                 <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                                <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} />
+                                <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT'} />
                                 <InputError message={(errors as any).end_date} className="mt-1" />
                             </div>
                             <div>
                                 <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
-                                <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} placeholder="Contoh: 3" min="1" />
+                                <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.pkwt_type === 'PKWTT'} placeholder="Contoh: 3" min="1" />
                                 <p className="text-xs text-slate-500 mt-1">Isi bulan untuk auto-hitung tanggal berakhir</p>
                                 <InputError message={(errors as any).duration_months} className="mt-1" />
                             </div>

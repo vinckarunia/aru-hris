@@ -58,7 +58,7 @@ export default function Create({ worker, projects }: Props) {
     /** Effect A: manual end_date change → auto-calculate duration_months */
     useEffect(() => {
         if (lastEditedBy.current === 'duration') { lastEditedBy.current = null; return; }
-        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
+        if (data.start_date && data.end_date && data.pkwt_type !== 'PKWTT') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
             if (end >= start) {
@@ -80,7 +80,7 @@ export default function Create({ worker, projects }: Props) {
     /** Effect B: duration_months change → auto-calculate end_date */
     useEffect(() => {
         if (lastEditedBy.current === 'dates') { lastEditedBy.current = null; return; }
-        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
+        if (data.start_date && data.duration_months && data.pkwt_type !== 'PKWTT') {
             const months = parseInt(data.duration_months, 10);
             if (!isNaN(months) && months > 0) {
                 const start = new Date(data.start_date);
@@ -271,13 +271,13 @@ export default function Create({ worker, projects }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} />
+                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT'} />
                             <p className="text-xs text-slate-500 mt-1">Kosongkan jika PKWTT</p>
                             <InputError message={errors.end_date} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel htmlFor="duration_months" value="Durasi (Bulan)" />
-                            <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} placeholder="Contoh: 3" min="1" />
+                            <TextInput id="duration_months" type="number" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.duration_months} onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }} disabled={data.pkwt_type === 'PKWTT'} placeholder="Contoh: 3" min="1" />
                             <p className="text-xs text-slate-500 mt-1">Isi bulan untuk auto-hitung tanggal berakhir</p>
                             <InputError message={errors.duration_months} className="mt-1" />
                         </div>

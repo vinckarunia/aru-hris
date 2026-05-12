@@ -67,7 +67,7 @@ export default function Edit({ contract }: Props) {
             lastEditedBy.current = null;
             return;
         }
-        if (data.start_date && data.end_date && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
+        if (data.start_date && data.end_date && data.pkwt_type !== 'PKWTT') {
             const start = new Date(data.start_date);
             const end = new Date(data.end_date);
 
@@ -98,7 +98,7 @@ export default function Edit({ contract }: Props) {
             lastEditedBy.current = null;
             return;
         }
-        if (data.start_date && data.duration_months && data.pkwt_type === 'PKWT' && data.contract_type === 'Kontrak') {
+        if (data.start_date && data.duration_months && data.pkwt_type !== 'PKWTT') {
             const months = parseInt(data.duration_months, 10);
             if (!isNaN(months) && months > 0) {
                 const start = new Date(data.start_date);
@@ -157,9 +157,8 @@ export default function Edit({ contract }: Props) {
                                 onChange={e => {
                                     const type = e.target.value;
                                     setData('contract_type', type);
-                                    if (type === 'Harian') {
+                                    if (type !== 'Kontrak') {
                                         setData('pkwt_type', '');
-                                        setData('end_date', '');
                                     } else if (!data.pkwt_type) {
                                         setData('pkwt_type', 'PKWT');
                                     }
@@ -167,6 +166,7 @@ export default function Edit({ contract }: Props) {
                             >
                                 <option value="Kontrak">Contract</option>
                                 <option value="Harian">Harian</option>
+                                <option value="Part-time">Part-time</option>
                             </select>
                             <InputError message={errors.contract_type} className="mt-1" />
                         </div>
@@ -191,7 +191,7 @@ export default function Edit({ contract }: Props) {
                         </div>
                         <div>
                             <InputLabel htmlFor="end_date" value="Tanggal Berakhir Kontrak" />
-                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'} />
+                            <TextInput id="end_date" type="date" className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800" value={data.end_date} onChange={e => { lastEditedBy.current = null; setData('end_date', e.target.value); }} disabled={data.pkwt_type === 'PKWTT'} />
                             <p className="text-xs text-slate-500 mt-1">Kosongkan jika PKWTT.</p>
                             <InputError message={errors.end_date} className="mt-1" />
                         </div>
@@ -203,7 +203,7 @@ export default function Edit({ contract }: Props) {
                                 className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                                 value={data.duration_months}
                                 onChange={e => { lastEditedBy.current = null; setData('duration_months', e.target.value.replace(/\D/g, '')); }}
-                                disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'}
+                                disabled={data.pkwt_type === 'PKWTT'}
                                 placeholder="Contoh: 3"
                                 min="1"
                             />
