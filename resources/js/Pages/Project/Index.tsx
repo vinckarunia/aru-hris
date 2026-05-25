@@ -542,9 +542,10 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                                 type="checkbox"
                                                 checked={data.pic_ids && data.pic_ids.includes(pic.id)}
                                                 onChange={() => handlePicToggle(pic.id)}
-                                                className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                                                disabled={isPic}
+                                                className="rounded text-primary focus:ring-primary dark:bg-slate-900 border-slate-300 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                                             />
-                                            <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{pic.name}</span>
+                                            <span className={`text-sm truncate ${isPic ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>{pic.name}</span>
                                         </label>
                                     ))
                                 )}
