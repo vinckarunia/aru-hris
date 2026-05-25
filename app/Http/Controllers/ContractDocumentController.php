@@ -61,12 +61,19 @@ class ContractDocumentController extends Controller
         
         // Map project's pkwt_type to the appropriate blade view
         $pkwtType = $contract->assignment->project->pkwt_type ?? 'vdi';
-        $viewName = match ($pkwtType) {
-            'cj'  => 'pdf.pkwt_cj',
-            'tlj' => 'pdf.pkwt_tlj',
-            'all' => 'pdf.pkwt_all',
-            default => 'pdf.pkwt', // vdi
-        };
+        
+        if (strtolower($contract->contract_type) === 'harian' && $pkwtType === 'tlj') {
+            $viewName = 'pdf.dw_tlj';
+        } elseif (strtolower($contract->contract_type) === 'part-time' && $pkwtType === 'tlj') {
+            $viewName = 'pdf.pt_tlj';
+        } else {
+            $viewName = match ($pkwtType) {
+                'cj'  => 'pdf.pkwt_cj',
+                'tlj' => 'pdf.pkwt_tlj',
+                'all' => 'pdf.pkwt_all',
+                default => 'pdf.pkwt', // vdi
+            };
+        }
         
         // Audit log for PKWT download
         $workerName = $contract->assignment->worker->name ?? 'Unknown';
@@ -164,7 +171,8 @@ class ContractDocumentController extends Controller
                       'chroot' => public_path()
                   ]);
 
-        $fileName = 'PKWT - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
+        $prefix = (isset($data['contract']) && in_array(strtolower($data['contract']->contract_type), ['harian', 'part-time'])) ? 'PKPH' : 'PKWT';
+        $fileName = $prefix . ' - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
         
         return $pdf->download($fileName);
     }

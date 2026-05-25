@@ -81,6 +81,11 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
+
+    const canEditProject = (project: Project) => {
+        if (!isPic) return true;
+        return project.pics?.some((p: Pic) => p.user_id === auth.user.id);
+    };
     const [itemsPerPage, setItemsPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
@@ -397,7 +402,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                     <div className="flex items-center gap-2">PIC</div>
                                 </th>
                                 <th className="px-6 py-4 text-center">
-                                    {!isPic && "Aksi"}
+                                    Aksi
                                 </th>
                             </tr>
                         </thead>
@@ -450,11 +455,11 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center space-x-2">
+                                            {canEditProject(project) && (
+                                                <button onClick={() => openEditModal(project)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="20"></iconify-icon></button>
+                                            )}
                                             {!isPic && (
-                                                <>
-                                                    <button onClick={() => openEditModal(project)} className="p-2 text-primary hover:bg-primary/10 rounded-lg"><iconify-icon icon="solar:pen-bold" width="20"></iconify-icon></button>
-                                                    <button onClick={() => openDeleteModal(project)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon></button>
-                                                </>
+                                                <button onClick={() => openDeleteModal(project)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><iconify-icon icon="solar:trash-bin-trash-bold" width="20"></iconify-icon></button>
                                             )}
                                         </td>
                                     </tr>
@@ -484,11 +489,12 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                             <select
                                 id="client_id"
                                 value={data.client_id}
+                                disabled={isPic}
                                 onChange={(e) => {
                                     setData('client_id', e.target.value);
                                     setData('branch_ids', []); // Reset checkbox when client changes
                                 }}
-                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:opacity-50"
                             >
                                 <option value="" disabled>-- Pilih Client --</option>
                                 {clients.map((c: Client) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
@@ -557,7 +563,8 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                 id="pkwt_type"
                                 value={data.pkwt_type}
                                 onChange={(e) => setData('pkwt_type', e.target.value)}
-                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                disabled={modalMode === 'edit'}
+                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                             >
                                 <option value="all">PKWT All (Default)</option>
                                 <option value="vdi">PKWT VDI</option>

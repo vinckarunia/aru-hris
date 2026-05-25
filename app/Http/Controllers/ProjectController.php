@@ -139,7 +139,13 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project): RedirectResponse
     {
-        if (!$request->user()->isAdminOrAbove()) abort(403);
+        $user = $request->user();
+        if (!$user->isAdminOrAbove()) {
+            if (!$user->isPic() || !$project->pics->contains('id', $user->pic?->id)) {
+                abort(403, 'Akses ditolak. Anda bukan PIC untuk project ini.');
+            }
+        }
+
         $validated = $request->validate([
             'client_id'  => 'required|exists:clients,id',
             'branch_ids' => 'required|array|min:1',

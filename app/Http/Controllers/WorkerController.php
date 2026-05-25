@@ -86,7 +86,7 @@ class WorkerController extends Controller
 
         $picProjects = [];
         if ($request->user()->isPic()) {
-            $picProjects = $request->user()->pic ? $request->user()->pic->projects()->with('branches:id,client_id,name')->select('projects.id', 'name')->get() : [];
+            $picProjects = $request->user()->pic ? $request->user()->pic->projects()->with('branches:id,client_id,name')->select('projects.id', 'name', 'client_id', 'prefix')->get() : [];
         }
 
         return Inertia::render('Worker/Create', [

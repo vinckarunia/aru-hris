@@ -7,6 +7,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
+import Modal from '@/Components/Modal';
 
 /**
  * Predefined bank options grouped by category for the bank selection dropdown.
@@ -31,6 +32,8 @@ interface Branch {
 interface Project {
     id: string;
     name: string;
+    prefix?: string;
+    client_id?: string;
     branches?: Branch[];
 }
 
@@ -79,7 +82,37 @@ export default function Create({ picProjects = [], validationDigits, validationE
     });
 
     /** Get the branches belonging to the currently selected project. */
-    const selectedProjectBranches = picProjects.find(p => p.id.toString() === data.project_id)?.branches ?? [];
+    const selectedProject = picProjects.find(p => p.id.toString() === data.project_id);
+    const selectedProjectBranches = selectedProject?.branches ?? [];
+    const [projectSearch, setProjectSearch] = useState('');
+    const [branchSearch, setBranchSearch] = useState('');
+    const [isAddBranchModalOpen, setIsAddBranchModalOpen] = useState(false);
+    
+    const filteredProjects = picProjects.filter(p => (p.name + ' ' + (p.prefix || '')).toLowerCase().includes(projectSearch.toLowerCase()));
+    
+    const branchForm = useForm({
+        client_id: '',
+        project_id: '',
+        name: ''
+    });
+    const openAddBranchModal = () => {
+        if (!selectedProject || !selectedProject.client_id) return;
+        branchForm.setData('client_id', selectedProject.client_id.toString());
+        branchForm.setData('project_id', selectedProject.id.toString());
+        branchForm.setData('name', '');
+        branchForm.clearErrors();
+        setIsAddBranchModalOpen(true);
+    };
+    const submitAddBranch = (e: React.FormEvent) => {
+        e.preventDefault();
+        branchForm.post(route('branches.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsAddBranchModalOpen(false);
+                branchForm.reset();
+            }
+        });
+    };
 
     const [bankDropdown, setBankDropdown] = useState<string>('');
 
@@ -153,28 +186,50 @@ export default function Create({ picProjects = [], validationDigits, validationE
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div className="md:col-span-2">
                                 <InputLabel htmlFor="project_id">Project / Site <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari Project..."
+                                    className="mt-1 mb-2 block w-full text-sm"
+                                    value={projectSearch}
+                                    onChange={e => setProjectSearch(e.target.value)}
+                                />
                                 <select
                                     id="project_id"
-                                    className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                    size={4}
                                     value={data.project_id}
                                     onChange={e => {
                                         setData(prev => ({ ...prev, project_id: e.target.value, branch_ids: [] }));
                                     }}
                                     required
                                 >
-                                    <option value="">-- Pilih Project --</option>
-                                    {picProjects.map(p => (
-                                        <option key={p.id} value={p.id.toString()}>{p.name}</option>
+                                    {filteredProjects.map(p => (
+                                        <option key={p.id} value={p.id.toString()} className="p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">{p.name} {p.prefix ? `(${p.prefix})` : ''}</option>
                                     ))}
+                                    {filteredProjects.length === 0 && <option disabled className="p-2">Project tidak ditemukan</option>}
                                 </select>
                                 <InputError message={errors.project_id} className="mt-1" />
                             </div>
                             <div className="md:col-span-2">
-                                <InputLabel htmlFor="branch_ids">Cabang Penempatan (Bisa Pilih &gt;1)</InputLabel>
-                                <div className="mt-1 block w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-900 rounded-md shadow-sm xl:max-h-48 max-h-32 overflow-y-auto p-2">
+                                <div className="flex justify-between items-end mb-1">
+                                    <InputLabel htmlFor="branch_ids">Cabang Penempatan (Bisa Pilih &gt;1)</InputLabel>
+                                    {selectedProject && (
+                                        <button type="button" onClick={openAddBranchModal} className="text-xs font-semibold text-primary hover:text-primary-dark flex items-center gap-1">
+                                            <iconify-icon icon="solar:add-circle-bold" width="14"></iconify-icon> Tambah Cabang
+                                        </button>
+                                    )}
+                                </div>
+                                <TextInput
+                                    type="text"
+                                    placeholder="Cari Cabang..."
+                                    className="mb-2 block w-full text-sm"
+                                    value={branchSearch}
+                                    onChange={e => setBranchSearch(e.target.value)}
+                                />
+                                <div className="block w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-900 rounded-md shadow-sm xl:max-h-48 max-h-32 overflow-y-auto p-2">
                                     {selectedProjectBranches.length > 0 ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                                            {selectedProjectBranches.map(b => (
+                                            {selectedProjectBranches.filter(b => b.name.toLowerCase().includes(branchSearch.toLowerCase())).map(b => (
                                                 <label key={b.id} className={`flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded border border-transparent transition-colors ${data.branch_ids.includes(b.id.toString()) || data.branch_ids.includes(b.id as never) ? 'bg-primary/5 border-primary/20' : ''}`}>
                                                     <input
                                                         type="checkbox"
@@ -547,6 +602,32 @@ export default function Create({ picProjects = [], validationDigits, validationE
                     </PrimaryButton>
                 </div>
             </form>
+        
+            {/* Add Branch Modal */}
+            <Modal show={isAddBranchModalOpen} onClose={() => setIsAddBranchModalOpen(false)} maxWidth="sm">
+                <form onSubmit={submitAddBranch} className="p-6">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Tambah Cabang Baru</h3>
+                    <div className="mb-4">
+                        <InputLabel htmlFor="branch_name" value="Nama Cabang" />
+                        <TextInput
+                            id="branch_name"
+                            type="text"
+                            className="mt-1 block w-full"
+                            value={branchForm.data.name}
+                            onChange={e => branchForm.setData('name', e.target.value)}
+                            required
+                        />
+                        <InputError message={branchForm.errors.name} className="mt-2" />
+                    </div>
+                    <div className="flex justify-end gap-3 mt-6">
+                        <button type="button" onClick={() => setIsAddBranchModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Batal</button>
+                        <PrimaryButton disabled={branchForm.processing} className="px-4 py-2 rounded-xl text-sm bg-primary hover:bg-primary-dark">
+                            {branchForm.processing ? 'Menyimpan...' : 'Simpan Cabang'}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
         </AdminLayout>
     );
+
 }

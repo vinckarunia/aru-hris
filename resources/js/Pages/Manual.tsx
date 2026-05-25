@@ -85,12 +85,15 @@ export default function Manual() {
             title: 'Manajemen Project',
             icon: 'solar:folder-with-files-bold-duotone',
             roles: ['SUPER_ADMIN', 'ADMIN_ARU', 'PIC'],
-            searchText: "{userRole === \'PIC\' ? ( <> Sebagai PIC, Anda dapat melihat daftar project yang ditugaskan kepada Anda. Di halaman ini Anda dapat melihat detail project, client yang terkait, dan daftar karyawan yang berada di project tersebut. ) : ( <> Fitur ini digunakan untuk mengelola project yang berjalan pada setiap client. Tambah Project: Klik \"Tambah Project\", pilih Client, lalu isi nama project dan detail lainnya. Assign PIC: Anda dapat menugaskan satu atau lebih PIC internal ARU untuk mengelola project tersebut. PIC ini nantinya dapat mengelola data karyawan yang ditugaskan di project ini. Delete Project: Gunakan tombol hapus pada baris project jika project tidak lagi aktif. Perhatikan bahwa jika Anda menghapus suatu project, maka dampaknya semua karyawan aktif yang terafiliasi dengan project tersebut status penempatannya akan otomatis berubah menjadi \"Project Closed\". Edit Project: Gunakan menu aksi pada baris project untuk mengubah data project. )}",
+            searchText: "{userRole === \'PIC\' ? ( <> Sebagai PIC, Anda dapat melihat daftar project yang ditugaskan kepada Anda. Di halaman ini Anda dapat melihat detail project, client yang terkait, dan daftar karyawan yang berada di project tersebut. Anda juga dapat mengedit informasi project (seperti nama atau prefix), namun Anda tidak dapat memindahkan project ke client lain. ) : ( <> Fitur ini digunakan untuk mengelola project yang berjalan pada setiap client. Tambah Project: Klik \"Tambah Project\", pilih Client, lalu isi nama project dan detail lainnya. Assign PIC: Anda dapat menugaskan satu atau lebih PIC internal ARU untuk mengelola project tersebut. PIC ini nantinya dapat mengelola data karyawan yang ditugaskan di project ini. Delete Project: Gunakan tombol hapus pada baris project jika project tidak lagi aktif. Perhatikan bahwa jika Anda menghapus suatu project, maka dampaknya semua karyawan aktif yang terafiliasi dengan project tersebut status penempatannya akan otomatis berubah menjadi \"Project Closed\". Edit Project: Gunakan menu aksi pada baris project untuk mengubah data project. )}",
             content: (
                 <div className="space-y-4 text-slate-600 dark:text-slate-300">
                     {userRole === 'PIC' ? (
                         <>
                             <p>Sebagai PIC, Anda dapat melihat daftar project yang ditugaskan kepada Anda. Di halaman ini Anda dapat melihat detail project, client yang terkait, dan daftar karyawan yang berada di project tersebut.</p>
+                            <ul className="list-disc pl-5 space-y-2">
+                                <li><strong>Edit Project:</strong> Anda dapat mengedit detail dari project yang Anda pegang. Namun, Anda tidak diperkenankan mengubah <strong>Client</strong> dan <strong>Tipe Dokumen PKWT</strong> dari project yang sudah ada.</li>
+                            </ul>
                         </>
                     ) : (
                         <>
@@ -99,7 +102,7 @@ export default function Manual() {
                                 <li><strong>Tambah Project:</strong> Klik "Tambah Project", pilih Client, lalu isi nama project dan detail lainnya.</li>
                                 <li><strong>Assign PIC:</strong> Anda dapat menugaskan satu atau lebih PIC internal ARU untuk mengelola project tersebut. PIC ini nantinya dapat mengelola data karyawan yang ditugaskan di project ini.</li>
                                 <li><strong>Delete Project:</strong> Gunakan tombol hapus pada baris project jika project tidak lagi aktif. Perhatikan bahwa jika Anda menghapus suatu project, maka dampaknya semua karyawan aktif yang terafiliasi dengan project tersebut status penempatannya akan otomatis berubah menjadi "Project Closed".</li>
-                                <li><strong>Edit Project:</strong> Gunakan menu aksi pada baris project untuk mengubah data project.</li>
+                                <li><strong>Edit Project:</strong> Gunakan menu aksi pada baris project untuk mengubah data project. (Catatan: Tipe Dokumen PKWT tidak dapat diubah setelah project dibuat)</li>
                             </ul>
                         </>
                     )}
@@ -111,7 +114,7 @@ export default function Manual() {
             title: 'Karyawan, Penempatan & Kontrak',
             icon: 'solar:users-group-two-rounded-bold-duotone',
             roles: ['SUPER_ADMIN', 'ADMIN_ARU', 'PIC'],
-            searchText: "{userRole === \'PIC\' && ( Penting: Sebagai PIC, setiap perubahan data yang Anda lakukan (tambah, edit karyawan, penempatan, atau kontrak) tidak akan langsung merubah sistem, melainkan akan masuk ke alur Data Request terlebih dahulu untuk direview dan disetujui oleh Admin ARU. )} Modul utama ini mengatur siklus hidup karyawan mulai dari pendataan, penempatan ke project, hingga detail kontrak dan kompensasi. 1. Manajemen Karyawan (Worker) Tambah Karyawan: Isi data pribadi dasar (nama, NIK KTP, jenis kelamin, dll). Dokumen Pendukung: Setelah karyawan dibuat, Anda dapat mengunggah dokumen penting (KTP, KK, dll) di tab Dokumen. Admin perlu melakukan verifikasi dokumen tersebut. Data Keluarga: Kelola susunan anggota keluarga (suami/istri, anak) di tab Keluarga. 2. Penempatan (Assignment) Karyawan harus ditempatkan (assigned) ke suatu Project agar dapat dibuatkan kontrak kerja. Masuk ke profil karyawan, pilih tab \"Penempatan\". Klik \"Tambah Penempatan\", lalu pilih Project, Branch (jika ada), dan tanggal penempatan. 3. Kontrak & Kompensasi Setelah ada penempatan, Anda bisa membuat kontrak kerja (PKWT, Harian). Di dalam baris Penempatan yang aktif, klik \"Lihat Kontrak\" atau masuk ke tab \"Kontrak\". Klik \"Tambah Kontrak\", tentukan jenis, tanggal mulai, dan tanggal selesai. Perpanjangan Kontrak: Cukup buat kontrak baru pada penempatan yang sama dengan tanggal mulai meneruskan tanggal selesai kontrak sebelumnya. Kompensasi: Setelah kontrak tersimpan, Anda wajib menambahkan rincian Gaji/Kompensasi (Gaji Pokok, Tunjangan, Lemburan) di dalam detail kontrak tersebut. Dokumen Legal: Anda dapat mencetak/mendownload PKWT atau Surat Tugas langsung dari detail kontrak. 4. Export Data Di halaman daftar Karyawan, terdapat tombol \"Export\". Anda dapat mendownload seluruh data karyawan beserta penempatan dan kontrak terakhir dalam format Excel/CSV.",
+            searchText: "{userRole === \'PIC\' && ( Penting: Sebagai PIC, setiap perubahan data yang Anda lakukan (tambah, edit karyawan, penempatan, atau kontrak) tidak akan langsung merubah sistem, melainkan akan masuk ke alur Data Request terlebih dahulu untuk direview dan disetujui oleh Admin ARU. )} Modul utama ini mengatur siklus hidup karyawan mulai dari pendataan, penempatan ke project, hingga detail kontrak dan kompensasi. 1. Manajemen Karyawan (Worker) Tambah Karyawan: Isi data pribadi dasar (nama, NIK KTP, jenis kelamin, dll). Dokumen Pendukung: Setelah karyawan dibuat, Anda dapat mengunggah dokumen penting (KTP, KK, dll) di tab Dokumen. Admin perlu melakukan verifikasi dokumen tersebut. Data Keluarga: Kelola susunan anggota keluarga (suami/istri, anak) di tab Keluarga. 2. Penempatan (Assignment) Karyawan harus ditempatkan (assigned) ke suatu Project agar dapat dibuatkan kontrak kerja. Masuk ke profil karyawan, pilih tab \"Penempatan\". Klik \"Tambah Penempatan\", lalu pilih Project, Branch (jika ada), dan tanggal penempatan. Anda dapat mencari (search) Project dan Cabang jika daftar pilihan terlalu panjang. Jika Cabang belum ada, Anda bisa klik tombol \"+ Tambah Cabang\" langsung di dalam form untuk membuat cabang baru tanpa perlu keluar form. 3. Kontrak & Kompensasi Setelah ada penempatan, Anda bisa membuat kontrak kerja (PKWT, Harian). Di dalam baris Penempatan yang aktif, klik \"Lihat Kontrak\" atau masuk ke tab \"Kontrak\". Klik \"Tambah Kontrak\", tentukan jenis, tanggal mulai, dan tanggal selesai. Perpanjangan Kontrak: Cukup buat kontrak baru pada penempatan yang sama dengan tanggal mulai meneruskan tanggal selesai kontrak sebelumnya. Kompensasi: Setelah kontrak tersimpan, Anda wajib menambahkan rincian Gaji/Kompensasi (Gaji Pokok, Tunjangan, Lemburan) di dalam detail kontrak tersebut. Dokumen Legal: Anda dapat mencetak/mendownload PKWT, PKPH, Part-time, atau Surat Tugas langsung dari detail kontrak. 4. Export Data Di halaman daftar Karyawan, terdapat tombol \"Export\". Anda dapat mendownload seluruh data karyawan beserta penempatan dan kontrak terakhir dalam format Excel/CSV.",
             content: (
                 <div className="space-y-4 text-slate-600 dark:text-slate-300">
                     {userRole === 'PIC' && (
@@ -133,16 +136,18 @@ export default function Manual() {
                     <ul className="list-disc pl-5 space-y-2">
                         <li>Masuk ke profil karyawan, pilih tab "Penempatan".</li>
                         <li>Klik "Tambah Penempatan", lalu pilih Project, Branch (jika ada), dan tanggal penempatan.</li>
+                        <li><strong>Pencarian Cepat:</strong> Gunakan kolom <em>search</em> yang tersedia di atas pilihan Project dan Cabang jika daftarnya sangat banyak.</li>
+                        <li><strong>Tambah Cabang:</strong> Jika cabang belum ada di database, Anda bisa langsung menekan tombol <strong>"+ Tambah Cabang"</strong> dan mengetikkan nama cabang baru tanpa perlu menutup/keluar dari form penempatan.</li>
                     </ul>
 
                     <h4 className="font-semibold text-slate-800 dark:text-slate-200 mt-4">3. Kontrak & Kompensasi</h4>
-                    <p>Setelah ada penempatan, Anda bisa membuat kontrak kerja (PKWT, Harian).</p>
+                    <p>Setelah ada penempatan, Anda bisa membuat kontrak kerja (PKWT, Harian, Part-time).</p>
                     <ul className="list-disc pl-5 space-y-2">
                         <li>Di dalam baris Penempatan yang aktif, klik "Lihat Kontrak" atau masuk ke tab "Kontrak".</li>
                         <li>Klik "Tambah Kontrak", tentukan jenis, tanggal mulai, dan tanggal selesai.</li>
                         <li><strong>Perpanjangan Kontrak:</strong> Cukup buat kontrak baru pada penempatan yang sama dengan tanggal mulai meneruskan tanggal selesai kontrak sebelumnya.</li>
                         <li><strong>Kompensasi:</strong> Setelah kontrak tersimpan, Anda wajib menambahkan rincian Gaji/Kompensasi (Gaji Pokok, Tunjangan, Lemburan) di dalam detail kontrak tersebut.</li>
-                        <li><strong>Dokumen Legal:</strong> Anda dapat mencetak/mendownload PKWT atau Surat Tugas langsung dari detail kontrak.</li>
+                        <li><strong>Dokumen Legal:</strong> Anda dapat mencetak/mendownload langsung dokumen kontrak seperti PKWT, PKPH (Harian & Part-time), atau Surat Tugas dari detail kontrak.</li>
                     </ul>
 
                     <h4 className="font-semibold text-slate-800 dark:text-slate-200 mt-4">4. Export Data</h4>

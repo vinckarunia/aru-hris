@@ -91,11 +91,22 @@ class BranchController extends Controller
                 // Branch name must be unique within the same client
                 Rule::unique('branches')->where('client_id', $request->client_id),
             ],
+            'project_id' => 'nullable|exists:projects,id',
         ], [
             'name.unique' => 'Nama cabang ini sudah ada di Perusahaan Client tersebut.',
         ]);
 
-        $branch = Branch::create($validated);
+        $branch = Branch::create([
+            'client_id' => $validated['client_id'],
+            'name' => $validated['name'],
+        ]);
+
+        if (!empty($validated['project_id'])) {
+            $project = \App\Models\Project::find($validated['project_id']);
+            if ($project) {
+                $project->branches()->attach($branch->id);
+            }
+        }
 
         \App\Models\AuditLog::log('create', 'branch', "Menambahkan cabang: {$branch->name}", ['branch_id' => $branch->id]);
 
