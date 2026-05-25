@@ -588,7 +588,7 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                             );
                                                             return (
                                                                 <div className="flex gap-2 w-full mt-2">
-                                                                    <a href={route('contracts.download-pkwt', { contract: latestContract.id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download PKWT (PDF)">
+                                                                    <a href={route('contracts.download-pkwt', { contract: latestContract.id, format: 'pdf' })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Kontrak (PDF)">
                                                                         <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> Kontrak
                                                                     </a>
                                                                     <a href={route('contracts.download-st', { contract: latestContract.id })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Surat Tugas (PDF)">
@@ -597,6 +597,19 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                                 </div>
                                                             );
                                                         })()
+                                                    )}
+
+                                                    {(assign.status === 'contract expired' || assign.status === 'resign') && (
+                                                        <div className="w-full mt-2">
+                                                            <a 
+                                                                href={(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? route('assignments.download-paklaring', { assignment: assign.id }) : '#'} 
+                                                                onClick={!(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? (e) => { e.preventDefault(); alert('Perangkat kerja belum dikembalikan. Silakan update status pengembalian di form edit penempatan terlebih dahulu.'); } : undefined}
+                                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors w-full ${(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? 'bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'}`}
+                                                                title="Download Paklaring"
+                                                            >
+                                                                <iconify-icon icon="solar:document-bold" width="14"></iconify-icon> Paklaring
+                                                            </a>
+                                                        </div>
                                                     )}
                                                 </div>
                                             )}

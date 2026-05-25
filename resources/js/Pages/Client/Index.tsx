@@ -23,6 +23,7 @@ interface Client {
     id: string;
     full_name: string;
     short_name: string;
+    address?: string | null;
     mou_start_date?: string | null;
     mou_end_date?: string | null;
     created_at: string;
@@ -100,6 +101,7 @@ export default function Index({ clients, projects, workers }: Props) {
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         full_name: '',
         short_name: '',
+        address: '',
         mou_start_date: '',
         mou_end_date: '',
     });
@@ -223,6 +225,7 @@ export default function Index({ clients, projects, workers }: Props) {
         setData({
             full_name: client.full_name,
             short_name: client.short_name,
+            address: client.address ? client.address : '',
             mou_start_date: client.mou_start_date ? client.mou_start_date : '',
             mou_end_date: client.mou_end_date ? client.mou_end_date : '',
         });
@@ -542,6 +545,19 @@ export default function Index({ clients, projects, workers }: Props) {
                                 placeholder="CONTOH: ABC"
                             />
                             <InputError message={errors.short_name} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="address" value="Alamat Lengkap (Opsional)" />
+                            <textarea
+                                id="address"
+                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+                                value={data.address}
+                                onChange={(e) => setData('address', e.target.value)}
+                                placeholder="Masukkan alamat lengkap"
+                                rows={3}
+                            />
+                            <InputError message={errors.address as string} className="mt-2" />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -143,6 +143,80 @@ class ContractDocumentController extends Controller
     }
 
     /**
+     * Download the Paklaring (Surat Keterangan Kerja) document.
+     */
+    public function downloadPaklaring(Request $request, \App\Models\Assignment $assignment)
+    {
+        $user = $request->user();
+
+        $assignment->load(['worker', 'project.client', 'branches']);
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+            if (!in_array($assignment->project_id, $projectIds)) {
+                abort(403, 'Akses ditolak. Penempatan ini di luar wewenang project Anda.');
+            }
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Mengunduh paklaring hanya diperbolehkan untuk Admin dan PIC project terkait.');
+        }
+        
+        // 1. Validation for equipment_returned
+        if (!$assignment->equipment_returned) {
+            abort(403, 'Gagal mengunduh: Perangkat kerja belum dikembalikan.');
+        }
+
+        // 2. Validation for Grade A / Grade B
+        $grade = '';
+        if ($assignment->status === 'contract expired') {
+            $grade = 'A';
+        } elseif ($assignment->status === 'resign') {
+            $grade = 'B';
+        } else {
+            abort(403, 'Gagal mengunduh: Status penempatan harus Resign atau Contract Expired untuk mencetak Paklaring.');
+        }
+
+        $pihakPertama = ($user->internalEmployee ?? null)
+            ?? InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
+            ?? InternalEmployee::where('position', 'Head of Operation')->first()
+            ?? InternalEmployee::first();
+
+        // Format based on image: No. : 081/ARU/Pers-SKK/IV/2026
+        $sequence = str_pad($assignment->id, 3, '0', STR_PAD_LEFT);
+        $romanMonths = [1=>'I', 2=>'II', 3=>'III', 4=>'IV', 5=>'V', 6=>'VI', 7=>'VII', 8=>'VIII', 9=>'IX', 10=>'X', 11=>'XI', 12=>'XII'];
+        $monthRom = $romanMonths[(int)\Carbon\Carbon::now()->format('n')];
+        $year = \Carbon\Carbon::now()->year;
+        $nomorSurat = "{$sequence}/ARU/Pers-SKK/{$monthRom}/{$year}";
+
+        $data = [
+            'assignment'    => $assignment,
+            'worker'        => $assignment->worker,
+            'pihakPertama'  => $pihakPertama,
+            'logoPath'      => $this->getAssetPath('logo'),
+            'signaturePath' => $this->getAssetPath('signature'),
+            'grade'         => $grade,
+            'nomorSurat'    => $nomorSurat,
+        ];
+        
+        $pdf = Pdf::loadView('pdf.paklaring', $data)
+                  ->setPaper('a4', 'portrait')
+                  ->setOptions([
+                      'isPhpEnabled' => true,
+                      'isRemoteEnabled' => true,
+                      'isFontSubsettingEnabled' => true,
+                      'chroot' => public_path()
+                  ]);
+        $fileName = 'Paklaring - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
+
+        \App\Models\AuditLog::log('download', 'assignment', "Mengunduh Paklaring (Grade {$grade}) untuk karyawan: {$data['worker']->name}", [
+            'assignment_id' => $assignment->id,
+            'document_type' => 'Paklaring',
+            'grade'         => $grade,
+        ]);
+
+        return $pdf->download($fileName);
+    }
+
+    /**
      * Get absolute filesystem path to a stored company asset.
      * Returns null if not yet uploaded.
      *

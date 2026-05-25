@@ -314,7 +314,10 @@ class AssignmentController extends Controller
         $worker = Worker::find($assignment->worker_id);
 
         if (!$isNowActive) {
-            // Assignment has been terminated — clear the worker's NIK.
+            // Assignment has been terminated — preserve the NIK to assignment, then clear worker's NIK.
+            if ($worker->nik_aru) {
+                $assignment->update(['nik_aru' => $worker->nik_aru]);
+            }
             $worker->update(['nik_aru' => null]);
         } elseif ($projectChanged) {
             // Worker moved to a different project — generate a new NIK.

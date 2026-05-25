@@ -102,6 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Document Generation
         Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
         Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
+        Route::get('/assignments/{assignment}/download-paklaring', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPaklaring'])->name('assignments.download-paklaring');
     });
 
     // Admin & Super Admin Routes

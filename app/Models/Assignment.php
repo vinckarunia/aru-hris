@@ -48,6 +48,7 @@ class Assignment extends Model
         'worker_id',
         'project_id',
         'employee_id',
+        'nik_aru',
         'position',
         'hire_date',
         'termination_date',

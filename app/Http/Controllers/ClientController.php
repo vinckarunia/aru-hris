@@ -117,6 +117,7 @@ class ClientController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'full_name' => 'required|string|max:255|unique:clients,full_name',
             'short_name' => 'required|string|max:50|unique:clients,short_name',
+            'address' => 'nullable|string|max:1000',
             'mou_start_date' => 'nullable|date',
             'mou_end_date' => 'nullable|date|after_or_equal:mou_start_date',
         ]);
@@ -140,6 +141,7 @@ class ClientController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'full_name' => 'required|string|max:255|unique:clients,full_name,' . $client->id,
             'short_name' => 'required|string|max:50|unique:clients,short_name,' . $client->id,
+            'address' => 'nullable|string|max:1000',
             'mou_start_date' => 'nullable|date',
             'mou_end_date' => 'nullable|date|after_or_equal:mou_start_date',
         ]);
