@@ -558,12 +558,12 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                         </div>
 
                         <div>
-                            <InputLabel htmlFor="pkwt_type" value="Tipe Dokumen PKWT" />
+                            <InputLabel htmlFor="pkwt_type" value="Tipe Dokumen Kontrak" />
                             <select
                                 id="pkwt_type"
                                 value={data.pkwt_type}
                                 onChange={(e) => setData('pkwt_type', e.target.value)}
-                                disabled={modalMode === 'edit'}
+                                disabled={modalMode === 'edit' && isPic}
                                 className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                             >
                                 <option value="all">PKWT All (Default)</option>

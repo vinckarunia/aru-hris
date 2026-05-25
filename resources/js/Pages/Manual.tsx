@@ -92,7 +92,7 @@ export default function Manual() {
                         <>
                             <p>Sebagai PIC, Anda dapat melihat daftar project yang ditugaskan kepada Anda. Di halaman ini Anda dapat melihat detail project, client yang terkait, dan daftar karyawan yang berada di project tersebut.</p>
                             <ul className="list-disc pl-5 space-y-2">
-                                <li><strong>Edit Project:</strong> Anda dapat mengedit detail dari project yang Anda pegang. Namun, Anda tidak diperkenankan mengubah <strong>Client</strong> dan <strong>Tipe Dokumen PKWT</strong> dari project yang sudah ada.</li>
+                                <li><strong>Edit Project:</strong> Anda dapat mengedit detail dari project yang Anda pegang. Namun, Anda tidak diperkenankan mengubah <strong>Client</strong> dan <strong>Tipe Dokumen Kontrak</strong> dari project yang sudah ada.</li>
                             </ul>
                         </>
                     ) : (
@@ -102,7 +102,7 @@ export default function Manual() {
                                 <li><strong>Tambah Project:</strong> Klik "Tambah Project", pilih Client, lalu isi nama project dan detail lainnya.</li>
                                 <li><strong>Assign PIC:</strong> Anda dapat menugaskan satu atau lebih PIC internal ARU untuk mengelola project tersebut. PIC ini nantinya dapat mengelola data karyawan yang ditugaskan di project ini.</li>
                                 <li><strong>Delete Project:</strong> Gunakan tombol hapus pada baris project jika project tidak lagi aktif. Perhatikan bahwa jika Anda menghapus suatu project, maka dampaknya semua karyawan aktif yang terafiliasi dengan project tersebut status penempatannya akan otomatis berubah menjadi "Project Closed".</li>
-                                <li><strong>Edit Project:</strong> Gunakan menu aksi pada baris project untuk mengubah data project. (Catatan: Tipe Dokumen PKWT tidak dapat diubah setelah project dibuat)</li>
+                                <li><strong>Edit Project:</strong> Gunakan menu aksi pada baris project untuk mengubah data project.</li>
                             </ul>
                         </>
                     )}
