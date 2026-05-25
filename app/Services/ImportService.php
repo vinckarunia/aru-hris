@@ -367,9 +367,9 @@ class ImportService
                 'total_rows' => max(0, $rowCount - 1), // Approximate: total minus 1 header row
             ];
         } else {
-            $spreadsheet = $this->loadSpreadsheetReadOnly($fullPath);
+            $spreadsheet = $this->loadSpreadsheetWithFormatting($fullPath);
             foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
-                $rows = $worksheet->toArray();
+                $rows = $this->readWorksheetRowsFormatted($worksheet);
                 if (empty($rows)) {
                     continue;
                 }
@@ -476,6 +476,76 @@ class ImportService
         $reader->setReadDataOnly(true);
 
         return $reader->load($fullPath);
+    }
+
+    /**
+     * Load a spreadsheet with formatting data preserved (for preview/display purposes).
+     *
+     * @param string $fullPath Absolute path to the spreadsheet file.
+     * @return \PhpOffice\PhpSpreadsheet\Spreadsheet
+     */
+    private function loadSpreadsheetWithFormatting(string $fullPath): \PhpOffice\PhpSpreadsheet\Spreadsheet
+    {
+        set_time_limit(120);
+
+        $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($fullPath);
+        // Do NOT set readDataOnly so that date formatting is preserved
+
+        return $reader->load($fullPath);
+    }
+
+    /**
+     * Read all rows from a worksheet, converting Excel date serial numbers
+     * to human-readable date strings (Y-m-d) for display purposes.
+     *
+     * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $worksheet
+     * @return array<int, array<int, string|null>>
+     */
+    private function readWorksheetRowsFormatted(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $worksheet): array
+    {
+        $rows = [];
+        foreach ($worksheet->getRowIterator() as $row) {
+            $rowData = [];
+            $cellIterator = $row->getCellIterator();
+            $cellIterator->setIterateOnlyExistingCells(false);
+            foreach ($cellIterator as $cell) {
+                $value = $cell->getValue();
+                // Detect Excel date serial numbers and convert them
+                if (is_numeric($value) && $value > 25000 && $value < 60000) {
+                    // Check if the cell has a date number format
+                    $formatCode = $cell->getStyle()->getNumberFormat()->getFormatCode();
+                    if ($this->isDateFormat($formatCode) || $formatCode === 'General') {
+                        try {
+                            $dateObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value);
+                            $value = $dateObj->format('Y-m-d');
+                        } catch (\Throwable $e) {
+                            // Keep raw value if conversion fails
+                        }
+                    }
+                }
+                $rowData[] = $value !== null ? (string) $value : null;
+            }
+            $rows[] = $rowData;
+        }
+        return $rows;
+    }
+
+    /**
+     * Check if a number format code represents a date format.
+     *
+     * @param string $formatCode The Excel number format code.
+     * @return bool
+     */
+    private function isDateFormat(string $formatCode): bool
+    {
+        $datePatterns = ['yy', 'mm', 'dd', 'd-', 'm-', 'y-', 'd/', 'm/', 'y/', 'date', 'D-', 'M-', 'Y-', 'D/', 'M/', 'Y/'];
+        $lowerFormat = strtolower($formatCode);
+        foreach ($datePatterns as $pattern) {
+            if (stripos($lowerFormat, strtolower($pattern)) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

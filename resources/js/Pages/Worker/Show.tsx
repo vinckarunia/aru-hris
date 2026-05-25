@@ -574,6 +574,12 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                     <iconify-icon icon="solar:calendar-bold-duotone"></iconify-icon>
                                                     {assign.hire_date} s/d {assign.termination_date || 'Sekarang'}
                                                 </p>
+                                                {(assign.status === 'contract expired' || assign.status === 'resign') && (
+                                                    <p className={`text-xs mt-1.5 flex items-center gap-1.5 font-medium ${(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                                        <iconify-icon icon={(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? 'solar:check-circle-bold' : 'solar:clock-circle-bold'} width="14"></iconify-icon>
+                                                        Perangkat Kerja: {(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? 'Sudah Dikembalikan' : 'Belum Dikembalikan'}
+                                                    </p>
+                                                )}
                                             </div>
                                             {!isWorker && (
                                                 <div className="flex flex-col items-end gap-2 shrink-0">

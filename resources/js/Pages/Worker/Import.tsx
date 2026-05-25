@@ -550,7 +550,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                 STEP 2: MAPPING & GLOBAL SETTINGS
             ================================================================ */}
             {currentStep === 2 && (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card flex flex-col h-[calc(100vh-16rem)]">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-card">
                     {/* Header */}
                     <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-800/50 rounded-t-2xl shrink-0">
                         <div>
@@ -633,7 +633,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                     </div>
 
                     {/* Scrollable Mapping Table */}
-                    <div className="overflow-auto flex-1 custom-scrollbar">
+                    <div className="overflow-auto custom-scrollbar" style={{ maxHeight: '45vh', minHeight: '200px' }}>
                         <table className="w-full text-left border-collapse whitespace-nowrap">
                             <thead className="bg-white dark:bg-slate-800 sticky top-0 z-10 shadow-sm">
                                 {/* Row 1: Mapping Dropdowns */}
@@ -693,7 +693,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                     </div>
 
                     {/* Global Settings Panel (Below Table) */}
-                    <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl shrink-0">
+                    <div className="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
                         <div className="flex items-center gap-2 mb-4">
                             <iconify-icon icon="solar:settings-bold" width="18" className="text-primary"></iconify-icon>
                             <h4 className="text-sm font-bold text-slate-700 dark:text-white">Pengaturan Global</h4>
