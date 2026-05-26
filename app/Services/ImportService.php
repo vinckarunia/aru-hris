@@ -80,12 +80,12 @@ class ImportService
             ],
         ],
         [
-            'group' => 'Data Penempatan',
+            'group' => 'Data Penempatan/Assignment',
             'options' => [
-                ['key' => 'project_name', 'label' => 'Nama Project'],
-                ['key' => 'branch_name', 'label' => 'Nama Cabang'],
-                ['key' => 'nik_tlj', 'label' => 'NIK Client (Employee ID)'],
-                ['key' => 'position', 'label' => 'Jabatan (Position)'],
+                ['key' => 'project_name', 'label' => 'Nama Project (Prefix NIK)'],
+                ['key' => 'branch_name', 'label' => 'Cabang/Area (Opsional)'],
+                ['key' => 'employee_id', 'label' => 'ID Karyawan Client'],
+                ['key' => 'position', 'label' => 'Jabatan'],
                 ['key' => 'hire_date', 'label' => 'Tanggal Masuk (Hire Date)'],
                 ['key' => 'status', 'label' => 'Status Karyawan'],
                 ['key' => 'termination_date', 'label' => 'Tanggal Keluar'],
@@ -104,8 +104,11 @@ class ImportService
             'group' => 'Data Kompensasi (Gaji & Tunjangan)',
             'options' => [
                 ['key' => 'base_salary', 'label' => 'Gaji Pokok'],
+                ['key' => 'allowance', 'label' => 'Tunjangan (Lainnya/Tetap)'],
                 ['key' => 'meal_allowance', 'label' => 'Tunjangan Makan'],
                 ['key' => 'transport_allowance', 'label' => 'Tunjangan Transport'],
+                ['key' => 'attendance_allowance', 'label' => 'Tunjangan Kehadiran'],
+                ['key' => 'performance_bonus', 'label' => 'Insentif/Bonus Performa'],
                 ['key' => 'overtime_weekday', 'label' => 'Rate Lembur (Weekday)'],
                 ['key' => 'overtime_holiday', 'label' => 'Rate Lembur (Weekend/Libur)'],
             ],
@@ -187,6 +190,13 @@ class ImportService
         'ktp' => 'ktp_number',
         
         'nip' => 'employee_id',
+        'nik tlj' => 'employee_id',
+        'nik client' => 'employee_id',
+        'id client' => 'employee_id',
+        'id karyawan client' => 'employee_id',
+        'employee id' => 'employee_id',
+        'id karyawan' => 'employee_id',
+        
         'nik aru' => 'nik_aru',
         
         'jabatan' => 'position',
@@ -247,11 +257,28 @@ class ImportService
         'gapok' => 'base_salary',
         'basic salary' => 'base_salary',
         
+        'tunjangan tetap' => 'allowance',
+        'tunjangan lainnya' => 'allowance',
+        'tunjangan' => 'allowance',
+        'allowance' => 'allowance',
+        
         'uang makan' => 'meal_allowance',
         'tunjangan makan' => 'meal_allowance',
         
         'tunjangan transport' => 'transport_allowance',
         'uang transport' => 'transport_allowance',
+        
+        'tunjangan kehadiran' => 'attendance_allowance',
+        'uang hadir' => 'attendance_allowance',
+        'kehadiran' => 'attendance_allowance',
+        
+        'insentif' => 'performance_bonus',
+        'bonus performa' => 'performance_bonus',
+        'bonus' => 'performance_bonus',
+        
+        'catatan evaluasi' => 'evaluation_notes',
+        'evaluasi kontrak' => 'evaluation_notes',
+        'evaluasi' => 'evaluation_notes',
         
         'lembur weekday' => 'overtime_weekday',
         'overtime weekday' => 'overtime_weekday',
@@ -759,7 +786,7 @@ class ImportService
             if ($ktpClean) {
                 $existingWorker = Worker::where('ktp_number', $ktpClean)->first();
                 if ($existingWorker) {
-                    $conflict = $this->buildConflictData($existingWorker, $row, $mapping);
+                    $conflict = $this->buildConflictData($existingWorker, $row, $mapping, $globalSettings);
                 }
             }
         }
@@ -822,13 +849,44 @@ class ImportService
      * @param Worker $existing The existing worker from the database.
      * @param array $row The row data.
      * @param array $mapping The column mapping.
+     * @param array $globalSettings Global settings for fallback values.
      * @return array The conflict data with existing_id and field-level comparison.
      */
-    private function buildConflictData(Worker $existing, array $row, array $mapping): array
+    private function buildConflictData(Worker $existing, array $row, array $mapping, array $globalSettings = []): array
     {
         $c = ImportDataCleaner::class;
 
+        $latestAssignment = $existing->assignments()->latest()->first();
+        $latestContract = $latestAssignment ? $latestAssignment->contracts()->latest()->first() : null;
+        $latestComp = $latestContract ? $latestContract->compensation : null;
+
+        $incomingContractTypeRaw = $c::extractField($row, $mapping, 'raw_contract_type');
+        $incomingContractType = $incomingContractTypeRaw !== null ? $c::parseContractType($incomingContractTypeRaw) : null;
+
+        $incomingSalaryRaw = $c::extractField($row, $mapping, 'base_salary');
+        $incomingSalary = $incomingSalaryRaw !== null ? $c::cleanCurrency($incomingSalaryRaw) : null;
+
+        // Resolve incoming Client, Project, Branch
+        $incomingProjectName = $c::extractField($row, $mapping, 'project_name');
+        if (!$incomingProjectName && !empty($globalSettings['project_id'])) {
+            $p = \App\Models\Project::find($globalSettings['project_id']);
+            $incomingProjectName = $p ? $p->name : null;
+        }
+
+        $incomingBranchName = $c::extractField($row, $mapping, 'branch_name');
+        if (!$incomingBranchName && !empty($globalSettings['branch_ids'])) {
+            $b = \App\Models\Branch::whereIn('id', $globalSettings['branch_ids'])->pluck('name')->join(', ');
+            $incomingBranchName = $b ?: null;
+        }
+
+        $incomingClientName = null;
+        if (!empty($globalSettings['client_id'])) {
+            $cl = \App\Models\Client::find($globalSettings['client_id']);
+            $incomingClientName = $cl ? $cl->name : null;
+        }
+
         $compareFields = [
+            // Worker Fields
             ['key' => 'name', 'label' => 'Nama', 'existing' => $existing->name, 'incoming' => $c::extractField($row, $mapping, 'name')],
             ['key' => 'gender', 'label' => 'Jenis Kelamin', 'existing' => $existing->gender, 'incoming' => $c::parseGender($c::extractField($row, $mapping, 'gender'))],
             ['key' => 'birth_place', 'label' => 'Tempat Lahir', 'existing' => $existing->birth_place, 'incoming' => $c::extractField($row, $mapping, 'birth_place')],
@@ -843,6 +901,19 @@ class ImportService
             ['key' => 'bpjs_ketenagakerjaan', 'label' => 'BPJS TK', 'existing' => $existing->bpjs_ketenagakerjaan, 'incoming' => $c::cleanIdentityNumber($c::extractField($row, $mapping, 'bpjs_ketenagakerjaan'))],
             ['key' => 'bank_name', 'label' => 'Bank', 'existing' => $existing->bank_name, 'incoming' => $c::normalizeBankName($c::extractField($row, $mapping, 'bank_name'))],
             ['key' => 'bank_account_number', 'label' => 'No Rekening', 'existing' => $existing->bank_account_number, 'incoming' => $c::cleanBankAccountNumber($c::extractField($row, $mapping, 'bank_account_number'))],
+            
+            // Assignment & Contract Fields
+            ['key' => 'client', 'label' => 'Client', 'existing' => $latestAssignment?->project?->client?->name, 'incoming' => $incomingClientName],
+            ['key' => 'project', 'label' => 'Project', 'existing' => $latestAssignment?->project?->name, 'incoming' => $incomingProjectName],
+            ['key' => 'branch', 'label' => 'Cabang', 'existing' => $latestAssignment ? $latestAssignment->branches->pluck('name')->join(', ') : null, 'incoming' => $incomingBranchName],
+            ['key' => 'position', 'label' => 'Jabatan', 'existing' => $latestAssignment?->position, 'incoming' => $c::extractField($row, $mapping, 'position')],
+            ['key' => 'employee_id', 'label' => 'ID Karyawan Client', 'existing' => $latestAssignment?->employee_id, 'incoming' => $c::extractField($row, $mapping, 'employee_id')],
+            ['key' => 'contract_type', 'label' => 'Jenis Kontrak', 'existing' => $latestContract?->contract_type, 'incoming' => $incomingContractType],
+            ['key' => 'contract_start', 'label' => 'Mulai Kontrak', 'existing' => $latestContract?->start_date?->format('Y-m-d'), 'incoming' => $c::parseDate($c::extractField($row, $mapping, 'contract_start'))],
+            ['key' => 'contract_end', 'label' => 'Selesai Kontrak', 'existing' => $latestContract?->end_date?->format('Y-m-d'), 'incoming' => $c::parseDate($c::extractField($row, $mapping, 'contract_end'))],
+            
+            // Compensation Fields
+            ['key' => 'base_salary', 'label' => 'Gaji Pokok', 'existing' => $latestComp?->base_salary, 'incoming' => $incomingSalary],
         ];
 
         $diffs = [];
@@ -1134,7 +1205,7 @@ class ImportService
         return [
             'project_id' => $projectId,
             'branch_ids' => $branchIds,
-            'employee_id' => $c::extractField($row, $mapping, 'nik_tlj'),
+            'employee_id' => $c::extractField($row, $mapping, 'employee_id'),
             'position' => $c::extractField($row, $mapping, 'position'),
             'hire_date' => $c::parseDate($c::extractField($row, $mapping, 'hire_date')),
             'termination_date' => $terminationDate,
@@ -1216,6 +1287,9 @@ class ImportService
         return [
             'base_salary' => $c::cleanCurrency($c::extractField($row, $mapping, 'base_salary')),
             'salary_rate' => $salaryRate,
+            'allowance' => $c::cleanCurrency($c::extractField($row, $mapping, 'allowance')),
+            'attendance_allowance' => $c::cleanCurrency($c::extractField($row, $mapping, 'attendance_allowance')),
+            'performance_bonus' => $c::cleanCurrency($c::extractField($row, $mapping, 'performance_bonus')),
             'meal_allowance' => $c::cleanCurrency($c::extractField($row, $mapping, 'meal_allowance')),
             'transport_allowance' => $c::cleanCurrency($c::extractField($row, $mapping, 'transport_allowance')),
             'allowance_rate' => $allowanceRate,
@@ -1346,11 +1420,11 @@ class ImportService
             'Tanggal Masuk', 'Jenis Kontrak', 'Status', 'Tanggal Keluar',
             'Jabatan', 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
             'Alamat KTP', 'Alamat Domisili', 'No HP', 'Email', 'Pendidikan',
-            'Agama', 'Status PTKP', 'Gaji Pokok', 'Uang Makan',
-            'Tunjangan Transport', 'Lembur Weekday', 'Lembur Libur',
+            'Agama', 'Status PTKP', 'Gaji Pokok', 'Tunjangan', 'Uang Makan',
+            'Tunjangan Transport', 'Tunjangan Kehadiran', 'Insentif', 'Lembur Weekday', 'Lembur Libur',
             'NPWP', 'Bank', 'Rekening', 'BPJS Kesehatan',
             'BPJS Ketenagakerjaan', 'No KTP', 'No KK', 'Ibu Kandung',
-            'Kontrak Start Date', 'Kontrak End Date',
+            'Kontrak Start Date', 'Kontrak End Date', 'Catatan Evaluasi',
         ];
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();

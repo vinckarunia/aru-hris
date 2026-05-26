@@ -148,12 +148,14 @@ class AssignmentController extends Controller
 
         \App\Models\AuditLog::log('create', 'assignment', "Menambahkan penempatan untuk worker #{$validated['worker_id']} ke project #{$validated['project_id']}", ['assignment_id' => $assignment->id]);
 
-        // Generate a fresh NIK ARU based on the assigned project.
+        // Generate a fresh NIK ARU based on the assigned project if not already filled.
         if (is_null($validated['termination_date'] ?? null)) {
             $worker  = Worker::find($validated['worker_id']);
             $project = Project::find($validated['project_id']);
-            $newNik  = $this->generateNikForProject($project);
-            $worker->update(['nik_aru' => $newNik]);
+            if (empty($worker->nik_aru)) {
+                $newNik  = $this->generateNikForProject($project);
+                $worker->update(['nik_aru' => $newNik]);
+            }
         }
 
         // Create the bundled first contract

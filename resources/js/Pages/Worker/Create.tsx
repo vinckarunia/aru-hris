@@ -293,7 +293,8 @@ export default function Create({ picProjects = [], validationDigits, validationE
                         </div>
                         <div>
                             <InputLabel htmlFor="nik_aru">NIK ARU</InputLabel>
-                            <TextInput id="nik_aru" type="text" className="mt-1 block w-full bg-slate-100 dark:bg-slate-900/50 text-slate-500 cursor-not-allowed border-slate-200 dark:border-slate-700" value={data.nik_aru} disabled placeholder="Auto-generated saat Assignment" title="Dibuat otomatis oleh sistem saat penempatan project" />
+                            <TextInput id="nik_aru" type="text" className="mt-1 block w-full" value={data.nik_aru} onChange={e => setData('nik_aru', e.target.value)} placeholder="Kosongkan untuk auto-generate" title="Kosongkan jika ingin sistem membuat NIK otomatis saat penempatan project" />
+                            <p className="text-xs text-slate-500 mt-1">Kosongkan jika ingin diisi otomatis oleh sistem.</p>
                             <InputError message={errors.nik_aru} className="mt-1" />
                         </div>
 

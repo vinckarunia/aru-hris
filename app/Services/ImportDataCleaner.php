@@ -231,15 +231,21 @@ class ImportDataCleaner
             return null;
         }
 
-        $lower = strtolower(trim($value));
+        // Remove spaces and punctuation to handle "Laki - Laki", "Laki2", etc.
+        $lower = strtolower(preg_replace('/[^a-zA-Z]/', '', trim($value)));
 
-        if (in_array($lower, ['l', 'laki-laki', 'laki', 'male', 'Laki-laki'])) {
+        if ($lower === 'l' || str_contains($lower, 'laki') || str_contains($lower, 'pria') || str_contains($lower, 'male')) {
             return 'male';
         }
 
-        if (in_array($lower, ['p', 'perempuan', 'female', 'Perempuan'])) {
+        if ($lower === 'p' || str_contains($lower, 'perempuan') || str_contains($lower, 'wanita') || str_contains($lower, 'female') || str_contains($lower, 'cewe')) {
             return 'female';
         }
+
+        // Fallback for exact single letter in original string just in case
+        $exactLower = strtolower(trim($value));
+        if ($exactLower === 'l') return 'male';
+        if ($exactLower === 'p') return 'female';
 
         return null;
     }

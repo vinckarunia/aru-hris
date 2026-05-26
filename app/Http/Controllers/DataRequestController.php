@@ -564,7 +564,7 @@ class DataRequestController extends Controller
 
                         if (is_null($assignmentFillable['termination_date'] ?? null)) {
                             $project = \App\Models\Project::find($assignmentFillable['project_id']);
-                            if ($project) {
+                            if ($project && empty($worker->nik_aru)) {
                                 $newNik = (new AssignmentController)->generateNikForProject($project);
                                 $worker->update(['nik_aru' => $newNik]);
                             }

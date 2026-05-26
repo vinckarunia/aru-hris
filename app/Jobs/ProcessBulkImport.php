@@ -318,7 +318,7 @@ class ProcessBulkImport implements ShouldQueue
                     }
                 }
 
-                $hasAssignmentMapping = !empty(array_intersect(array_keys($this->mapping), ['project_name', 'branch_name', 'nik_tlj', 'position', 'hire_date', 'termination_date', 'status']));
+                $hasAssignmentMapping = !empty(array_intersect(array_keys($this->mapping), ['project_name', 'branch_name', 'employee_id', 'position', 'hire_date', 'termination_date', 'status']));
                 $hasContractMapping = !empty(array_intersect(array_keys($this->mapping), ['raw_contract_type', 'contract_start', 'contract_end', 'evaluation_notes']));
                 $hasCompensationMapping = !empty(array_intersect(array_keys($this->mapping), ['base_salary', 'meal_allowance', 'transport_allowance', 'attendance_allowance', 'allowance', 'performance_bonus', 'overtime_weekday', 'overtime_holiday']));
 
@@ -347,7 +347,7 @@ class ProcessBulkImport implements ShouldQueue
                         // Filter out unmapped assignment fields
                         if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
                         if (!array_key_exists('branch_name', $this->mapping) && empty($this->globalSettings['branch_ids'])) unset($assignmentData['branch_ids']);
-                        if (!array_key_exists('nik_tlj', $this->mapping)) unset($assignmentData['nik_tlj']);
+                        if (!array_key_exists('employee_id', $this->mapping)) unset($assignmentData['employee_id']);
                         if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
                         if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
                             unset($assignmentData['status']);
@@ -432,7 +432,7 @@ class ProcessBulkImport implements ShouldQueue
                     if ($existingAssignment) {
                         if ($hasAssignmentMapping) {
                             if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
-                            if (!array_key_exists('nik_tlj', $this->mapping)) unset($assignmentData['nik_tlj']);
+                            if (!array_key_exists('employee_id', $this->mapping)) unset($assignmentData['employee_id']);
                             if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
                             if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
                                 unset($assignmentData['status']);
