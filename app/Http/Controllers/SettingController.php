@@ -243,10 +243,19 @@ class SettingController extends Controller
         imagedestroy($src);
         imagedestroy($dst);
 
-        // If the uploaded asset is the logo, also generate the favicon
+        // If the uploaded asset is the logo, also generate the favicon (safely for shared hosting)
         if ($type === 'logo') {
-            $faviconPath = public_path('favicon.ico');
-            exec('convert ' . escapeshellarg($fullPath) . ' -define icon:auto-resize=64,48,32,16 ' . escapeshellarg($faviconPath));
+            try {
+                $faviconPath = public_path('favicon.ico');
+                if (function_exists('exec')) {
+                    $disabled = explode(',', ini_get('disable_functions'));
+                    if (!in_array('exec', array_map('trim', $disabled))) {
+                        exec('convert ' . escapeshellarg($fullPath) . ' -define icon:auto-resize=64,48,32,16 ' . escapeshellarg($faviconPath));
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Gagal generate favicon: " . $e->getMessage());
+            }
         }
 
         // Persist path in settings
