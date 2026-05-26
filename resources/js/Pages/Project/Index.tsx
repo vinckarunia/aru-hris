@@ -43,7 +43,7 @@ interface Project {
     client_id: string;
     name: string;
     pkwt_type: 'vdi' | 'cj' | 'tlj' | 'all';
-    prefix: string;
+    prefix: string | null;
     id_running_number: number;
     client?: Client;
     branches?: Branch[];
@@ -99,7 +99,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
     const filteredProjects = projects.filter((project: Project) => {
         // Search Logic
         const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            project.prefix.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (project.prefix && project.prefix.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (project.client && project.client.full_name.toLowerCase().includes(searchQuery.toLowerCase()));
 
         // Filter Logic
@@ -234,7 +234,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
             pic_ids: project.pics?.map((p: Pic) => p.id) || [],
             name: project.name,
             pkwt_type: project.pkwt_type || 'all',
-            prefix: project.prefix
+            prefix: project.prefix || ''
         });
         clearErrors();
         setIsCreateModalOpen(true);
@@ -439,7 +439,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{project.prefix}</span>
+                                            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-md font-mono text-xs font-bold text-slate-500">{project.prefix || '-'}</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
@@ -576,7 +576,7 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                         </div>
 
                         <div>
-                            <InputLabel htmlFor="prefix" value="Prefix" />
+                            <InputLabel htmlFor="prefix" value="Prefix (Opsional)" />
                             <TextInput id="prefix" type="text" className="mt-1 block w-full uppercase" value={data.prefix} onChange={(e) => setData('prefix', e.target.value.toUpperCase())} placeholder="CONTOH: ITS-01" />
                             <InputError message={errors.prefix} className="mt-2" />
                         </div>

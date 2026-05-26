@@ -73,7 +73,8 @@ interface Project {
     id: string;
     client_id: string;
     name: string;
-    prefix: string;
+    pkwt_type: 'vdi' | 'cj' | 'tlj' | 'all';
+    prefix: string | null;
     id_running_number: number;
     client: Client | null;
     branches: Branch[];
@@ -305,10 +306,10 @@ export default function Show({ project }: Props) {
                             )}
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                             {/* Project Prefix */}
-                            <span className="flex items-center gap-1.5">
-                                <iconify-icon icon="solar:tag-bold" width="14"></iconify-icon>
-                                <span className="font-mono font-bold text-slate-600 dark:text-slate-400">{project.prefix}</span>
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="text-xs text-slate-400 font-medium">PREFIX</span>
+                                <span className="font-mono font-bold text-slate-600 dark:text-slate-400">{project.prefix || '-'}</span>
+                            </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-slate-500 font-medium">
                             <span>{uniqueWorkerAssignments.length} Karyawan</span>

@@ -427,14 +427,15 @@ class AssignmentController extends Controller
     {
         $prefix = (string) $project->prefix;
 
-        // Get the highest number currently used by workers for this prefix.
-        // This handles cases where NIKs were imported and are higher than the current id_running_number.
-        $maxWorkerNikNumber = \App\Models\Worker::whereNotNull('nik_aru')
-            ->where('nik_aru', 'like', $prefix . '%')
-            ->pluck('nik_aru')
+        // Get the highest number currently used by workers assigned to this project.
+        // This ensures the number increments based on the project's own pool, regardless of the prefix.
+        $maxWorkerNikNumber = \App\Models\Assignment::where('project_id', $project->id)
+            ->join('workers', 'assignments.worker_id', '=', 'workers.id')
+            ->whereNotNull('workers.nik_aru')
+            ->pluck('workers.nik_aru')
             ->map(function ($nik) use ($prefix) {
-                // Extract only the numeric part after the prefix
-                $numberPart = substr($nik, strlen($prefix));
+                // If prefix is present, strip it. If not, just parse the numeric part.
+                $numberPart = $prefix ? substr($nik, strlen($prefix)) : $nik;
                 return is_numeric($numberPart) ? (int) $numberPart : 0;
             })
             ->max() ?? 0;
