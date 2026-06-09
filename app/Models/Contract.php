@@ -49,6 +49,8 @@ class Contract extends Model
     protected function casts(): array
     {
         return [
+            'start_date' => 'date',
+            'end_date' => 'date',
             'hardcopy_received_at' => 'datetime',
         ];
     }

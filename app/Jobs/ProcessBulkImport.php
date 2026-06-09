@@ -267,16 +267,14 @@ class ProcessBulkImport implements ShouldQueue
                         ->where('client_id', $this->globalSettings['client_id'])
                         ->first();
                     if (!$existingProject) {
-                        // Generate a unique prefix from the project name
-                        $basePrefix = strtoupper(substr(trim($projectName), 0, 3));
-                        if (strlen($basePrefix) < 2) {
-                            $basePrefix = 'ARU';
-                        }
-                        $prefix = $basePrefix;
-                        $suffix = 1;
-                        while (Project::where('prefix', $prefix)->exists()) {
-                            $prefix = $basePrefix . $suffix;
-                            $suffix++;
+                        // Detect prefix from nik_aru input (non-numeric leading characters)
+                        $nikAruRaw = ImportDataCleaner::extractField($row, $this->mapping, 'nik_aru');
+                        $prefix = null;
+                        if ($nikAruRaw) {
+                            // Extract the alphabetic prefix from the NIK ARU (e.g., "ARU001" → "ARU")
+                            if (preg_match('/^([A-Za-z]+)/', trim($nikAruRaw), $prefixMatch)) {
+                                $prefix = strtoupper($prefixMatch[1]);
+                            }
                         }
 
                         $existingProject = Project::create([
@@ -330,7 +328,6 @@ class ProcessBulkImport implements ShouldQueue
                     $assignmentData = $importService->buildAssignmentData($row, $this->mapping, $this->globalSettings);
                     $contractsData = $importService->buildContractsData($row, $this->mapping, $this->globalSettings);
                     $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
-                    $familyData = $importService->buildFamilyMembersData($row, $this->mapping);
 
                     if ($isUpdate) {
                         if (!$hasAssignmentMapping) $assignmentData = [];
@@ -376,7 +373,6 @@ class ProcessBulkImport implements ShouldQueue
                     $payload = array_merge($workerData, $assignmentData, [
                         'contracts' => $contractsData,
                         'compensation' => $compData,
-                        'family_members' => $familyData
                     ]);
 
                     if ($isUpdate) {
@@ -544,13 +540,6 @@ class ProcessBulkImport implements ShouldQueue
                             ContractCompensation::create($compData);
                         }
                     }
-                }
-
-                // 6. Create Family Members
-                $familyData = $importService->buildFamilyMembersData($row, $this->mapping);
-                foreach ($familyData as $memberData) {
-                    $memberData['worker_id'] = $worker->id;
-                    FamilyMember::create($memberData);
                 }
 
                 DB::commit();

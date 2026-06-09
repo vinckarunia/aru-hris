@@ -271,10 +271,44 @@ class ImportDataCleaner
 
         $value = strtoupper(trim($value));
 
-        // Already has slash — normalize
+        // Already has slash — normalize and return
         if (str_contains($value, '/')) {
-            // Handle "K/0", "TK/0", etc.
             return $value;
+        }
+
+        // Descriptive text: "TIDAK KAWIN", "BELUM KAWIN", "BELUM MENIKAH" → TK
+        // "KAWIN", "MENIKAH" → K
+        $isTK = false;
+        $isK = false;
+        $tanggungan = null;
+
+        if (preg_match('/TIDAK\s*KAWIN|BELUM\s*KAWIN|BELUM\s*MENIKAH|SINGLE|LAJANG/', $value)) {
+            $isTK = true;
+        } elseif (preg_match('/KAWIN|MENIKAH|MARRIED/', $value)) {
+            $isK = true;
+        }
+
+        // Extract tanggungan number from descriptive text
+        if ($isTK || $isK) {
+            if (preg_match('/(\d)\s*(TANGGUNGAN|ANAK|TANG|TGG)/', $value, $m)) {
+                $tanggungan = (int) $m[1];
+            } elseif (preg_match('/(TANGGUNGAN|ANAK|TANG|TGG)\s*(\d)/', $value, $m)) {
+                $tanggungan = (int) $m[2];
+            } elseif (preg_match('/(\d)\s*$/', $value, $m)) {
+                // Trailing number: "Kawin 2" → K/2
+                $tanggungan = (int) $m[1];
+            }
+
+            if ($isTK) {
+                return 'TK/' . ($tanggungan ?? 0);
+            }
+            // K without number → K/1 (default: married with 1 dependent)
+            return 'K/' . ($tanggungan ?? 1);
+        }
+
+        // Non-descriptive codes: "TK0", "TK1", "TK 0", "TK 1" etc.
+        if (preg_match('/^TK\s*(\d)$/', $value, $matches)) {
+            return 'TK/' . $matches[1];
         }
 
         // "TK" without number → TK/0
@@ -282,19 +316,14 @@ class ImportDataCleaner
             return 'TK/0';
         }
 
-        // "TK0", "TK1", etc.
-        if (preg_match('/^TK(\d)$/', $value, $matches)) {
-            return 'TK/' . $matches[1];
-        }
-
-        // "K" without number → K/0
-        if ($value === 'K') {
-            return 'K/0';
-        }
-
-        // "K1", "K2", "K3"
-        if (preg_match('/^K(\d)$/', $value, $matches)) {
+        // "K1", "K2", "K3", "K 1", "K 2", "K 3"
+        if (preg_match('/^K\s*(\d)$/', $value, $matches)) {
             return 'K/' . $matches[1];
+        }
+
+        // "K" without number → K/1
+        if ($value === 'K') {
+            return 'K/1';
         }
 
         return $value;

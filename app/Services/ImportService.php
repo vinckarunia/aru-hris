@@ -113,66 +113,6 @@ class ImportService
                 ['key' => 'overtime_holiday', 'label' => 'Rate Lembur (Weekend/Libur)'],
             ],
         ],
-        [
-            'group' => 'Data Keluarga - Pasangan 1',
-            'options' => [
-                ['key' => 'spouse_1_name', 'label' => 'Nama Istri/Suami (1)'],
-                ['key' => 'spouse_1_birth_place', 'label' => 'Tempat Lahir Pasangan (1)'],
-                ['key' => 'spouse_1_birth_date', 'label' => 'Tanggal Lahir Pasangan (1)'],
-                ['key' => 'spouse_1_nik', 'label' => 'NIK Pasangan (1)'],
-                ['key' => 'spouse_1_bpjs', 'label' => 'No BPJS Pasangan (1)'],
-            ],
-        ],
-        [
-            'group' => 'Data Keluarga - Anak (Pasangan 1)',
-            'options' => [
-                ['key' => 'child_1_1_name', 'label' => 'Nama Anak 1 (Pasangan 1)'],
-                ['key' => 'child_1_1_birth_place', 'label' => 'Tempat Lahir Anak 1 (Pasangan 1)'],
-                ['key' => 'child_1_1_birth_date', 'label' => 'Tanggal Lahir Anak 1 (Pasangan 1)'],
-                ['key' => 'child_1_1_nik', 'label' => 'NIK Anak 1 (Pasangan 1)'],
-                ['key' => 'child_1_1_bpjs', 'label' => 'BPJS Anak 1 (Pasangan 1)'],
-                ['key' => 'child_2_1_name', 'label' => 'Nama Anak 2 (Pasangan 1)'],
-                ['key' => 'child_2_1_birth_place', 'label' => 'Tempat Lahir Anak 2 (Pasangan 1)'],
-                ['key' => 'child_2_1_birth_date', 'label' => 'Tanggal Lahir Anak 2 (Pasangan 1)'],
-                ['key' => 'child_2_1_nik', 'label' => 'NIK Anak 2 (Pasangan 1)'],
-                ['key' => 'child_2_1_bpjs', 'label' => 'BPJS Anak 2 (Pasangan 1)'],
-                ['key' => 'child_3_1_name', 'label' => 'Nama Anak 3 (Pasangan 1)'],
-                ['key' => 'child_3_1_birth_place', 'label' => 'Tempat Lahir Anak 3 (Pasangan 1)'],
-                ['key' => 'child_3_1_birth_date', 'label' => 'Tanggal Lahir Anak 3 (Pasangan 1)'],
-                ['key' => 'child_3_1_nik', 'label' => 'NIK Anak 3 (Pasangan 1)'],
-                ['key' => 'child_3_1_bpjs', 'label' => 'BPJS Anak 3 (Pasangan 1)'],
-            ],
-        ],
-        [
-            'group' => 'Data Keluarga - Pasangan 2',
-            'options' => [
-                ['key' => 'spouse_2_name', 'label' => 'Nama Istri/Suami (2)'],
-                ['key' => 'spouse_2_birth_place', 'label' => 'Tempat Lahir Pasangan (2)'],
-                ['key' => 'spouse_2_birth_date', 'label' => 'Tanggal Lahir Pasangan (2)'],
-                ['key' => 'spouse_2_nik', 'label' => 'NIK Pasangan (2)'],
-                ['key' => 'spouse_2_bpjs', 'label' => 'No BPJS Pasangan (2)'],
-            ],
-        ],
-        [
-            'group' => 'Data Keluarga - Anak (Pasangan 2)',
-            'options' => [
-                ['key' => 'child_1_2_name', 'label' => 'Nama Anak 1 (Pasangan 2)'],
-                ['key' => 'child_1_2_birth_place', 'label' => 'Tempat Lahir Anak 1 (Pasangan 2)'],
-                ['key' => 'child_1_2_birth_date', 'label' => 'Tanggal Lahir Anak 1 (Pasangan 2)'],
-                ['key' => 'child_1_2_nik', 'label' => 'NIK Anak 1 (Pasangan 2)'],
-                ['key' => 'child_1_2_bpjs', 'label' => 'BPJS Anak 1 (Pasangan 2)'],
-                ['key' => 'child_2_2_name', 'label' => 'Nama Anak 2 (Pasangan 2)'],
-                ['key' => 'child_2_2_birth_place', 'label' => 'Tempat Lahir Anak 2 (Pasangan 2)'],
-                ['key' => 'child_2_2_birth_date', 'label' => 'Tanggal Lahir Anak 2 (Pasangan 2)'],
-                ['key' => 'child_2_2_nik', 'label' => 'NIK Anak 2 (Pasangan 2)'],
-                ['key' => 'child_2_2_bpjs', 'label' => 'BPJS Anak 2 (Pasangan 2)'],
-                ['key' => 'child_3_2_name', 'label' => 'Nama Anak 3 (Pasangan 2)'],
-                ['key' => 'child_3_2_birth_place', 'label' => 'Tempat Lahir Anak 3 (Pasangan 2)'],
-                ['key' => 'child_3_2_birth_date', 'label' => 'Tanggal Lahir Anak 3 (Pasangan 2)'],
-                ['key' => 'child_3_2_nik', 'label' => 'NIK Anak 3 (Pasangan 2)'],
-                ['key' => 'child_3_2_bpjs', 'label' => 'BPJS Anak 3 (Pasangan 2)'],
-            ],
-        ],
     ];
 
     /**
@@ -316,46 +256,6 @@ class ImportService
         'pkwt end date' => 'contract_end',
         'selesai kontrak' => 'contract_end',
         'akhir kontrak' => 'contract_end',
-        'nama istri/suami_1' => 'spouse_1_name',
-        'tempat lahir istri/suami_1' => 'spouse_1_birth_place',
-        'tanggal lahir istri/suami_1' => 'spouse_1_birth_date',
-        'nik istri/suami_1' => 'spouse_1_nik',
-        'bpjs istri/suami_1' => 'spouse_1_bpjs',
-        'nama anak 1_1' => 'child_1_1_name',
-        'tempat lahir anak 1_1' => 'child_1_1_birth_place',
-        'tanggal lahir anak 1_1' => 'child_1_1_birth_date',
-        'nik anak 1_1' => 'child_1_1_nik',
-        'bpjs anak 1_1' => 'child_1_1_bpjs',
-        'nama anak 2_1' => 'child_2_1_name',
-        'tempat lahir anak 2_1' => 'child_2_1_birth_place',
-        'tanggal lahir anak 2_1' => 'child_2_1_birth_date',
-        'nik anak 2_1' => 'child_2_1_nik',
-        'bpjs anak 2_1' => 'child_2_1_bpjs',
-        'nama anak 3_1' => 'child_3_1_name',
-        'tempat lahir anak 3_1' => 'child_3_1_birth_place',
-        'tanggal lahir anak 3_1' => 'child_3_1_birth_date',
-        'nik anak 3_1' => 'child_3_1_nik',
-        'bpjs anak 3_1' => 'child_3_1_bpjs',
-        'nama istri/suami_2' => 'spouse_2_name',
-        'tempat lahir istri/suami_2' => 'spouse_2_birth_place',
-        'tanggal lahir istri/suami_2' => 'spouse_2_birth_date',
-        'nik istri/suami_2' => 'spouse_2_nik',
-        'bpjs istri/suami_2' => 'spouse_2_bpjs',
-        'nama anak 1_2' => 'child_1_2_name',
-        'tempat lahir anak 1_2' => 'child_1_2_birth_place',
-        'tanggal lahir anak 1_2' => 'child_1_2_birth_date',
-        'nik anak 1_2' => 'child_1_2_nik',
-        'bpjs anak 1_2' => 'child_1_2_bpjs',
-        'nama anak 2_2' => 'child_2_2_name',
-        'tempat lahir anak 2_2' => 'child_2_2_birth_place',
-        'tanggal lahir anak 2_2' => 'child_2_2_birth_date',
-        'nik anak 2_2' => 'child_2_2_nik',
-        'bpjs anak 2_2' => 'child_2_2_bpjs',
-        'nama anak 3_2' => 'child_3_2_name',
-        'tempat lahir anak 3_2' => 'child_3_2_birth_place',
-        'tanggal lahir anak 3_2' => 'child_3_2_birth_date',
-        'nik anak 3_2' => 'child_3_2_nik',
-        'bpjs anak 3_2' => 'child_3_2_bpjs',
     ];
 
     /**
@@ -726,7 +626,7 @@ class ImportService
         array &$seenKtpNumbers
     ): array {
         // Validate Worker data (returns errors + optional conflict)
-        $workerValidation = $this->validateWorkerData($row, $mapping, $seenKtpNumbers);
+        $workerValidation = $this->validateWorkerData($row, $mapping, $seenKtpNumbers, $globalSettings);
         $errors  = $workerValidation['errors'];
         $conflict = $workerValidation['conflict'];
 
@@ -755,9 +655,10 @@ class ImportService
      * @param array $row The row data.
      * @param array $mapping The column mapping.
      * @param array $seenKtpNumbers KTP numbers already seen in this batch.
+     * @param array $globalSettings Global settings for fallback values.
      * @return array{errors: string[], conflict: array|null}
      */
-    private function validateWorkerData(array $row, array $mapping, array $seenKtpNumbers): array
+    private function validateWorkerData(array $row, array $mapping, array $seenKtpNumbers, array $globalSettings): array
     {
         $errors = [];
         $conflict = null;
@@ -1248,7 +1149,7 @@ class ImportService
 
         $contracts[] = [
             'contract_type' => $contractType,
-            'pkwt_type' => $contractType === 'Kontrak' ? ($end ? 'PKWT' : 'PKWTT') : null,
+            'pkwt_type' => $contractType === 'Kontrak' ? ($end ? 'PKWT' : 'PKWTT') : ($contractType === 'Harian' || $contractType === 'Part-time' ? null : null),
             'pkwt_number' => null, // Optional, no longer required
             'start_date' => $start,
             'end_date' => $end,

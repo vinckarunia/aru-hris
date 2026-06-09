@@ -131,6 +131,7 @@ const CONTRACT_TYPE_OPTIONS = [
     { value: '', label: '-- Dari File --' },
     { value: 'Kontrak', label: 'Kontrak (PKWT)' },
     { value: 'Harian', label: 'Harian' },
+    { value: 'Part-time', label: 'Part-time' },
 ];
 
 // ============================================================================
@@ -729,7 +730,8 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                         const pid = e.target.value || null;
                                         setGlobalSettings(prev => ({ ...prev, project_id: pid, branch_ids: [] }));
                                     }}
-                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
+                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
+                                    disabled={mapping['project_name'] !== undefined}
                                 >
                                     <option value="">-- Pilih Project --</option>
                                     {filteredProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -745,7 +747,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                     value={globalSettings.branch_ids[0] ?? ''}
                                     onChange={(e) => setGlobalSettings(prev => ({ ...prev, branch_ids: e.target.value ? [e.target.value as never] : [] }))}
                                     className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
-                                    disabled={!globalSettings.project_id}
+                                    disabled={mapping['branch_name'] !== undefined || !globalSettings.project_id}
                                 >
                                     <option value="">-- Pilih Cabang Default --</option>
                                     {filteredBranches.map(b => (
@@ -755,48 +757,75 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                             </div>
 
                             {/* Salary Rate */}
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Satuan Gaji</label>
-                                <select
-                                    value={globalSettings.salary_rate}
-                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, salary_rate: e.target.value }))}
-                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
-                                >
-                                    {RATE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                                </select>
-                            </div>
+                            {(() => {
+                                const hasSalaryMapping = mapping['base_salary'] !== undefined || mapping['allowance'] !== undefined;
+                                return (
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                            Satuan Gaji {!hasSalaryMapping && <span className="text-slate-400 normal-case">(tidak ada kolom)</span>}
+                                        </label>
+                                        <select
+                                            value={globalSettings.salary_rate}
+                                            onChange={(e) => setGlobalSettings(prev => ({ ...prev, salary_rate: e.target.value }))}
+                                            className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
+                                            disabled={!hasSalaryMapping}
+                                        >
+                                            {RATE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
 
-                            {/* Allowance Rate */}
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Satuan Tunjangan</label>
-                                <select
-                                    value={globalSettings.allowance_rate}
-                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, allowance_rate: e.target.value }))}
-                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
-                                >
-                                    {RATE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                                </select>
-                            </div>
+                            {/* Allowance Rate (meal, transport, attendance — NOT 'allowance' polosan) */}
+                            {(() => {
+                                const hasAllowanceMapping = mapping['meal_allowance'] !== undefined || mapping['transport_allowance'] !== undefined || mapping['attendance_allowance'] !== undefined;
+                                return (
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                            Satuan Tunjangan {!hasAllowanceMapping && <span className="text-slate-400 normal-case">(tidak ada kolom)</span>}
+                                        </label>
+                                        <select
+                                            value={globalSettings.allowance_rate}
+                                            onChange={(e) => setGlobalSettings(prev => ({ ...prev, allowance_rate: e.target.value }))}
+                                            className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
+                                            disabled={!hasAllowanceMapping}
+                                        >
+                                            {RATE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Overtime Rate */}
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Satuan Lembur</label>
-                                <select
-                                    value={globalSettings.overtime_rate}
-                                    onChange={(e) => setGlobalSettings(prev => ({ ...prev, overtime_rate: e.target.value }))}
-                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
-                                >
-                                    {RATE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                                </select>
-                            </div>
+                            {(() => {
+                                const hasOvertimeMapping = mapping['overtime_weekday'] !== undefined || mapping['overtime_holiday'] !== undefined;
+                                return (
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                            Satuan Lembur {!hasOvertimeMapping && <span className="text-slate-400 normal-case">(tidak ada kolom)</span>}
+                                        </label>
+                                        <select
+                                            value={globalSettings.overtime_rate}
+                                            onChange={(e) => setGlobalSettings(prev => ({ ...prev, overtime_rate: e.target.value }))}
+                                            className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
+                                            disabled={!hasOvertimeMapping}
+                                        >
+                                            {RATE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Contract Type */}
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jenis Kontrak</label>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Jenis Kontrak {mapping['raw_contract_type'] !== undefined && <span className="text-emerald-500 normal-case">(dari file)</span>}
+                                </label>
                                 <select
                                     value={globalSettings.contract_type}
                                     onChange={(e) => setGlobalSettings(prev => ({ ...prev, contract_type: e.target.value }))}
-                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary"
+                                    className="w-full text-sm rounded-lg border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary disabled:opacity-50"
+                                    disabled={mapping['raw_contract_type'] !== undefined}
                                 >
                                     {CONTRACT_TYPE_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                                 </select>
