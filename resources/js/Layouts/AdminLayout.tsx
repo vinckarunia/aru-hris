@@ -1,4 +1,4 @@
-import { useState, PropsWithChildren, useEffect } from 'react';
+import { useState, PropsWithChildren, useEffect, useRef } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import { PageProps } from '@/types';
@@ -26,6 +26,35 @@ interface Props {
  */
 export default function AdminLayout({ title, header, children }: PropsWithChildren<Props>) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    
+    // Set 1 week expiration for the tooltip auto-show (Until June 16, 2026)
+    const isWithinOneWeek = new Date() < new Date('2026-06-16T00:00:00');
+    const [showChangelog, setShowChangelog] = useState(() => {
+        return isWithinOneWeek && typeof window !== 'undefined' && sessionStorage.getItem('changelog_v1_seen') !== 'true';
+    });
+
+    const changelogRef = useRef<HTMLDivElement>(null);
+
+    const handleCloseChangelog = () => {
+        setShowChangelog(false);
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('changelog_v1_seen', 'true');
+        }
+    };
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (changelogRef.current && !changelogRef.current.contains(event.target as Node)) {
+                setShowChangelog(false);
+            }
+        }
+        if (showChangelog) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showChangelog]);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -230,6 +259,10 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                         <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Laporan</span>
                                     </Link>
                                 )}
+                                <Link href={route('document-templates.index')} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title="Template Dokumen">
+                                    <iconify-icon icon="solar:document-add-linear" width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
+                                    <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'lg:w-0 lg:opacity-0 lg:hidden' : 'w-auto opacity-100 block'}`}>Template Dokumen</span>
+                                </Link>
                             </div>
                         </div>
 
@@ -300,6 +333,40 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
 
                         {/* User Profile Info & Logout */}
                         <div className="flex items-center gap-4 pl-2 ml-2">
+                            {/* Changelog Info Button */}
+                            <div className="relative flex items-center" ref={changelogRef}>
+                                <button 
+                                    onClick={() => showChangelog ? handleCloseChangelog() : setShowChangelog(true)}
+                                    className="flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group relative z-30"
+                                    title="Fitur Baru & Update"
+                                >
+                                    <iconify-icon icon="solar:info-circle-bold-duotone" width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                                    {isWithinOneWeek && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>}
+                                </button>
+
+                                {showChangelog && (
+                                    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden transform origin-top-right transition-all">
+                                        <div className="p-4 bg-primary/5 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
+                                            <h4 className="font-bold text-primary flex items-center gap-2">
+                                                Update Fitur Baru (v1.0.1)
+                                            </h4>
+                                            <button onClick={handleCloseChangelog} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                                <iconify-icon icon="solar:close-circle-bold" width="20"></iconify-icon>
+                                            </button>
+                                        </div>
+                                        <div className="p-4 text-sm text-slate-600 dark:text-slate-300 space-y-3 max-h-96 overflow-y-auto">
+                                            <p className="font-medium text-slate-800 dark:text-slate-200">Rilis Document Engine (Native DOCX)</p>
+                                            <ul className="list-disc pl-4 space-y-1.5">
+                                                <li>Sistem generasi dokumen kini menggunakan format Native DOCX untuk struktur halaman dan tabel yang jauh lebih responsif.</li>
+                                                <li>Dukungan placeholder dinamis yang lebih komprehensif, termasuk kalkulasi lembur Weekday dan Weekend secara otomatis.</li>
+                                                <li>Penomoran surat cerdas yang secara otomatis mendeteksi dan menyesuaikan jenis kontrak (PKWT, PKPH, dll).</li>
+                                                <li>Sistem template yang kini sepenuhnya dinamis tanpa teks statis/hardcoded.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Help / Manual Button */}
                             <Link
                                 href={route('manual.index')}
@@ -308,7 +375,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                             >
                                 <iconify-icon icon="solar:book-minimalistic-bold-duotone" width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
                             </Link>
-                            
+
                             <button onClick={toggleTheme} className="flex p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800 transition-all group">
                                 <iconify-icon icon={isDarkMode ? "solar:sun-bold-duotone" : "solar:moon-bold-duotone"} width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
                             </button>

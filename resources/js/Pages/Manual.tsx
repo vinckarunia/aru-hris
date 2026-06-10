@@ -312,6 +312,31 @@ export default function Manual() {
                     <p>Setiap perubahan data penting (Create, Update, Delete) akan dicatat di sini. Anda dapat melacak siapa yang melakukan perubahan, pada jam berapa, dan detail data sebelum vs sesudah diubah.</p>
                 </div>
             )
+        },
+        {
+            id: 'document-template',
+            title: 'Template Dokumen & Document Engine',
+            icon: 'solar:document-add-bold-duotone',
+            roles: ['SUPER_ADMIN', 'ADMIN_ARU', 'PIC'],
+            searchText: "Fitur Document Engine memungkinkan pembuatan dokumen legal (Kontrak, Paklaring, Surat Tugas) secara otomatis dengan format Native DOCX. Upload Template: Anda dapat mengunggah template dasar berformat .docx. Gunakan placeholder dinamis seperti [NAMA_KARYAWAN], [MULAI_KONTRAK], dll untuk mengisi data secara otomatis. Manajemen Template: Terdapat Template Global (berlaku untuk semua) dan Template Project (berlaku hanya untuk spesifik project). Jadikan Default: Khusus Admin, template bisa ditandai sebagai 'Default' sehingga akan langsung terpilih ketika men-generate kontrak. Pengaturan Kompensasi: Rincian kompensasi seperti Gaji Pokok, Tunjangan, dan perhitungan Lembur (Weekday/Weekend) akan diformat menjadi tabel yang rapi di dalam dokumen DOCX.",
+            content: (
+                <div className="space-y-4 text-slate-600 dark:text-slate-300">
+                    <p>Fitur <strong>Document Engine</strong> digunakan untuk memfasilitasi pembuatan dokumen legal (Kontrak, Paklaring, Surat Tugas) secara otomatis ke dalam format <strong>Native DOCX</strong>.</p>
+                    
+                    <ul className="list-disc pl-5 space-y-2">
+                        <li><strong>Upload Template Baru:</strong> Anda dapat mengunggah file template berformat <code>.docx</code>. Di dalam file tersebut, Anda dapat menuliskan "variabel dinamis" (placeholder) seperti <code>[NAMA_KARYAWAN]</code> atau <code>[MULAI_KONTRAK]</code> yang nantinya akan otomatis terisi dengan data sebenarnya.</li>
+                        <li><strong>Panduan Variabel:</strong> Klik tombol "Panduan Variabel" di halaman ini untuk melihat daftar lengkap *placeholder* yang didukung sistem (termasuk variabel Gaji, Tunjangan, dan Lemburan).</li>
+                        <li><strong>Jenis Template:</strong> 
+                            <ul className="list-circle pl-5 mt-1 space-y-1">
+                                <li><em>Template Global</em>: Dapat digunakan lintas project (dikelola oleh Admin).</li>
+                                <li><em>Template Project</em>: Spesifik hanya untuk project tertentu.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Pengaturan Default (Khusus Admin):</strong> Template bisa ditandai sebagai 'Default' (satu per tipe dokumen: Kontrak, Paklaring, dll). Template default akan otomatis menjadi pilihan utama setiap kali Anda hendak mendownload dokumen karyawan.</li>
+                        <li><strong>Penomoran Dokumen:</strong> Sistem cerdas membedakan penomoran surat (contoh: <code>PKWT</code> untuk kontrak regular dan <code>PKPH</code> untuk part-time/harian) secara otomatis tanpa perlu hardcode pada template.</li>
+                    </ul>
+                </div>
+            )
         }
     ];
 

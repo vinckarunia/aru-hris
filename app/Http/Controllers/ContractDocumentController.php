@@ -4,23 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Contract;
 use App\Models\InternalEmployee;
+use App\Models\Assignment;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
-use PhpOffice\PhpWord\TemplateProcessor;
-
+use App\Services\DocumentParserService;
 class ContractDocumentController extends Controller
 {
+    protected $parserService;
+
+    public function __construct(DocumentParserService $parserService)
+    {
+        $this->parserService = $parserService;
+    }
+
     /**
      * Download the PKWT document.
-     *
-     * @param Request $request
-     * @param Contract $contract
      */
     public function downloadPkwt(Request $request, Contract $contract)
     {
         $user = $request->user();
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateKontrak', 'assignment.project.templateHarian', 'assignment.project.templatePartTime']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
@@ -31,59 +34,74 @@ class ContractDocumentController extends Controller
             abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin dan PIC project terkait.');
         }
         
-        $user = $request->user();
-        
-        // Pihak Pertama: Use the logged-in ARU user's linked InternalEmployee profile.
-        // Falls back to name search, then position search, then any first employee.
         $pihakPertama = ($user->internalEmployee ?? null)
             ?? InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
-            ?? InternalEmployee::where('position', 'Head of Operation')->first();
-            
-        $format = $request->query('format', 'pdf');
+            ?? InternalEmployee::where('position', 'Head of Operation')->first()
+            ?? InternalEmployee::first();
 
-        // Monthly letter sequence: count contracts starting in the same month+year.
-        $contractMonth = $contract->start_date
-            ? \Carbon\Carbon::parse($contract->start_date)
-            : now();
-        $pkwtMonthlySeq = \App\Models\Contract::whereYear('start_date', $contractMonth->year)
+        // Calculate sequence for old and new logic
+        $contractMonth = $contract->start_date ? \Carbon\Carbon::parse($contract->start_date) : now();
+        $pkwtMonthlySeq = Contract::whereYear('start_date', $contractMonth->year)
             ->whereMonth('start_date', $contractMonth->month)
             ->where('id', '<=', $contract->id)
             ->count();
+            
+        $seqFormatted     = str_pad($pkwtMonthlySeq, 3, '0', STR_PAD_LEFT);
+        $pkwtNumFormatted = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
+        $romanMonths  = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
+        $issueDate    = $contract->start_date ? \Carbon\Carbon::parse($contract->start_date) : now();
+        $romanMonth   = $romanMonths[$issueDate->month] ?? 'I';
+        $year         = $issueDate->year;
         
-        $data = [
-            'contract'        => $contract,
-            'worker'          => $contract->assignment->worker,
-            'pihakPertama'    => $pihakPertama,
-            'logoPath'        => $this->getAssetPath('logo'),
-            'signaturePath'   => $this->getAssetPath('signature'),
-            'pkwtMonthlySeq'  => $pkwtMonthlySeq,
-        ];
+        // Determine if we should use DB Template or fallback Blade
+        $project = $contract->assignment->project;
+        $contractType = strtolower($contract->contract_type);
         
-        // Map project's pkwt_type to the appropriate blade view
-        $pkwtType = $contract->assignment->project->pkwt_type ?? 'vdi';
+        $prefix = in_array($contractType, ['harian', 'part-time']) ? 'PKPH' : 'PKWT';
+        $nomorSurat = sprintf('%s/ARU/%s-%s/%s/%s', $seqFormatted, $prefix, $pkwtNumFormatted, $romanMonth, $year);
+
+
         
-        if (strtolower($contract->contract_type) === 'harian' && $pkwtType === 'tlj') {
-            $viewName = 'pdf.dw_tlj';
-        } elseif (strtolower($contract->contract_type) === 'part-time' && $pkwtType === 'tlj') {
-            $viewName = 'pdf.pt_tlj';
+        $template = null;
+        if ($contractType === 'harian') {
+            $template = $project->templateHarian;
+        } elseif ($contractType === 'part-time') {
+            $template = $project->templatePartTime;
         } else {
-            $viewName = match ($pkwtType) {
-                'cj'  => 'pdf.pkwt_cj',
-                'tlj' => 'pdf.pkwt_tlj',
-                'all' => 'pdf.pkwt_all',
-                default => 'pdf.pkwt', // vdi
-            };
+            $template = $project->templateKontrak;
         }
+
+        $contractTypeMapped = match ($contractType) {
+            'harian' => 'kontrak_harian',
+            'part-time' => 'kontrak_part_time',
+            default => 'kontrak_pkwt',
+        };
+
+        if (!$template) {
+            $template = \App\Models\DocumentTemplate::where('type', $contractTypeMapped)->where('is_default', true)->first();
+        }
+
+        if (!$template || !$template->file_path || !\Storage::disk('local')->exists($template->file_path)) {
+            return back()->with('error', 'Template DOCX belum dikonfigurasi untuk proyek ini dan tidak ada template default.');
+        }
+
+        // New DOCX Native Engine Logic
+        $parsedData = $this->parserService->getRealData($contract, $contract->assignment, $pihakPertama, $nomorSurat);
         
-        // Audit log for PKWT download
         $workerName = $contract->assignment->worker->name ?? 'Unknown';
-        \App\Models\AuditLog::log('download', 'contract', "Mengunduh PKWT untuk karyawan: {$workerName}", [
+        $fileName = "{$prefix} - {$workerName}.docx";
+        $outputPath = storage_path('app/temp_' . uniqid() . '.docx');
+        
+        $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+        
+        \App\Models\AuditLog::log('download', 'contract', "Mengunduh Kontrak untuk karyawan: {$workerName}", [
             'contract_id' => $contract->id,
-            'document_type' => 'PKWT',
+            'document_type' => $prefix,
             'worker_name' => $workerName,
+            'used_template' => 'DOCX_TEMPLATE'
         ]);
 
-        return $this->generatePkwtPdf($data, $viewName);
+        return response()->download($outputPath, $fileName)->deleteFileAfterSend(true);
     }
 
     /**
@@ -93,7 +111,7 @@ class ContractDocumentController extends Controller
     {
         $user = $request->user();
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateSuratTugas']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
@@ -104,52 +122,53 @@ class ContractDocumentController extends Controller
             abort(403, 'Akses ditolak. Mengunduh surat tugas hanya diperbolehkan untuk Admin dan PIC project terkait.');
         }
         
-        $user = $request->user();
-        
-        // Pihak Pertama: Use the logged-in ARU user's linked InternalEmployee profile.
-        // Falls back to name search, then position search, then any first employee.
         $pihakPertama = ($user->internalEmployee ?? null)
             ?? InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
             ?? InternalEmployee::where('position', 'Head of Operation')->first()
             ?? InternalEmployee::first();
-            
-        $data = [
-            'contract'      => $contract,
-            'worker'        => $contract->assignment->worker,
-            'pihakPertama'  => $pihakPertama,
-            'logoPath'      => $this->getAssetPath('logo'),
-            'signaturePath' => $this->getAssetPath('signature'),
-        ];
-        
-        $pdf = Pdf::loadView('pdf.surat-tugas', $data)
-                  ->setPaper('a4', 'portrait')
-                  ->setOptions([
-                      'isPhpEnabled' => true,
-                      'isRemoteEnabled' => true,
-                      'isFontSubsettingEnabled' => true,
-                      'chroot' => public_path()
-                  ]);
-        $fileName = 'Surat Tugas - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
 
-        // Audit log for Surat Tugas download
+        $template = $contract->assignment->project->templateSuratTugas ?? null;
+        
+        // Compute basic SP nomor for Surat Tugas
+        $seqFormatted = str_pad($contract->id, 3, '0', STR_PAD_LEFT);
+        $romanMonths  = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
+        $monthRom = $romanMonths[(int)\Carbon\Carbon::now()->format('n')];
+        $year = \Carbon\Carbon::now()->year;
+        $nomorSurat = "ST-{$seqFormatted}/ARU/{$monthRom}/{$year}";
+
+        if (!$template) {
+            $template = \App\Models\DocumentTemplate::where('type', 'surat_tugas')->where('is_default', true)->first();
+        }
+
+        if (!$template || !$template->file_path || !\Storage::disk('local')->exists($template->file_path)) {
+            return back()->with('error', 'Template DOCX Surat Tugas belum dikonfigurasi untuk proyek ini dan tidak ada template default.');
+        }
+
+        $parsedData = $this->parserService->getRealData($contract, $contract->assignment, $pihakPertama, $nomorSurat, 'docx');
         $workerName = $contract->assignment->worker->name ?? 'Unknown';
+        $fileName = 'Surat Tugas - ' . $workerName . '.docx';
+        $outputPath = storage_path('app/temp_st_' . uniqid() . '.docx');
+        
+        $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+        
         \App\Models\AuditLog::log('download', 'contract', "Mengunduh Surat Tugas untuk karyawan: {$workerName}", [
             'contract_id' => $contract->id,
             'document_type' => 'Surat Tugas',
             'worker_name' => $workerName,
+            'used_template' => 'DOCX_TEMPLATE'
         ]);
 
-        return $pdf->download($fileName);
+        return response()->download($outputPath, $fileName)->deleteFileAfterSend(true);
     }
 
     /**
      * Download the Paklaring (Surat Keterangan Kerja) document.
      */
-    public function downloadPaklaring(Request $request, \App\Models\Assignment $assignment)
+    public function downloadPaklaring(Request $request, Assignment $assignment)
     {
         $user = $request->user();
 
-        $assignment->load(['worker', 'project.client', 'branches']);
+        $assignment->load(['worker', 'project.client', 'branches', 'project.templatePaklaringA', 'project.templatePaklaringB']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
@@ -160,12 +179,10 @@ class ContractDocumentController extends Controller
             abort(403, 'Akses ditolak. Mengunduh paklaring hanya diperbolehkan untuk Admin dan PIC project terkait.');
         }
         
-        // 1. Validation for equipment_returned
         if (!$assignment->equipment_returned) {
             abort(403, 'Gagal mengunduh: Perangkat kerja belum dikembalikan.');
         }
 
-        // 2. Validation for Grade A / Grade B
         $grade = '';
         if ($assignment->status === 'contract expired') {
             $grade = 'A';
@@ -187,67 +204,31 @@ class ContractDocumentController extends Controller
         $year = \Carbon\Carbon::now()->year;
         $nomorSurat = "{$sequence}/ARU/Pers-SKK/{$monthRom}/{$year}";
 
-        $data = [
-            'assignment'    => $assignment,
-            'worker'        => $assignment->worker,
-            'pihakPertama'  => $pihakPertama,
-            'logoPath'      => $this->getAssetPath('logo'),
-            'signaturePath' => $this->getAssetPath('signature'),
-            'grade'         => $grade,
-            'nomorSurat'    => $nomorSurat,
-        ];
-        
-        $pdf = Pdf::loadView('pdf.paklaring', $data)
-                  ->setPaper('a4', 'portrait')
-                  ->setOptions([
-                      'isPhpEnabled' => true,
-                      'isRemoteEnabled' => true,
-                      'isFontSubsettingEnabled' => true,
-                      'chroot' => public_path()
-                  ]);
-        $fileName = 'Paklaring - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
+        $template = $grade === 'A' ? $assignment->project->templatePaklaringA : $assignment->project->templatePaklaringB;
+        $templateTypeStr = $grade === 'A' ? 'paklaring_a' : 'paklaring_b';
 
-        \App\Models\AuditLog::log('download', 'assignment', "Mengunduh Paklaring (Grade {$grade}) untuk karyawan: {$data['worker']->name}", [
+        if (!$template) {
+            $template = \App\Models\DocumentTemplate::where('type', $templateTypeStr)->where('is_default', true)->first();
+        }
+
+        if (!$template || !$template->file_path || !\Storage::disk('local')->exists($template->file_path)) {
+            return back()->with('error', "Template DOCX Paklaring {$grade} belum dikonfigurasi untuk proyek ini dan tidak ada template default.");
+        }
+
+        $parsedData = $this->parserService->getRealData(null, $assignment, $pihakPertama, $nomorSurat, 'docx');
+        $workerName = $assignment->worker->name ?? 'Unknown';
+        $fileName = 'Paklaring - ' . $workerName . '.docx';
+        $outputPath = storage_path('app/temp_paklaring_' . uniqid() . '.docx');
+        
+        $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+        
+        \App\Models\AuditLog::log('download', 'assignment', "Mengunduh Paklaring (Grade {$grade}) untuk karyawan: {$workerName}", [
             'assignment_id' => $assignment->id,
             'document_type' => 'Paklaring',
             'grade'         => $grade,
+            'used_template' => 'DOCX_TEMPLATE'
         ]);
 
-        return $pdf->download($fileName);
-    }
-
-    /**
-     * Get absolute filesystem path to a stored company asset.
-     * Returns null if not yet uploaded.
-     *
-     * @param string $type 'logo' or 'signature'
-     * @return string|null
-     */
-    private function getAssetPath(string $type): ?string
-    {
-        $setting = \App\Models\Setting::where('key', 'asset_' . $type)->value('value');
-        if (!$setting) return null;
-        $path = public_path('uploads/' . $setting);
-        return file_exists($path) ? $path : null;
-    }
-
-    /**
-     * Generate PKWT as PDF
-     */
-    private function generatePkwtPdf(array $data, string $viewName)
-    {
-        $pdf = Pdf::loadView($viewName, $data)
-                  ->setPaper('a4', 'portrait')
-                  ->setOptions([
-                      'isPhpEnabled' => true,
-                      'isRemoteEnabled' => true,
-                      'isFontSubsettingEnabled' => true,
-                      'chroot' => public_path()
-                  ]);
-
-        $prefix = (isset($data['contract']) && in_array(strtolower($data['contract']->contract_type), ['harian', 'part-time'])) ? 'PKPH' : 'PKWT';
-        $fileName = $prefix . ' - ' . ($data['worker']->name ?? 'Worker') . '.pdf';
-        
-        return $pdf->download($fileName);
+        return response()->download($outputPath, $fileName)->deleteFileAfterSend(true);
     }
 }

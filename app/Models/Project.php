@@ -38,6 +38,12 @@ class Project extends Model
         'pkwt_type',
         'prefix',
         'id_running_number',
+        'template_kontrak_id',
+        'template_harian_id',
+        'template_part_time_id',
+        'template_surat_tugas_id',
+        'template_paklaring_a_id',
+        'template_paklaring_b_id',
     ];
 
     /**
@@ -78,5 +84,37 @@ class Project extends Model
     public function pics()
     {
         return $this->belongsToMany(Pic::class, 'pic_project');
+    }
+
+    // --- Document Template Relationships ---
+
+    public function templateKontrak()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_kontrak_id');
+    }
+
+    public function templateHarian()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_harian_id');
+    }
+
+    public function templatePartTime()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_part_time_id');
+    }
+
+    public function templateSuratTugas()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_surat_tugas_id');
+    }
+
+    public function templatePaklaringA()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_paklaring_a_id');
+    }
+
+    public function templatePaklaringB()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_paklaring_b_id');
     }
 }

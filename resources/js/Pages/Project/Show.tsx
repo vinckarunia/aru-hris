@@ -73,7 +73,6 @@ interface Project {
     id: string;
     client_id: string;
     name: string;
-    pkwt_type: 'vdi' | 'cj' | 'tlj' | 'all';
     prefix: string | null;
     id_running_number: number;
     client: Client | null;

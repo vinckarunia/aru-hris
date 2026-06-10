@@ -42,7 +42,6 @@ interface Project {
     id: string;
     client_id: string;
     name: string;
-    pkwt_type: 'vdi' | 'cj' | 'tlj' | 'all';
     prefix: string | null;
     id_running_number: number;
     client?: Client;
@@ -64,6 +63,12 @@ interface Pic {
     user: User;
 }
 
+interface DocumentTemplate {
+    id: number;
+    name: string;
+    type: string;
+}
+
 /**
  * Props for the Project Index component.
  */
@@ -71,9 +76,10 @@ interface Props {
     projects: Project[];
     clients: Client[];
     branches: Branch[];
+    globalTemplates: DocumentTemplate[];
 }
 
-export default function Index({ projects, clients, branches, pics }: Props & { pics: Pic[] }) {
+export default function Index({ projects, clients, branches, pics, globalTemplates }: Props & { pics: Pic[] }) {
     const { auth } = usePage<any>().props;
     const isPic = auth.user.role === 'PIC';
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -117,8 +123,13 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
         branch_ids: [] as string[],
         pic_ids: [] as string[],
         name: '',
-        pkwt_type: 'all',
         prefix: '',
+        template_kontrak_id: '',
+        template_harian_id: '',
+        template_part_time_id: '',
+        template_surat_tugas_id: '',
+        template_paklaring_a_id: '',
+        template_paklaring_b_id: '',
     });
 
     // Filter available branches based on the currently selected client
@@ -233,8 +244,13 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
             branch_ids: project.branches?.map(d => d.id) || [],
             pic_ids: project.pics?.map((p: Pic) => p.id) || [],
             name: project.name,
-            pkwt_type: project.pkwt_type || 'all',
-            prefix: project.prefix || ''
+            prefix: project.prefix || '',
+            template_kontrak_id: (project as any).template_kontrak_id?.toString() || '',
+            template_harian_id: (project as any).template_harian_id?.toString() || '',
+            template_part_time_id: (project as any).template_part_time_id?.toString() || '',
+            template_surat_tugas_id: (project as any).template_surat_tugas_id?.toString() || '',
+            template_paklaring_a_id: (project as any).template_paklaring_a_id?.toString() || '',
+            template_paklaring_b_id: (project as any).template_paklaring_b_id?.toString() || '',
         });
         clearErrors();
         setIsCreateModalOpen(true);
@@ -558,27 +574,60 @@ export default function Index({ projects, clients, branches, pics }: Props & { p
                             <InputError message={errors.name} className="mt-2" />
                         </div>
 
-                        <div>
-                            <InputLabel htmlFor="pkwt_type" value="Tipe Dokumen Kontrak" />
-                            <select
-                                id="pkwt_type"
-                                value={data.pkwt_type}
-                                onChange={(e) => setData('pkwt_type', e.target.value)}
-                                disabled={modalMode === 'edit' && isPic}
-                                className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
-                            >
-                                <option value="all">PKWT All (Default)</option>
-                                <option value="vdi">PKWT VDI</option>
-                                <option value="cj">PKWT CJ</option>
-                                <option value="tlj">PKWT TLJ</option>
-                            </select>
-                            <InputError message={errors.pkwt_type as string} className="mt-2" />
-                        </div>
+
 
                         <div>
                             <InputLabel htmlFor="prefix" value="Prefix (Opsional)" />
                             <TextInput id="prefix" type="text" className="mt-1 block w-full uppercase" value={data.prefix} onChange={(e) => setData('prefix', e.target.value.toUpperCase())} placeholder="CONTOH: ITS-01" />
                             <InputError message={errors.prefix} className="mt-2" />
+                        </div>
+
+                        {/* Document Templates Selection */}
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <h3 className="text-md font-bold text-slate-800 dark:text-slate-200 mb-4">Pengaturan Template Dokumen</h3>
+                            <div className="flex flex-col gap-4">
+                                {[
+                                    { type: 'kontrak_pkwt', fieldName: 'template_kontrak_id', label: 'Kontrak PKWT' },
+                                    { type: 'kontrak_part_time', fieldName: 'template_part_time_id', label: 'Kontrak Part-Time' },
+                                    { type: 'kontrak_harian', fieldName: 'template_harian_id', label: 'Kontrak Harian' },
+                                    { type: 'surat_tugas', fieldName: 'template_surat_tugas_id', label: 'Surat Tugas' },
+                                    { type: 'paklaring_a', fieldName: 'template_paklaring_a_id', label: 'Paklaring A' },
+                                    { type: 'paklaring_b', fieldName: 'template_paklaring_b_id', label: 'Paklaring B' },
+                                ].map((item) => {
+                                    const fieldName = item.fieldName as keyof typeof data;
+                                    const templatesForType = globalTemplates.filter(t => t.type === item.type);
+
+                                    return (
+                                        <div key={item.type} className="flex flex-col">
+                                            <InputLabel htmlFor={fieldName} value={item.label} />
+                                            <div className="flex gap-2">
+                                                <select
+                                                    id={fieldName}
+                                                    value={data[fieldName] as string}
+                                                    onChange={(e) => setData(fieldName as any, e.target.value)}
+                                                    className="mt-1 block w-full flex-1 border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm disabled:opacity-50"
+                                                >
+                                                    <option value="">-- Template Default Sistem --</option>
+                                                    {templatesForType.map(t => (
+                                                        <option key={t.id} value={String(t.id)}>{t.name}</option>
+                                                    ))}
+                                                </select>
+                                                {/* Preview Button */}
+                                                <button 
+                                                    type="button"
+                                                    disabled={!data[fieldName]}
+                                                    onClick={() => data[fieldName] && window.open(route('document-templates.preview', Number(data[fieldName])), '_blank')}
+                                                    className="mt-1 flex items-center justify-center px-3 border border-slate-300 dark:border-slate-700 text-slate-500 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition" 
+                                                    title="Preview Template"
+                                                >
+                                                    <iconify-icon icon="solar:eye-bold" width="20"></iconify-icon>
+                                                </button>
+                                            </div>
+                                            <InputError message={errors[fieldName] as string} className="mt-2" />
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 

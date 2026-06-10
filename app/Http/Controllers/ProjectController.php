@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
 use App\Enums\UserRole;
 use App\Models\Pic;
+use App\Models\DocumentTemplate;
 
 /**
  * Class ProjectController
@@ -47,11 +48,15 @@ class ProjectController extends Controller
         // Pass PIC details for assignment in Create/Edit Modal Form
         $pics = Pic::with('user:id,name')->orderBy('name')->get(['id', 'user_id', 'name']);
 
+        // Pass global Document Templates
+        $globalTemplates = DocumentTemplate::whereNull('project_id')->where('is_active', true)->get(['id', 'name', 'type']);
+
         return Inertia::render('Project/Index', [
             'projects' => $projects,
             'clients'  => $clients,
             'branches' => $branches,
             'pics'     => $pics,
+            'globalTemplates' => $globalTemplates,
         ]);
     }
 
@@ -108,8 +113,14 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)
             ],
-            'pkwt_type' => 'required|string|in:vdi,cj,tlj,all',
+
             'prefix' => 'nullable|string|max:' . \App\Http\Controllers\SettingController::getValidationDigits()['prefix_max'],
+            'template_kontrak_id' => 'nullable|exists:document_templates,id',
+            'template_harian_id' => 'nullable|exists:document_templates,id',
+            'template_part_time_id' => 'nullable|exists:document_templates,id',
+            'template_surat_tugas_id' => 'nullable|exists:document_templates,id',
+            'template_paklaring_a_id' => 'nullable|exists:document_templates,id',
+            'template_paklaring_b_id' => 'nullable|exists:document_templates,id',
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',
             'branch_ids.required' => 'Pilih minimal satu cabang.',
@@ -118,8 +129,13 @@ class ProjectController extends Controller
         $project = Project::create([
             'client_id' => $validated['client_id'],
             'name'      => $validated['name'],
-            'pkwt_type' => $validated['pkwt_type'],
             'prefix'    => $validated['prefix'],
+            'template_kontrak_id' => $validated['template_kontrak_id'] ?? null,
+            'template_harian_id' => $validated['template_harian_id'] ?? null,
+            'template_part_time_id' => $validated['template_part_time_id'] ?? null,
+            'template_surat_tugas_id' => $validated['template_surat_tugas_id'] ?? null,
+            'template_paklaring_a_id' => $validated['template_paklaring_a_id'] ?? null,
+            'template_paklaring_b_id' => $validated['template_paklaring_b_id'] ?? null,
         ]);
 
         $project->branches()->attach($validated['branch_ids']);
@@ -158,8 +174,14 @@ class ProjectController extends Controller
                 'required', 'string', 'max:255',
                 Rule::unique('projects')->where('client_id', $request->client_id)->ignore($project->id)
             ],
-            'pkwt_type' => 'required|string|in:vdi,cj,tlj,all',
+
             'prefix' => 'nullable|string|max:' . \App\Http\Controllers\SettingController::getValidationDigits()['prefix_max'],
+            'template_kontrak_id' => 'nullable|exists:document_templates,id',
+            'template_harian_id' => 'nullable|exists:document_templates,id',
+            'template_part_time_id' => 'nullable|exists:document_templates,id',
+            'template_surat_tugas_id' => 'nullable|exists:document_templates,id',
+            'template_paklaring_a_id' => 'nullable|exists:document_templates,id',
+            'template_paklaring_b_id' => 'nullable|exists:document_templates,id',
         ], [
             'name.unique'        => 'Nama project ini sudah ada di cabang tersebut.',
             'branch_ids.required' => 'Pilih minimal satu cabang.',
@@ -168,8 +190,13 @@ class ProjectController extends Controller
         $project->update([
             'client_id' => $validated['client_id'],
             'name'      => $validated['name'],
-            'pkwt_type' => $validated['pkwt_type'],
             'prefix'    => $validated['prefix'],
+            'template_kontrak_id' => $validated['template_kontrak_id'] ?? null,
+            'template_harian_id' => $validated['template_harian_id'] ?? null,
+            'template_part_time_id' => $validated['template_part_time_id'] ?? null,
+            'template_surat_tugas_id' => $validated['template_surat_tugas_id'] ?? null,
+            'template_paklaring_a_id' => $validated['template_paklaring_a_id'] ?? null,
+            'template_paklaring_b_id' => $validated['template_paklaring_b_id'] ?? null,
         ]);
 
         $project->branches()->sync($validated['branch_ids']);

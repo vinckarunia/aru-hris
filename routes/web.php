@@ -103,6 +103,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/contracts/{contract}/download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPkwt'])->name('contracts.download-pkwt');
         Route::get('/contracts/{contract}/download-st', [\App\Http\Controllers\ContractDocumentController::class, 'downloadSuratTugas'])->name('contracts.download-st');
         Route::get('/assignments/{assignment}/download-paklaring', [\App\Http\Controllers\ContractDocumentController::class, 'downloadPaklaring'])->name('assignments.download-paklaring');
+
+        // Document Templates (Library)
+        Route::resource('document-templates', \App\Http\Controllers\DocumentTemplateController::class)->except(['show']);
+        Route::patch('document-templates/{document_template}/toggle-default', [\App\Http\Controllers\DocumentTemplateController::class, 'toggleDefault'])->name('document-templates.toggle-default');
+        Route::get('document-templates/{document_template}/preview', [\App\Http\Controllers\DocumentTemplateController::class, 'preview'])->name('document-templates.preview');
+
+        // Project Templates
+        Route::post('/projects/{project}/templates', [\App\Http\Controllers\ProjectTemplateController::class, 'store'])->name('projects.templates.store');
     });
 
     // Admin & Super Admin Routes
@@ -127,7 +135,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
 
         Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
-
 
         // Reports (Query Builder)
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
