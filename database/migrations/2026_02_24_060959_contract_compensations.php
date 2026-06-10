@@ -29,11 +29,13 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_base_salary_nonnegative CHECK (base_salary >= 0);');
-        DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_meal_allowance_nonnegative CHECK (meal_allowance >= 0);');
-        DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_transport_allowance_nonnegative CHECK (transport_allowance >= 0);');
-        DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_overtime_weekday_nonnegative CHECK (overtime_weekday_rate >= 0);');
-        DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_overtime_holiday_nonnegative CHECK (overtime_holiday_rate >= 0);');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_base_salary_nonnegative CHECK (base_salary >= 0);');
+            DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_meal_allowance_nonnegative CHECK (meal_allowance >= 0);');
+            DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_transport_allowance_nonnegative CHECK (transport_allowance >= 0);');
+            DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_overtime_weekday_nonnegative CHECK (overtime_weekday_rate >= 0);');
+            DB::statement('ALTER TABLE contract_compensation ADD CONSTRAINT check_overtime_holiday_nonnegative CHECK (overtime_holiday_rate >= 0);');
+        }
     }
 
     /**

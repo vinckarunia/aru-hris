@@ -37,7 +37,9 @@ return new class extends Migration
             $table->unique(['project_id', 'employee_id']);
         });
 
-        DB::statement('ALTER TABLE assignments ADD CONSTRAINT check_termination_after_hire CHECK (termination_date IS NULL OR termination_date >= hire_date);');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE assignments ADD CONSTRAINT check_termination_after_hire CHECK (termination_date IS NULL OR termination_date >= hire_date);');
+        }
     }
 
     /**

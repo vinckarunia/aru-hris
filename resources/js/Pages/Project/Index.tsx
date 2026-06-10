@@ -612,15 +612,15 @@ export default function Index({ projects, clients, branches, pics, globalTemplat
                                                         <option key={t.id} value={String(t.id)}>{t.name}</option>
                                                     ))}
                                                 </select>
-                                                {/* Preview Button */}
+                                                {/* Download Placeholder Button */}
                                                 <button 
                                                     type="button"
                                                     disabled={!data[fieldName]}
                                                     onClick={() => data[fieldName] && window.open(route('document-templates.preview', Number(data[fieldName])), '_blank')}
                                                     className="mt-1 flex items-center justify-center px-3 border border-slate-300 dark:border-slate-700 text-slate-500 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition" 
-                                                    title="Preview Template"
+                                                    title="Unduh Format Placeholder"
                                                 >
-                                                    <iconify-icon icon="solar:eye-bold" width="20"></iconify-icon>
+                                                    <iconify-icon icon="solar:document-download-bold" width="20"></iconify-icon>
                                                 </button>
                                             </div>
                                             <InputError message={errors[fieldName] as string} className="mt-2" />

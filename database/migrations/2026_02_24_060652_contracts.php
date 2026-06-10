@@ -35,8 +35,10 @@ return new class extends Migration
             $table->unique(['assignment_id', 'contract_type', 'pkwt_type', 'pkwt_number'], 'contracts_type_combo_unique');
         });
 
-        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwt_number_positive CHECK (pkwt_number > 0);');
-        DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwtt_enddate CHECK ((pkwt_type = \'PKWTT\' AND end_date IS NULL) OR pkwt_type = \'PKWT\' OR pkwt_type IS NULL);');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwt_number_positive CHECK (pkwt_number > 0);');
+            DB::statement('ALTER TABLE contracts ADD CONSTRAINT check_pkwtt_enddate CHECK ((pkwt_type = \'PKWTT\' AND end_date IS NULL) OR pkwt_type = \'PKWT\' OR pkwt_type IS NULL);');
+        }
     }
 
     /**

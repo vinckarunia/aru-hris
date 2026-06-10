@@ -11,13 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->dropColumn('pkwt_type');
-        });
+        if (Schema::hasColumn('projects', 'pkwt_type')) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->dropColumn('pkwt_type');
+            });
+        }
 
-        Schema::table('document_templates', function (Blueprint $table) {
-            $table->dropColumn('content_html');
-        });
+        if (Schema::hasColumn('document_templates', 'content_html')) {
+            Schema::table('document_templates', function (Blueprint $table) {
+                $table->dropColumn('content_html');
+            });
+        }
     }
 
     /**
@@ -25,12 +29,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->string('pkwt_type')->default('vdi')->after('name');
-        });
+        if (!Schema::hasColumn('projects', 'pkwt_type')) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->string('pkwt_type')->default('vdi')->after('name');
+            });
+        }
 
-        Schema::table('document_templates', function (Blueprint $table) {
-            $table->longText('content_html')->nullable()->after('type');
-        });
+        if (!Schema::hasColumn('document_templates', 'content_html')) {
+            Schema::table('document_templates', function (Blueprint $table) {
+                $table->longText('content_html')->nullable()->after('type');
+            });
+        }
     }
 };

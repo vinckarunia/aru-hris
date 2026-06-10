@@ -134,18 +134,16 @@ class DocumentTemplateController extends Controller
 
     public function preview(DocumentTemplate $documentTemplate)
     {
-        $dummyData = $this->parserService->getDummyData();
-
         try {
             if (!$documentTemplate->file_path || !\Storage::disk('local')->exists($documentTemplate->file_path)) {
                 return response('Error: File DOCX tidak ditemukan.', 404);
             }
 
-            $outputPath = storage_path('app/preview_' . uniqid() . '.docx');
-            
-            $this->parserService->generateDocx(\Storage::disk('local')->path($documentTemplate->file_path), $dummyData, $outputPath);
-            
-            return response()->download($outputPath, 'Preview - ' . $documentTemplate->name . '.docx')->deleteFileAfterSend(true);
+            // Langsung unduh file template asli yang berisi placeholder
+            return response()->download(
+                \Storage::disk('local')->path($documentTemplate->file_path), 
+                'Template Placeholder - ' . $documentTemplate->name . '.docx'
+            );
         } catch (\Exception $e) {
             return response('Error Rendering Document: ' . $e->getMessage(), 500);
         }

@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE contracts MODIFY COLUMN contract_type ENUM('Kontrak', 'Harian', 'Part-time') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN contract_type ENUM('Kontrak', 'Harian', 'Part-time') NOT NULL");
+        }
     }
 
     /**
@@ -19,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE contracts MODIFY COLUMN contract_type ENUM('Kontrak', 'Harian') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE contracts MODIFY COLUMN contract_type ENUM('Kontrak', 'Harian') NOT NULL");
+        }
     }
 };

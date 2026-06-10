@@ -12,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE assignments MODIFY COLUMN status ENUM('active', 'contract expired', 'resign', 'fired', 'other', 'project closed') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE assignments MODIFY COLUMN status ENUM('active', 'contract expired', 'resign', 'fired', 'other', 'project closed') NULL");
+        }
     }
 
     /**
@@ -20,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE assignments MODIFY COLUMN status ENUM('active', 'contract expired', 'resign', 'fired', 'other') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE assignments MODIFY COLUMN status ENUM('active', 'contract expired', 'resign', 'fired', 'other') NULL");
+        }
     }
 };

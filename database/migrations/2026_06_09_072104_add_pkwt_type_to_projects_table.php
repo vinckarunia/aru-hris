@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->string('pkwt_type', 50)->nullable()->default('all')->after('name');
-        });
+        if (!Schema::hasColumn('projects', 'pkwt_type')) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->string('pkwt_type', 50)->nullable()->default('all')->after('name');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->dropColumn('pkwt_type');
-        });
+        if (Schema::hasColumn('projects', 'pkwt_type')) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->dropColumn('pkwt_type');
+            });
+        }
     }
 };
