@@ -105,3 +105,77 @@ Gunakan dua terminal terpisah untuk menjalankan backend dan frontend asset compi
 ## 📖 Panduan Penggunaan Sistem
 
 Untuk panduan operasional lengkap mengenai pengunggahan templat, penulisan variabel placeholder, serta aturan penomoran surat PKWT/PKPH, silakan akses halaman **Manual** langsung di dalam aplikasi pada menu navigasi utama.
+
+---
+
+## 🖨️ Panduan Setup Google PDF Converter (Shared Hosting)
+
+Fitur konversi dari format DOCX ke PDF menggunakan **Google Drive API** (Google Docs automatic conversion) untuk melakukan konversi berkualitas tinggi secara gratis tanpa perlu memasang library PDF eksternal di *shared hosting*. Alurnya mengunggah berkas `.docx` sementara, mengonversinya ke dokumen Google Docs, mengunduhnya sebagai `.pdf`, lalu menghapusnya kembali dari Google Drive secara bersih.
+
+Terdapat dua metode autentikasi yang didukung. Anda cukup memilih salah satu:
+
+### Metode A: Menggunakan Service Account + Folder Bersama (Sangat Direkomendasikan)
+Metode ini paling cepat karena menggunakan autentikasi server-to-server secara otomatis. Namun, karena akun layanan (*Service Account*) baru memiliki kuota penyimpanan default `0` byte, Anda harus menyimpan berkas sementara pada folder bersama di Google Drive pribadi Anda:
+
+1. **Buat Service Account & Unduh JSON Kredensial**:
+   - Masuk ke [Google Cloud Console](https://console.cloud.google.com/).
+   - Buat proyek baru, lalu aktifkan **Google Drive API**.
+   - Masuk ke menu **IAM & Admin > Service Accounts**, klik **Create Service Account**.
+   - Setelah dibuat, masuk ke tab **Keys > Add Key > Create new key**, pilih format **JSON**.
+   - Simpan berkas JSON tersebut ke server HRIS Anda pada lokasi berikut:
+     `storage/app/private/google-credentials.json`
+2. **Dapatkan Email Akun Layanan**:
+   - Buka berkas JSON kredensial tersebut, salin nilai `"client_email"` (misalnya: `your-sa-name@your-project-id.iam.gserviceaccount.com`).
+3. **Buat & Bagikan Folder Google Drive**:
+   - Buka Google Drive pribadi Anda.
+   - Buat folder baru (misalnya: `HRIS Temp`).
+   - Bagikan folder tersebut ke alamat email akun layanan (`client_email`) di atas dengan hak akses **Editor**.
+4. **Salin ID Folder Google Drive**:
+   - Masuk ke folder tersebut, salin string ID unik yang ada di ujung URL browser Anda:
+     Contoh: `https://drive.google.com/drive/folders/1igA-HlIilj6fOzDG_0aOmkNO2sG4uo2M` -> ID-nya adalah `1igA-HlIilj6fOzDG_0aOmkNO2sG4uo2M`.
+5. **Konfigurasikan `.env`**:
+   Tambahkan variabel ini pada berkas `.env` server produksi:
+   ```env
+   GOOGLE_DRIVE_PARENT_FOLDER_ID=1igA-HlIilj6fOzDG_0aOmkNO2sG4uo2M
+   ```
+
+---
+
+### Metode B: Menggunakan OAuth 2.0 User Consent (Pribadi)
+Metode ini berjalan langsung atas nama akun Google pribadi Anda sehingga memiliki akses penuh ke kuota penyimpanan 15 GB gratis Anda secara langsung:
+
+1. **Buat OAuth Client ID**:
+   - Di Google Cloud Console, buka **APIs & Services > Credentials**.
+   - Klik **Create Credentials > OAuth client ID**, pilih tipe aplikasi **Web application**.
+   - Di bagian **Authorized redirect URIs**, tambahkan: `https://developers.google.com/oauthplayground`.
+   - Salin **Client ID** dan **Client Secret** yang didapatkan.
+2. **Dapatkan Refresh Token**:
+   - Buka [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground).
+   - Klik ikon gerigi (Settings) di pojok kanan atas, centang **Use your own OAuth credentials**, lalu masukkan **Client ID** & **Client Secret** Anda.
+   - Di panel kiri (Step 1), cari **Google Drive API v3**, centang scope `https://www.googleapis.com/auth/drive` atau `https://www.googleapis.com/auth/drive.file`.
+   - Klik **Authorize APIs** dan setujui izin pada akun Google Anda.
+   - Di Step 2, klik **Exchange authorization code for tokens**, lalu salin **Refresh Token** yang muncul di panel kanan.
+3. **Konfigurasikan `.env`**:
+   Tambahkan variabel berikut ke berkas `.env` server produksi:
+   ```env
+   GOOGLE_CLIENT_ID=isi_client_id_anda
+   GOOGLE_CLIENT_SECRET=isi_client_secret_anda
+   GOOGLE_REFRESH_TOKEN=isi_refresh_token_anda
+   ```
+   *(Jika variabel OAuth ini terisi, sistem secara otomatis akan memprioritaskan metode OAuth ini dibanding Service Account).*
+
+---
+
+### 🧪 Verifikasi Fungsionalitas Konversi
+Jalankan tes unit otomatis untuk memastikan integrasi dan kredensial Anda berjalan dengan baik:
+```bash
+php artisan test --filter ContractDownloadTest
+```
+Jika sukses, hasil tes akan menampilkan:
+```text
+   PASS  Tests\Feature\ContractDownloadTest
+  ✓ it downloads docx file when pdf conversion is disabled
+  ✓ it falls back to docx when pdf conversion fails
+  ✓ it downloads pdf file when conversion is enabled and succeeds
+```
+

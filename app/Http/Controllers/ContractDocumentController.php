@@ -7,13 +7,17 @@ use App\Models\InternalEmployee;
 use App\Models\Assignment;
 use Illuminate\Http\Request;
 use App\Services\DocumentParserService;
+use App\Services\GooglePdfConverterService;
+
 class ContractDocumentController extends Controller
 {
     protected $parserService;
+    protected $pdfConverterService;
 
-    public function __construct(DocumentParserService $parserService)
+    public function __construct(DocumentParserService $parserService, GooglePdfConverterService $pdfConverterService)
     {
         $this->parserService = $parserService;
+        $this->pdfConverterService = $pdfConverterService;
     }
 
     /**
@@ -85,14 +89,38 @@ class ContractDocumentController extends Controller
             return back()->with('error', 'Template DOCX belum dikonfigurasi untuk proyek ini dan tidak ada template default.');
         }
 
-        // New DOCX Native Engine Logic
         $parsedData = $this->parserService->getRealData($contract, $contract->assignment, $pihakPertama, $nomorSurat);
         
         $workerName = $contract->assignment->worker->name ?? 'Unknown';
-        $fileName = "{$prefix} - {$workerName}.docx";
         $outputPath = storage_path('app/temp_' . uniqid() . '.docx');
         
         $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+        
+        // Convert to PDF if enabled
+        if (config('services.google.pdf_conversion_enabled')) {
+            $pdfOutputPath = storage_path('app/temp_' . uniqid() . '.pdf');
+            $converted = $this->pdfConverterService->convertDocxToPdf($outputPath, $pdfOutputPath);
+
+            if ($converted && file_exists($pdfOutputPath)) {
+                if (file_exists($outputPath)) {
+                    @unlink($outputPath);
+                }
+                
+                \App\Models\AuditLog::log('download', 'contract', "Mengunduh Kontrak (PDF) untuk karyawan: {$workerName}", [
+                    'contract_id' => $contract->id,
+                    'document_type' => $prefix,
+                    'worker_name' => $workerName,
+                    'used_template' => 'DOCX_TEMPLATE_TO_PDF'
+                ]);
+
+                $fileName = "{$prefix} - {$workerName}.pdf";
+                return response()->download($pdfOutputPath, $fileName)->deleteFileAfterSend(true);
+            }
+
+            \Illuminate\Support\Facades\Log::warning("Google Docs PDF Conversion failed. Falling back to DOCX for: {$workerName}");
+        }
+
+        $fileName = "{$prefix} - {$workerName}.docx";
         
         \App\Models\AuditLog::log('download', 'contract', "Mengunduh Kontrak untuk karyawan: {$workerName}", [
             'contract_id' => $contract->id,
@@ -146,10 +174,35 @@ class ContractDocumentController extends Controller
 
         $parsedData = $this->parserService->getRealData($contract, $contract->assignment, $pihakPertama, $nomorSurat, 'docx');
         $workerName = $contract->assignment->worker->name ?? 'Unknown';
-        $fileName = 'Surat Tugas - ' . $workerName . '.docx';
         $outputPath = storage_path('app/temp_st_' . uniqid() . '.docx');
         
         $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+        
+        // Convert to PDF if enabled
+        if (config('services.google.pdf_conversion_enabled')) {
+            $pdfOutputPath = storage_path('app/temp_st_' . uniqid() . '.pdf');
+            $converted = $this->pdfConverterService->convertDocxToPdf($outputPath, $pdfOutputPath);
+
+            if ($converted && file_exists($pdfOutputPath)) {
+                if (file_exists($outputPath)) {
+                    @unlink($outputPath);
+                }
+
+                \App\Models\AuditLog::log('download', 'contract', "Mengunduh Surat Tugas (PDF) untuk karyawan: {$workerName}", [
+                    'contract_id' => $contract->id,
+                    'document_type' => 'Surat Tugas',
+                    'worker_name' => $workerName,
+                    'used_template' => 'DOCX_TEMPLATE_TO_PDF'
+                ]);
+
+                $fileName = 'Surat Tugas - ' . $workerName . '.pdf';
+                return response()->download($pdfOutputPath, $fileName)->deleteFileAfterSend(true);
+            }
+
+            \Illuminate\Support\Facades\Log::warning("Google Docs PDF Conversion failed. Falling back to DOCX for ST: {$workerName}");
+        }
+
+        $fileName = 'Surat Tugas - ' . $workerName . '.docx';
         
         \App\Models\AuditLog::log('download', 'contract', "Mengunduh Surat Tugas untuk karyawan: {$workerName}", [
             'contract_id' => $contract->id,
@@ -217,10 +270,35 @@ class ContractDocumentController extends Controller
 
         $parsedData = $this->parserService->getRealData(null, $assignment, $pihakPertama, $nomorSurat, 'docx');
         $workerName = $assignment->worker->name ?? 'Unknown';
-        $fileName = 'Paklaring - ' . $workerName . '.docx';
         $outputPath = storage_path('app/temp_paklaring_' . uniqid() . '.docx');
         
         $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+        
+        // Convert to PDF if enabled
+        if (config('services.google.pdf_conversion_enabled')) {
+            $pdfOutputPath = storage_path('app/temp_paklaring_' . uniqid() . '.pdf');
+            $converted = $this->pdfConverterService->convertDocxToPdf($outputPath, $pdfOutputPath);
+
+            if ($converted && file_exists($pdfOutputPath)) {
+                if (file_exists($outputPath)) {
+                    @unlink($outputPath);
+                }
+
+                \App\Models\AuditLog::log('download', 'assignment', "Mengunduh Paklaring (Grade {$grade} - PDF) untuk karyawan: {$workerName}", [
+                    'assignment_id' => $assignment->id,
+                    'document_type' => 'Paklaring',
+                    'grade'         => $grade,
+                    'used_template' => 'DOCX_TEMPLATE_TO_PDF'
+                ]);
+
+                $fileName = 'Paklaring - ' . $workerName . '.pdf';
+                return response()->download($pdfOutputPath, $fileName)->deleteFileAfterSend(true);
+            }
+
+            \Illuminate\Support\Facades\Log::warning("Google Docs PDF Conversion failed. Falling back to DOCX for Paklaring: {$workerName}");
+        }
+
+        $fileName = 'Paklaring - ' . $workerName . '.docx';
         
         \App\Models\AuditLog::log('download', 'assignment', "Mengunduh Paklaring (Grade {$grade}) untuk karyawan: {$workerName}", [
             'assignment_id' => $assignment->id,

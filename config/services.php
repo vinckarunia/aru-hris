@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'google' => [
+        'pdf_conversion_enabled' => env('ENABLE_PDF_CONVERSION', true),
+        'service_account_json'   => env('GOOGLE_SERVICE_ACCOUNT_JSON'),
+        'drive_parent_folder_id' => env('GOOGLE_DRIVE_PARENT_FOLDER_ID'),
+        'client_id'              => env('GOOGLE_CLIENT_ID'),
+        'client_secret'          => env('GOOGLE_CLIENT_SECRET'),
+        'refresh_token'          => env('GOOGLE_REFRESH_TOKEN'),
+    ],
+
 ];

@@ -131,8 +131,6 @@ class DocumentParserService
         };
         $overtimeUnit = $translateRate($comp?->overtime_rate ?? 'hourly');
 
-        // TextRun format for DOCX (supports newlines)
-        $compHtml = new \PhpOffice\PhpWord\Element\TextRun();
         $comps = [];
         if ($upahPokok > 0) { $comps[] = 'Upah Pokok: Rp ' . number_format($upahPokok, 0, ',', '.'); $hasComp = true; }
         if ($tunjangan > 0) { $comps[] = 'Tunjangan Allowance: Rp ' . number_format($tunjangan, 0, ',', '.'); $hasComp = true; }
@@ -143,17 +141,17 @@ class DocumentParserService
         if ($lemburWeekday > 0) { $comps[] = 'Lembur Weekday: Rp ' . number_format($lemburWeekday, 0, ',', '.') . ' / ' . $overtimeUnit; $hasComp = true; }
         if ($lemburWeekend > 0) { $comps[] = 'Lembur Weekend/Libur: Rp ' . number_format($lemburWeekend, 0, ',', '.') . ' / ' . $overtimeUnit; $hasComp = true; }
         
+        $compText = '';
         if ($hasComp) {
             $alphabet = range('a', 'z');
+            $lines = [];
             foreach ($comps as $index => $c) {
                 $letter = $alphabet[$index] ?? '-';
-                $compHtml->addText($letter . '. ' . $c);
-                if ($index < count($comps) - 1) {
-                    $compHtml->addTextBreak(1);
-                }
+                $lines[] = $letter . '. ' . $c;
             }
+            $compText = implode("\n", $lines);
         } else {
-            $compHtml = '-'; // fallback to simple string
+            $compText = '-';
         }
 
         $taxStatus = strtoupper($worker?->tax_status ?? '-');
@@ -221,7 +219,7 @@ class DocumentParserService
             'pihak_aru_jabatan' => $pihakAru?->position ?? 'Head of Operation PT. Alfa Reka Usaha',
             'tanggal_dibuat'    => $startDateObj ? $startDateObj->translatedFormat('d F Y') : now()->translatedFormat('d F Y'),
             
-            'rincian_kompensasi'=> $compHtml,
+            'rincian_kompensasi'=> $compText,
         ];
     }
 
@@ -242,6 +240,63 @@ class DocumentParserService
         
         // Fix fragmented macros that might be split by XML tags due to Word formatting
         $tp->fixBrokenMacrosForKeys(array_map('strtoupper', array_keys($data)));
+
+        // Handle multi-line strings by cloning the paragraph containing the placeholder
+        $xml = $tp->getMainPartXml();
+        foreach ($data as $key => $value) {
+            $placeholder = strtoupper($key);
+            if (is_string($value) && str_contains($value, "\n")) {
+                $searchStr = '[' . $placeholder . ']';
+                $pos = strpos($xml, $searchStr);
+                if ($pos !== false) {
+                    // Boundary-safe backward search for the opening <w:p tag
+                    $pStartPos = false;
+                    $offset = $pos;
+                    while ($offset > 0) {
+                        $foundPos = strrpos(substr($xml, 0, $offset), '<w:p');
+                        if ($foundPos === false) {
+                            break;
+                        }
+                        $nextChar = substr($xml, $foundPos + 4, 1);
+                        if ($nextChar === ' ' || $nextChar === '>') {
+                            $pStartPos = $foundPos;
+                            break;
+                        }
+                        $offset = $foundPos;
+                    }
+                    
+                    $pEndPos = strpos($xml, '</w:p>', $pos);
+                    
+                    if ($pStartPos !== false && $pEndPos !== false) {
+                        $pEndPos += 6; // Include </w:p>
+                        $fullParagraphXml = substr($xml, $pStartPos, $pEndPos - $pStartPos);
+                        
+                        // Extract paragraph style/properties
+                        $pPr = '';
+                        if (preg_match('/<w:pPr>.*?<\/w:pPr>/s', $fullParagraphXml, $pPrMatch)) {
+                            $pPr = $pPrMatch[0];
+                        }
+                        
+                        // Extract open tag
+                        $pOpen = '';
+                        if (preg_match('/^<w:p\b[^>]*>/s', $fullParagraphXml, $pOpenMatch)) {
+                            $pOpen = $pOpenMatch[0];
+                        }
+                        
+                        $lines = explode("\n", $value);
+                        $replacementXml = '';
+                        foreach ($lines as $line) {
+                            $escapedLine = htmlspecialchars($line, ENT_XML1, 'UTF-8');
+                            $replacementXml .= $pOpen . $pPr . '<w:r><w:t>' . $escapedLine . '</w:t></w:r></w:p>';
+                        }
+                        
+                        $xml = substr_replace($xml, $replacementXml, $pStartPos, $pEndPos - $pStartPos);
+                        unset($data[$key]); // Handled, remove from array
+                    }
+                }
+            }
+        }
+        $tp->setMainPartXml($xml);
 
         foreach ($data as $key => $value) {
             // Keys from getRealData are like 'nama_karyawan'. We UPPERCASE them.

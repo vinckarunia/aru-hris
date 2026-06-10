@@ -63,4 +63,14 @@ class CustomTemplateProcessor extends \PhpOffice\PhpWord\TemplateProcessor
             );
         }
     }
+
+    public function getMainPartXml()
+    {
+        return $this->tempDocumentMainPart;
+    }
+
+    public function setMainPartXml($xml)
+    {
+        $this->tempDocumentMainPart = $xml;
+    }
 }
