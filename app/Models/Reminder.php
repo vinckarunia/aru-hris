@@ -44,6 +44,8 @@ class Reminder extends Model
         'dismissed_at',
     ];
 
+    protected $appends = ['redirect_url'];
+
     /** @var array<string, string> */
     protected $casts = [
         'type'         => ReminderType::class,
@@ -51,6 +53,29 @@ class Reminder extends Model
         'deadline_at'  => 'datetime',
         'dismissed_at' => 'datetime',
     ];
+
+    /**
+     * Get the redirect URL for the related model instance.
+     *
+     * @return string|null
+     */
+    public function getRedirectUrlAttribute(): ?string
+    {
+        if (!$this->related_type || !$this->related_id) {
+            return null;
+        }
+
+        try {
+            return match ($this->related_type) {
+                \App\Models\Contract::class => route('contracts.show', $this->related_id),
+                \App\Models\Client::class   => route('clients.show', $this->related_id),
+                \App\Models\Worker::class   => route('workers.show', $this->related_id),
+                default                     => null,
+            };
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
 
     /**
      * Get the related model (e.g., Contract, Worker) for this reminder.

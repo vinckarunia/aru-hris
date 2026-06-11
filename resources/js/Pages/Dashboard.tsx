@@ -61,6 +61,7 @@ interface DashboardReminderItem {
     title: string;
     message: string;
     status: 'pending' | 'critical' | 'done';
+    redirect_url?: string | null;
 }
 
 interface DashboardReminderGroup {
@@ -279,13 +280,13 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
 
                             {/* Worker Distribution */}
                             {!isPic && (
-                                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
-                                    <div>
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-full justify-between">
+                                    <div className="flex-1 flex flex-col">
                                         <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                             <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
                                             Distribusi Karyawan (Client)
                                         </h3>
-                                        <div className="h-56">
+                                        <div className="flex-1 min-h-[240px] relative">
                                             {charts.worker_distribution.length > 0 ? (
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <PieChart>
@@ -306,7 +307,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                                     </PieChart>
                                                 </ResponsiveContainer>
                                             ) : (
-                                                <div className="h-full flex items-center justify-center text-slate-400 italic">
+                                                <div className="absolute inset-0 flex items-center justify-center text-slate-400 italic">
                                                     Tidak ada data distribusi.
                                                 </div>
                                             )}
@@ -330,12 +331,12 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                             )}
 
                             {/* Employment Status Demographics */}
-                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-full">
                                 <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                                     <iconify-icon icon="solar:chart-square-bold" className="text-primary"></iconify-icon>
                                     Demografi Status Pekerjaan
                                 </h3>
-                                <div className="h-64">
+                                <div className="flex-1 min-h-[240px] relative">
                                     {charts.employment_demographics.length > 0 ? (
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={charts.employment_demographics}>
@@ -351,7 +352,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                             </BarChart>
                                         </ResponsiveContainer>
                                     ) : (
-                                        <div className="h-full flex items-center justify-center text-slate-400 italic">
+                                        <div className="absolute inset-0 flex items-center justify-center text-slate-400 italic">
                                             Tidak ada data demografi.
                                         </div>
                                     )}
@@ -574,16 +575,38 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
 
                                             {group.items.length > 0 ? (
                                                 <ul className="space-y-2">
-                                                    {group.items.map((item) => (
-                                                        <li key={item.id} className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-800/30 shadow-sm flex flex-col gap-1">
-                                                            <div className="font-bold text-slate-800 dark:text-slate-200">
-                                                                {item.title}
-                                                            </div>
-                                                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                                                                {item.message}
-                                                            </p>
-                                                        </li>
-                                                    ))}
+                                                    {group.items.map((item) => {
+                                                        const content = (
+                                                            <>
+                                                                <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between gap-2">
+                                                                    <span>{item.title}</span>
+                                                                    {item.redirect_url && (
+                                                                        <iconify-icon icon="solar:arrow-right-up-linear" className="text-amber-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"></iconify-icon>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                                                    {item.message}
+                                                                </p>
+                                                            </>
+                                                        );
+
+                                                        return (
+                                                            <li key={item.id}>
+                                                                {item.redirect_url ? (
+                                                                    <Link
+                                                                        href={item.redirect_url}
+                                                                        className="block bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-800/30 shadow-sm flex flex-col gap-1 hover:bg-amber-100/50 dark:hover:bg-slate-700/50 hover:border-amber-300 dark:hover:border-amber-700 transition-all group"
+                                                                    >
+                                                                        {content}
+                                                                    </Link>
+                                                                ) : (
+                                                                    <div className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-800/30 shadow-sm flex flex-col gap-1">
+                                                                        {content}
+                                                                    </div>
+                                                                )}
+                                                            </li>
+                                                        );
+                                                    })}
                                                 </ul>
                                             ) : (
                                                 <div className="bg-white/50 dark:bg-slate-800/30 p-4 rounded-xl text-center border border-dashed border-amber-200 dark:border-amber-800/30">

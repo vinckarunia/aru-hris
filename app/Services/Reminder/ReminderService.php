@@ -143,10 +143,11 @@ class ReminderService
                     'label' => $type->label(),
                     'count' => $reminders->count(),
                     'items' => $reminders->take(5)->map(fn ($r) => [
-                        'id'      => $r->id,
-                        'title'   => $r->title,
-                        'message' => $r->message,
-                        'status'  => $r->status,
+                        'id'           => $r->id,
+                        'title'        => $r->title,
+                        'message'      => $r->message,
+                        'status'       => $r->status,
+                        'redirect_url' => $r->redirect_url,
                     ])->values()->toArray(),
                 ];
             }

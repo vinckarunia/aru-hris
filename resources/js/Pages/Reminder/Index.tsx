@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Dialog, Transition } from '@headlessui/react';
 import { PageProps } from '@/types';
 import SecondaryButton from '@/Components/SecondaryButton';
@@ -18,6 +18,7 @@ interface Reminder {
     deadline_at: string;
     dismissed_at: string | null;
     created_at: string;
+    redirect_url?: string | null;
 }
 
 /**
@@ -343,7 +344,19 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                                         >
                                             <div className="flex items-start gap-2">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold hover:text-primary dark:hover:text-primary-400 truncate">{reminder.title}</p>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="font-bold hover:text-primary dark:hover:text-primary-400 truncate">{reminder.title}</p>
+                                                        {reminder.redirect_url && (
+                                                            <Link
+                                                                href={reminder.redirect_url}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary-400 transition-colors inline-flex items-center flex-shrink-0"
+                                                                title="Buka halaman terkait"
+                                                            >
+                                                                <iconify-icon icon="solar:arrow-right-up-linear" width="14"></iconify-icon>
+                                                            </Link>
+                                                        )}
+                                                    </div>
                                                     <p className="text-xs text-slate-500 mt-0.5 truncate">{reminder.message}</p>
                                                 </div>
                                             </div>
@@ -520,6 +533,18 @@ export default function Index({ reminders, filters, typeOptions }: Props) {
                                                         )}
                                                     </div>
                                                 </div>
+
+                                                {selectedReminder.redirect_url && (
+                                                    <div className="pt-2">
+                                                        <Link
+                                                            href={selectedReminder.redirect_url}
+                                                            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold text-sm transition-all shadow-sm shadow-primary/20"
+                                                        >
+                                                            <iconify-icon icon="solar:arrow-right-up-linear" width="18"></iconify-icon>
+                                                            Buka Halaman Terkait
+                                                        </Link>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="mt-6 flex justify-end">
