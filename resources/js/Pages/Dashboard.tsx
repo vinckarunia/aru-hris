@@ -302,7 +302,7 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
                                                         ))}
                                                     </Pie>
                                                     <RechartsTooltip content={<CustomTooltip />} />
-                                                    <Legend />
+                                                    <Legend formatter={(value) => <span className="text-slate-600 dark:text-slate-300 text-xs font-medium ml-1 mr-2">{value}</span>} />
                                                 </PieChart>
                                             </ResponsiveContainer>
                                         ) : (
