@@ -620,7 +620,7 @@ export default function Index({ projects, clients, branches, pics, globalTemplat
                                                     className="mt-1 flex items-center justify-center px-3 border border-slate-300 dark:border-slate-700 text-slate-500 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition" 
                                                     title="Unduh Format Placeholder"
                                                 >
-                                                    <iconify-icon icon="solar:document-download-bold" width="20"></iconify-icon>
+                                                    <iconify-icon icon="solar:download-minimalistic-bold" width="20"></iconify-icon>
                                                 </button>
                                             </div>
                                             <InputError message={errors[fieldName] as string} className="mt-2" />
