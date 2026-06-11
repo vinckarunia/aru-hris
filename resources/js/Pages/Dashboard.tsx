@@ -279,38 +279,53 @@ export default function Dashboard({ auth, dashboardData, remindersSummary }: Pro
 
                             {/* Worker Distribution */}
                             {!isPic && (
-                                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                                    <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                                        <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
-                                        Distribusi Karyawan (Client)
-                                    </h3>
-                                    <div className="h-64">
-                                        {charts.worker_distribution.length > 0 ? (
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={charts.worker_distribution}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={80}
-                                                        paddingAngle={5}
-                                                        dataKey="value"
-                                                    >
-                                                        {charts.worker_distribution.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                        ))}
-                                                    </Pie>
-                                                    <RechartsTooltip content={<CustomTooltip />} />
-                                                    <Legend formatter={(value) => <span className="text-slate-600 dark:text-slate-300 text-xs font-medium ml-1 mr-2">{value}</span>} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <div className="h-full flex items-center justify-center text-slate-400 italic">
-                                                Tidak ada data distribusi.
-                                            </div>
-                                        )}
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
+                                    <div>
+                                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                            <iconify-icon icon="solar:pie-chart-2-bold" className="text-primary"></iconify-icon>
+                                            Distribusi Karyawan (Client)
+                                        </h3>
+                                        <div className="h-56">
+                                            {charts.worker_distribution.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={charts.worker_distribution}
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            innerRadius={55}
+                                                            outerRadius={75}
+                                                            paddingAngle={3}
+                                                            dataKey="value"
+                                                        >
+                                                            {charts.worker_distribution.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <RechartsTooltip content={<CustomTooltip />} />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="h-full flex items-center justify-center text-slate-400 italic">
+                                                    Tidak ada data distribusi.
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                    {charts.worker_distribution.length > 0 && (
+                                        <div className="flex flex-wrap gap-x-3 gap-y-1.5 justify-center mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                            {charts.worker_distribution.map((entry, index) => {
+                                                const color = COLORS[index % COLORS.length];
+                                                return (
+                                                    <div key={entry.name} className="flex items-center gap-1.5 text-[11px] leading-tight">
+                                                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }}></span>
+                                                        <span className="text-slate-600 dark:text-slate-300 font-semibold">{entry.name}</span>
+                                                        <span className="text-slate-400 dark:text-slate-500 font-medium">({entry.value})</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
