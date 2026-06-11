@@ -98,10 +98,7 @@ export default function PlaceholderGuideModal({ show, onClose }: Props) {
                     </div>
                     <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                         <code className="bg-slate-100 dark:bg-slate-800 text-pink-600 px-1 rounded">[CLIENT]</code><span>Nama Client</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                        <code className="bg-slate-100 dark:bg-slate-800 text-pink-600 px-1 rounded">[CLIENT]</code><span>Nama Client</span>
-                    </div>
+                    </div>            
                     <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                         <code className="bg-slate-100 dark:bg-slate-800 text-pink-600 px-1 rounded">[ALAMAT_CLIENT]</code><span>Alamat Client</span>
                     </div>

@@ -147,7 +147,7 @@ export default function Index({ auth, templates }: Props) {
                                                     className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
                                                     title="Unduh Format Placeholder"
                                                 >
-                                                    <iconify-icon icon="solar:document-download-bold" width="18"></iconify-icon>
+                                                    <iconify-icon icon="solar:download-minimalistic-bold" width="18"></iconify-icon>
                                                 </button>
                                                 <Link href={route('document-templates.edit', template.id)} className="p-2 text-primary hover:bg-primary/10 rounded-md" title="Edit HTML">
                                                     <iconify-icon icon="solar:pen-bold" width="18"></iconify-icon>
