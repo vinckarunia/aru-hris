@@ -191,7 +191,14 @@ class AssignmentController extends Controller
             abort(403, 'Akses ditolak. Wewenang untuk melihat detail teknis penempatan dan kontrak hanya ada pada Admin.');
         }
 
-        $assignment->load(['worker', 'project', 'branches', 'contracts']);
+        $assignment->load([
+            'worker',
+            'project',
+            'branches',
+            'contracts' => function($q) {
+                $q->orderBy('start_date', 'desc')->orderBy('id', 'desc');
+            }
+        ]);
 
         return Inertia::render('Assignment/Show', [
             'assignment' => $assignment,

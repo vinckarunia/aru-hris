@@ -146,9 +146,48 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
         post: postDoc,
         delete: deleteDoc,
         processing: docProcessing,
-        errors: docErrors,
         reset: resetDoc,
+        errors: docErrors,
     } = useForm<{ type: string; file: File | null }>({ type: '', file: null });
+
+    const [downloading, setDownloading] = useState(false);
+    const [downloadText, setDownloadText] = useState('Sedang mengunduh dokumen...');
+
+    const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>, url: string, fileNameDefault: string) => {
+        e.preventDefault();
+        setDownloadText('Sedang memproses dan mengonversi dokumen...');
+        setDownloading(true);
+        try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error('Gagal mengunduh dokumen.');
+            }
+            
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = fileNameDefault;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error(error);
+            alert('Gagal mengunduh dokumen. Silakan coba beberapa saat lagi.');
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     /** Helper to format date nicely */
     const formatDate = (dateString: string | null) => {
@@ -594,10 +633,20 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                             );
                                                             return (
                                                                 <div className="flex gap-2 w-full mt-2">
-                                                                    <a href={route('contracts.download-pkwt', { contract: latestContract.id })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Kontrak (DOCX)">
+                                                                    <a
+                                                                        href="#"
+                                                                        onClick={(e) => handleDownload(e, route('contracts.download-pkwt', { contract: latestContract.id }), 'PKWT.docx')}
+                                                                        className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1"
+                                                                        title="Download Kontrak"
+                                                                    >
                                                                         <iconify-icon icon="solar:file-text-bold" width="14"></iconify-icon> Kontrak
                                                                     </a>
-                                                                    <a href={route('contracts.download-st', { contract: latestContract.id })} className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1" title="Download Surat Tugas (DOCX)">
+                                                                    <a
+                                                                        href="#"
+                                                                        onClick={(e) => handleDownload(e, route('contracts.download-st', { contract: latestContract.id }), 'Surat_Tugas.docx')}
+                                                                        className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors flex-1"
+                                                                        title="Download Surat Tugas"
+                                                                    >
                                                                         <iconify-icon icon="solar:file-check-bold" width="14"></iconify-icon> Surat Tugas
                                                                     </a>
                                                                 </div>
@@ -608,8 +657,11 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                                                     {(assign.status === 'contract expired' || assign.status === 'resign') && (
                                                         <div className="w-full mt-2">
                                                             <a 
-                                                                href={(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? route('assignments.download-paklaring', { assignment: assign.id }) : '#'} 
-                                                                onClick={!(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? (e) => { e.preventDefault(); alert('Perangkat kerja belum dikembalikan. Silakan update status pengembalian di form edit penempatan terlebih dahulu.'); } : undefined}
+                                                                href="#" 
+                                                                onClick={(assign.equipment_returned === true || (assign.equipment_returned as any) === 1)
+                                                                    ? (e) => handleDownload(e, route('assignments.download-paklaring', { assignment: assign.id }), 'Paklaring.docx')
+                                                                    : (e) => { e.preventDefault(); alert('Perangkat kerja belum dikembalikan. Silakan update status pengembalian di form edit penempatan terlebih dahulu.'); }
+                                                                }
                                                                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors w-full ${(assign.equipment_returned === true || (assign.equipment_returned as any) === 1) ? 'bg-primary/10 text-primary hover:bg-primary hover:text-white dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary dark:hover:text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'}`}
                                                                 title="Download Paklaring"
                                                             >
@@ -788,6 +840,27 @@ export default function Show({ worker, documentTypes, documentSettings }: Props)
                     </div>
                 </form>
             </Modal>
+
+            {/* Loading Overlay for Document Download */}
+            {downloading && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xl p-6 max-w-sm w-full mx-4 flex flex-col items-center text-center">
+                        <div className="relative w-16 h-16 mb-5">
+                            <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <iconify-icon icon="solar:document-text-bold-duotone" width="28" className="text-primary"></iconify-icon>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Memproses Dokumen</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {downloadText}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-4 italic">
+                            Mohon tunggu, jangan tutup halaman ini.
+                        </p>
+                    </div>
+                </div>
+            )}
 
         </Layout >
     );

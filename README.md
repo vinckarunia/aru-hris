@@ -1,4 +1,4 @@
-# HRIS PT. Alfa Reka Usaha (Vinckarunia ARU HRIS)
+# HRIS PT. Alfa Reka Usaha (ARU HRIS)
 
 [![Laravel Framework](https://img.shields.io/badge/Framework-Laravel%2011-red.svg)](https://laravel.com)
 [![Frontend Stack](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-blue.svg)](https://react.dev)

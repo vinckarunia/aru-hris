@@ -41,6 +41,7 @@ class DocumentParserService
 
             'jabatan'           => 'Software Engineer',
             'client'            => 'PT Teknologi Indonesia',
+            'alamat_client'     => 'Jl. Jenderal Sudirman No. 1, Jakarta',
             'cabang'            => 'Cabang Jakarta Pusat',
             'project'           => 'Sistem HRIS',
             'tanggal_hire'      => '01 Januari 2026',
@@ -191,6 +192,7 @@ class DocumentParserService
 
             'jabatan'           => strtoupper($assignment?->position ?? '-'),
             'client'            => strtoupper($client?->full_name ?? '-'),
+            'alamat_client'     => strtoupper($client?->address ?? '-'),
             'cabang'            => strtoupper($assignment?->branches->pluck('name')->implode(', ') ?: '-'),
             'project'           => strtoupper($project?->name ?? '-'),
             'tanggal_hire'      => $assignment?->hire_date ? \Carbon\Carbon::parse($assignment->hire_date)->translatedFormat('d F Y') : '-',

@@ -201,7 +201,18 @@ class WorkerController extends Controller
             }
         }
 
-        $worker->load(['assignments.project', 'assignments.branches', 'assignments.contracts', 'familyMembers', 'documents']);
+        $worker->load([
+            'assignments' => function($q) {
+                $q->orderBy('hire_date', 'desc')->orderBy('id', 'desc');
+            },
+            'assignments.project',
+            'assignments.branches',
+            'assignments.contracts' => function($q) {
+                $q->orderBy('start_date', 'desc')->orderBy('id', 'desc');
+            },
+            'familyMembers',
+            'documents'
+        ]);
 
         // Load document settings for the frontend (active types, max size, allowed formats)
         $docTypesJson = \App\Models\Setting::where('key', 'document_types')->value('value');
