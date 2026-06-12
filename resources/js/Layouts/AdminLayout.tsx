@@ -357,7 +357,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                         <div className="p-4 text-sm text-slate-600 dark:text-slate-300 space-y-3 max-h-96 overflow-y-auto">
                                             <p className="font-medium text-slate-800 dark:text-slate-200">Pembaruan Sistem Import & Paklaring</p>
                                             <ul className="list-disc pl-4 space-y-1.5">
-                                                <li><strong>Pemisahan Mode Update Import:</strong> Opsi resolusi konflik import kini dibagi menjadi <em>Update Data Saja</em> (hanya memperbarui profil) dan <em>Update + Cek Assignment</em> (sinkronisasi cerdas penempatan dan kontrak).</li>
+                                                <li><strong>Pemisahan Mode Update Import:</strong> Opsi resolusi konflik import kini dibagi menjadi <em>Update Data Saja</em> (hanya memperbarui profil) dan <em>Update Data + Penempatan dan Kontrak</em> (sinkronisasi cerdas penempatan dan kontrak).</li>
                                                 <li><strong>Paklaring Status Project Closed:</strong> Status penempatan "Project Closed" kini memenuhi syarat untuk menerbitkan <strong>Paklaring Grade A</strong>, asalkan perangkat kerja telah dikembalikan.</li>
                                             </ul>
                                         </div>

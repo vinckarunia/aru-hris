@@ -931,7 +931,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                             }}
                                             className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
                                         >
-                                            <iconify-icon icon="solar:add-circle-bold" width="16"></iconify-icon> Update + Cek Assignment (Semua)
+                                            <iconify-icon icon="solar:add-circle-bold" width="16"></iconify-icon> Update Data + Penempatan dan Kontrak (Semua)
                                         </button>
                                         <button
                                             onClick={() => {
@@ -1031,7 +1031,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                                                     >
                                                                         <option value="skip">Lewati</option>
                                                                         <option value="update">Update Data Saja</option>
-                                                                        <option value="update_with_assignment">Update + Cek Assignment</option>
+                                                                        <option value="update_with_assignment">Update Data + Penempatan dan Kontrak</option>
                                                                     </select>
                                                                     <iconify-icon icon={isExpanded ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} width="14" className="text-slate-400"></iconify-icon>
                                                                 </div>
