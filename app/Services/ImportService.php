@@ -1141,9 +1141,21 @@ class ImportService
             $start = $c::parseDate($hireDateRaw);
         }
 
+        $isExplicitPkwtt = false;
+        if ($rawContractType !== null && $rawContractType !== '') {
+            if (str_contains(strtolower($rawContractType), 'pkwtt')) {
+                $isExplicitPkwtt = true;
+            }
+        }
+
+        $pkwtType = null;
+        if ($contractType === 'Kontrak') {
+            $pkwtType = $isExplicitPkwtt ? 'PKWTT' : 'PKWT';
+        }
+
         $contracts[] = [
             'contract_type' => $contractType,
-            'pkwt_type' => $contractType === 'Kontrak' ? ($end ? 'PKWT' : 'PKWTT') : ($contractType === 'Harian' || $contractType === 'Part-time' ? null : null),
+            'pkwt_type' => $pkwtType,
             'pkwt_number' => null, // Optional, no longer required
             'start_date' => $start,
             'end_date' => $end,
