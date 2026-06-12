@@ -74,7 +74,7 @@ export default function Edit({ worker, validationDigits, validationEnums }: Prop
 
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-800/30 flex items-start gap-3 text-red-600 dark:text-red-400">
                 <iconify-icon icon="solar:info-circle-bold" width="20" className="mt-0.5 shrink-0"></iconify-icon>
-                <div className="text-sm font-medium">Kolom dengan tanda bintang (<span className="text-red-500 font-bold">*</span>) wajib diisi. Pastikan nomor identitas (KTP, KK, NPWP, BPJS) diisi sesuai dengan jumlah digit resminya.</div>
+                <div className="text-sm font-medium">Kolom dengan tanda bintang (<span className="text-red-500 font-bold">*</span>) wajib diisi. Pastikan nomor identitas (KTP, KK, BPJS) diisi sesuai dengan jumlah digit resminya.</div>
             </div>
 
             <form onSubmit={submit} className="space-y-6">

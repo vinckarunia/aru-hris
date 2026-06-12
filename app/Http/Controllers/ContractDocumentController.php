@@ -237,12 +237,12 @@ class ContractDocumentController extends Controller
         }
 
         $grade = '';
-        if ($assignment->status === 'contract expired') {
+        if ($assignment->status === 'contract expired' || $assignment->status === 'project closed') {
             $grade = 'A';
         } elseif ($assignment->status === 'resign') {
             $grade = 'B';
         } else {
-            abort(403, 'Gagal mengunduh: Status penempatan harus Resign atau Contract Expired untuk mencetak Paklaring.');
+            abort(403, 'Gagal mengunduh: Status penempatan harus Resign, Contract Expired, atau Project Closed untuk mencetak Paklaring.');
         }
 
         $pihakPertama = ($user->internalEmployee ?? null)

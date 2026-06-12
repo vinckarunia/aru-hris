@@ -27,10 +27,10 @@ interface Props {
 export default function AdminLayout({ title, header, children }: PropsWithChildren<Props>) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
-    // Set 1 week expiration for the tooltip auto-show (Until June 16, 2026)
-    const isWithinOneWeek = new Date() < new Date('2026-06-16T00:00:00');
+    // Set 1 week expiration for the tooltip auto-show (Until June 19, 2026)
+    const isWithinOneWeek = new Date() < new Date('2026-06-19T00:00:00');
     const [showChangelog, setShowChangelog] = useState(() => {
-        return isWithinOneWeek && typeof window !== 'undefined' && sessionStorage.getItem('changelog_v1_seen') !== 'true';
+        return isWithinOneWeek && typeof window !== 'undefined' && sessionStorage.getItem('changelog_v1_1_seen') !== 'true';
     });
 
     const changelogRef = useRef<HTMLDivElement>(null);
@@ -38,7 +38,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
     const handleCloseChangelog = () => {
         setShowChangelog(false);
         if (typeof window !== 'undefined') {
-            sessionStorage.setItem('changelog_v1_seen', 'true');
+            sessionStorage.setItem('changelog_v1_1_seen', 'true');
         }
     };
 
@@ -348,19 +348,17 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                     <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden transform origin-top-right transition-all">
                                         <div className="p-4 bg-primary/5 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
                                             <h4 className="font-bold text-primary flex items-center gap-2">
-                                                Update Fitur Baru (v1.0.1)
+                                                Update Fitur Baru (v1.1.0)
                                             </h4>
                                             <button onClick={handleCloseChangelog} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                                 <iconify-icon icon="solar:close-circle-bold" width="20"></iconify-icon>
                                             </button>
                                         </div>
                                         <div className="p-4 text-sm text-slate-600 dark:text-slate-300 space-y-3 max-h-96 overflow-y-auto">
-                                            <p className="font-medium text-slate-800 dark:text-slate-200">Rilis Document Engine (Native DOCX)</p>
+                                            <p className="font-medium text-slate-800 dark:text-slate-200">Pembaruan Sistem Import & Paklaring</p>
                                             <ul className="list-disc pl-4 space-y-1.5">
-                                                <li>Sistem generasi dokumen kini menggunakan format Native DOCX untuk struktur halaman dan tabel yang jauh lebih responsif.</li>
-                                                <li>Dukungan placeholder dinamis yang lebih komprehensif, termasuk kalkulasi lembur Weekday dan Weekend secara otomatis.</li>
-                                                <li>Penomoran surat cerdas yang secara otomatis mendeteksi dan menyesuaikan jenis kontrak (PKWT, PKPH, dll).</li>
-                                                <li>Sistem template yang kini sepenuhnya dinamis tanpa teks statis/hardcoded.</li>
+                                                <li><strong>Pemisahan Mode Update Import:</strong> Opsi resolusi konflik import kini dibagi menjadi <em>Update Data Saja</em> (hanya memperbarui profil) dan <em>Update + Cek Assignment</em> (sinkronisasi cerdas penempatan dan kontrak).</li>
+                                                <li><strong>Paklaring Status Project Closed:</strong> Status penempatan "Project Closed" kini memenuhi syarat untuk menerbitkan <strong>Paklaring Grade A</strong>, asalkan perangkat kerja telah dikembalikan.</li>
                                             </ul>
                                         </div>
                                     </div>

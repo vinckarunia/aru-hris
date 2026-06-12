@@ -73,7 +73,7 @@ class ProcessBulkImport implements ShouldQueue
     protected int $userId;
 
     /**
-     * @var array Per-row conflict actions: [row_number => 'update'|'skip'].
+     * @var array Per-row conflict actions: [row_number => 'update'|'update_with_assignment'|'skip'].
      */
     protected array $rowActions;
 
@@ -94,7 +94,7 @@ class ProcessBulkImport implements ShouldQueue
      * @param array $mapping The column mapping from the frontend.
      * @param array $globalSettings Global settings (project_id, branch_id, rates).
      * @param int $userId The ID of the authenticated user.
-     * @param array $rowActions Per-row conflict actions: [row_number => 'update'|'skip'].
+     * @param array $rowActions Per-row conflict actions: [row_number => 'update'|'update_with_assignment'|'skip'].
      * @param int $headerRow The 1-indexed row number containing headers.
      * @param string|null $activeSheetName When set, only rows from this sheet will be processed.
      */
@@ -239,7 +239,7 @@ class ProcessBulkImport implements ShouldQueue
 
                 if ($existingWorker) {
                     $action = $this->rowActions[(string) $processed] ?? 'skip';
-                    if ($action === 'update') {
+                    if ($action === 'update' || $action === 'update_with_assignment') {
                         $isUpdate = true;
                     } else {
                         // Skip this row silently (user chose to skip or no action specified)
@@ -330,9 +330,19 @@ class ProcessBulkImport implements ShouldQueue
                     $compData = $importService->buildCompensationData($row, $this->mapping, $this->globalSettings);
 
                     if ($isUpdate) {
-                        if (!$hasAssignmentMapping) $assignmentData = [];
-                        if (!$hasContractMapping) $contractsData = [];
-                        if (!$hasCompensationMapping) $compData = [];
+                        $updateAction = $this->rowActions[(string) $processed] ?? 'update';
+
+                        if ($updateAction === 'update') {
+                            // Data-only update: skip assignment/contract/compensation entirely
+                            $assignmentData = [];
+                            $contractsData = [];
+                            $compData = [];
+                        } else {
+                            // update_with_assignment: filter unmapped fields
+                            if (!$hasAssignmentMapping) $assignmentData = [];
+                            if (!$hasContractMapping) $contractsData = [];
+                            if (!$hasCompensationMapping) $compData = [];
+                        }
 
                         // Filter out unmapped worker fields
                         foreach ($workerData as $k => $v) {
@@ -341,32 +351,34 @@ class ProcessBulkImport implements ShouldQueue
                             }
                         }
 
-                        // Filter out unmapped assignment fields
-                        if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
-                        if (!array_key_exists('branch_name', $this->mapping) && empty($this->globalSettings['branch_ids'])) unset($assignmentData['branch_ids']);
-                        if (!array_key_exists('employee_id', $this->mapping)) unset($assignmentData['employee_id']);
-                        if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
-                        if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
-                            unset($assignmentData['status']);
-                            unset($assignmentData['termination_date']);
-                        }
-                        if (!array_key_exists('hire_date', $this->mapping)) unset($assignmentData['hire_date']);
-
-                        // Filter out unmapped contract fields
-                        foreach ($contractsData as &$contractData) {
-                            if (!array_key_exists('raw_contract_type', $this->mapping)) {
-                                unset($contractData['contract_type'], $contractData['pkwt_type'], $contractData['pkwt_number']);
+                        if ($updateAction === 'update_with_assignment') {
+                            // Filter out unmapped assignment fields
+                            if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
+                            if (!array_key_exists('branch_name', $this->mapping) && empty($this->globalSettings['branch_ids'])) unset($assignmentData['branch_ids']);
+                            if (!array_key_exists('employee_id', $this->mapping)) unset($assignmentData['employee_id']);
+                            if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
+                            if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
+                                unset($assignmentData['status']);
+                                unset($assignmentData['termination_date']);
                             }
-                            if (!array_key_exists('contract_start', $this->mapping)) unset($contractData['start_date']);
-                            if (!array_key_exists('contract_end', $this->mapping)) unset($contractData['end_date'], $contractData['duration_months']);
-                            if (!array_key_exists('evaluation_notes', $this->mapping)) unset($contractData['evaluation_notes']);
-                        }
-                        unset($contractData);
+                            if (!array_key_exists('hire_date', $this->mapping)) unset($assignmentData['hire_date']);
 
-                        // Filter out unmapped compensation fields
-                        $compFields = ['base_salary', 'meal_allowance', 'transport_allowance', 'attendance_allowance', 'allowance', 'performance_bonus', 'overtime_weekday', 'overtime_holiday'];
-                        foreach ($compFields as $field) {
-                            if (!array_key_exists($field, $this->mapping)) unset($compData[$field]);
+                            // Filter out unmapped contract fields
+                            foreach ($contractsData as &$contractData) {
+                                if (!array_key_exists('raw_contract_type', $this->mapping)) {
+                                    unset($contractData['contract_type'], $contractData['pkwt_type'], $contractData['pkwt_number']);
+                                }
+                                if (!array_key_exists('contract_start', $this->mapping)) unset($contractData['start_date']);
+                                if (!array_key_exists('contract_end', $this->mapping)) unset($contractData['end_date'], $contractData['duration_months']);
+                                if (!array_key_exists('evaluation_notes', $this->mapping)) unset($contractData['evaluation_notes']);
+                            }
+                            unset($contractData);
+
+                            // Filter out unmapped compensation fields
+                            $compFields = ['base_salary', 'meal_allowance', 'transport_allowance', 'attendance_allowance', 'allowance', 'performance_bonus', 'overtime_weekday', 'overtime_holiday'];
+                            foreach ($compFields as $field) {
+                                if (!array_key_exists($field, $this->mapping)) unset($compData[$field]);
+                            }
                         }
                     }
 
@@ -376,7 +388,10 @@ class ProcessBulkImport implements ShouldQueue
                     ]);
 
                     if ($isUpdate) {
-                        $payload['_action'] = 'bulk_import_update_worker';
+                        $updateAction = $this->rowActions[(string) $processed] ?? 'update';
+                        $payload['_action'] = $updateAction === 'update'
+                            ? 'bulk_import_update_worker_only'
+                            : 'bulk_import_update_worker';
                     }
 
                     \App\Models\DataRequest::create([
@@ -399,8 +414,10 @@ class ProcessBulkImport implements ShouldQueue
                 }
 
                 // --- Admin path: create records directly ---
+                $updateAction = $isUpdate ? ($this->rowActions[(string) $processed] ?? 'update') : null;
+
                 if ($isUpdate) {
-                    // Update existing worker data
+                    // Update existing worker data (common to both update modes)
                     foreach ($workerData as $k => $v) {
                         if (!array_key_exists($k, $this->mapping)) {
                             unset($workerData[$k]);
@@ -414,7 +431,12 @@ class ProcessBulkImport implements ShouldQueue
                     $worker = Worker::create($workerData);
                 }
 
-
+                // For data-only update, skip assignment/contract/compensation entirely
+                if ($updateAction === 'update') {
+                    DB::commit();
+                    $importService->updateProgress($this->sessionId, $processed, $totalRows, $failed, 'processing');
+                    continue;
+                }
 
                 // 2. Create or update Assignment
                 $assignmentData = $importService->buildAssignmentData($row, $this->mapping, $this->globalSettings);
@@ -423,25 +445,62 @@ class ProcessBulkImport implements ShouldQueue
                 unset($assignmentData['branch_id']);
                 unset($assignmentData['branch_ids']);
                 
-                if ($isUpdate) {
-                    $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
-                    if ($existingAssignment) {
-                        if ($hasAssignmentMapping) {
-                            if (!array_key_exists('project_name', $this->mapping) && empty($this->globalSettings['project_id'])) unset($assignmentData['project_id']);
-                            if (!array_key_exists('employee_id', $this->mapping)) unset($assignmentData['employee_id']);
-                            if (!array_key_exists('position', $this->mapping)) unset($assignmentData['position']);
-                            if (!array_key_exists('status', $this->mapping) && !array_key_exists('termination_date', $this->mapping)) {
-                                unset($assignmentData['status']);
-                                unset($assignmentData['termination_date']);
-                            }
-                            if (!array_key_exists('hire_date', $this->mapping)) unset($assignmentData['hire_date']);
+                if ($updateAction === 'update_with_assignment') {
+                    // Smart assignment: check if same project+branch already exists
+                    $targetProjectId = $assignmentData['project_id'] ?? null;
+                    $matchingAssignment = null;
 
-                            $assignmentUpdateData = array_filter($assignmentData, fn($v) => $v !== null && $v !== '');
-                            $existingAssignment->update($assignmentUpdateData);
-                            if (!empty($rowBranchIds)) {
-                                $existingAssignment->branches()->sync($rowBranchIds);
+                    if ($targetProjectId) {
+                        $candidateAssignments = Assignment::where('worker_id', $worker->id)
+                            ->where('project_id', $targetProjectId)
+                            ->get();
+
+                        foreach ($candidateAssignments as $candidate) {
+                            $candidateBranchIds = $candidate->branches()->pluck('branches.id')->sort()->values()->toArray();
+                            $incomingBranchIds = collect($rowBranchIds)->map(fn($v) => (int) $v)->sort()->values()->toArray();
+
+                            if ($candidateBranchIds === $incomingBranchIds || (empty($candidateBranchIds) && empty($incomingBranchIds))) {
+                                $matchingAssignment = $candidate;
+                                break;
                             }
                         }
+
+                        // If no exact branch match but there's an assignment on the same project, use it
+                        if (!$matchingAssignment && $candidateAssignments->isNotEmpty()) {
+                            $matchingAssignment = $candidateAssignments->first();
+                        }
+                    }
+
+                    if ($matchingAssignment) {
+                        // Same project+branch: only update status/termination_date if changed
+                        $statusUpdates = [];
+                        if (array_key_exists('status', $this->mapping) || array_key_exists('termination_date', $this->mapping)) {
+                            if (isset($assignmentData['status']) && $assignmentData['status'] !== $matchingAssignment->status) {
+                                $statusUpdates['status'] = $assignmentData['status'];
+                            }
+                            if (isset($assignmentData['termination_date']) && $assignmentData['termination_date'] !== $matchingAssignment->termination_date) {
+                                $statusUpdates['termination_date'] = $assignmentData['termination_date'];
+                            }
+                        }
+                        if (!empty($statusUpdates)) {
+                            $matchingAssignment->update($statusUpdates);
+                        }
+                        if (!empty($rowBranchIds)) {
+                            $matchingAssignment->branches()->sync($rowBranchIds);
+                        }
+                        $assignment = $matchingAssignment;
+                    } else {
+                        // Different project/branch: create new assignment
+                        $assignmentData['worker_id'] = $worker->id;
+                        $assignment = Assignment::create($assignmentData);
+                        if (!empty($rowBranchIds)) {
+                            $assignment->branches()->sync($rowBranchIds);
+                        }
+                    }
+                } elseif ($isUpdate) {
+                    // Legacy fallback (should not happen with new flow, but kept for safety)
+                    $existingAssignment = Assignment::where('worker_id', $worker->id)->first();
+                    if ($existingAssignment) {
                         $assignment = $existingAssignment;
                     } else {
                         $assignmentData['worker_id'] = $worker->id;
@@ -479,7 +538,40 @@ class ProcessBulkImport implements ShouldQueue
                     foreach ($contractsData as $contractData) {
                         $contractData['assignment_id'] = $assignment->id;
                         
-                        if ($isUpdate) {
+                        if ($updateAction === 'update_with_assignment') {
+                            // Smart contract: only create if no matching contract exists
+                            if (!array_key_exists('raw_contract_type', $this->mapping)) {
+                                unset($contractData['contract_type'], $contractData['pkwt_type'], $contractData['pkwt_number']);
+                            }
+                            if (!array_key_exists('contract_start', $this->mapping)) unset($contractData['start_date']);
+                            if (!array_key_exists('contract_end', $this->mapping)) unset($contractData['end_date'], $contractData['duration_months']);
+                            if (!array_key_exists('evaluation_notes', $this->mapping)) unset($contractData['evaluation_notes']);
+
+                            // Check if a contract with the same key attributes already exists
+                            $existingContract = Contract::where('assignment_id', $assignment->id)
+                                ->where('contract_type', $contractData['contract_type'] ?? 'Kontrak')
+                                ->where(function ($q) use ($contractData) {
+                                    $q->where('pkwt_type', $contractData['pkwt_type'] ?? null);
+                                })
+                                ->where(function ($q) use ($contractData) {
+                                    $q->where('pkwt_number', $contractData['pkwt_number'] ?? null);
+                                })
+                                ->when(isset($contractData['start_date']), function ($q) use ($contractData) {
+                                    $q->where('start_date', $contractData['start_date']);
+                                })
+                                ->when(isset($contractData['end_date']), function ($q) use ($contractData) {
+                                    $q->where('end_date', $contractData['end_date']);
+                                })
+                                ->first();
+
+                            if ($existingContract) {
+                                // Contract already exists with same data, skip creation
+                                $contract = $existingContract;
+                            } else {
+                                // Different contract data, create new
+                                $contract = Contract::create($contractData);
+                            }
+                        } elseif ($isUpdate) {
                             if (!array_key_exists('raw_contract_type', $this->mapping)) {
                                 unset($contractData['contract_type'], $contractData['pkwt_type'], $contractData['pkwt_number']);
                             }
@@ -502,8 +594,8 @@ class ProcessBulkImport implements ShouldQueue
                         }
 
                         // Track the latest contract for compensation attachment
-                        $endDate = $contractData['end_date'];
-                        if ($contractData['pkwt_type'] === 'PKWTT') {
+                        $endDate = $contractData['end_date'] ?? null;
+                        if (($contractData['pkwt_type'] ?? null) === 'PKWTT') {
                             // PKWTT is always the latest
                             $latestContractId = $contract->id;
                             $latestEndDate = null;

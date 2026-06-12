@@ -616,6 +616,12 @@ class DataRequestController extends Controller
                         if ($contract) {
                             $contract->delete();
                         }
+                    } else if ($action === 'bulk_import_update_worker_only') {
+                        // Data-only update: only update worker profile fields, no assignment/contract/compensation changes
+                        $workerFillable = array_intersect_key($dataRequest->requested_data, array_flip((new \App\Models\Worker)->getFillable()));
+                        $updateData = array_filter($workerFillable, fn($v) => $v !== null && $v !== '');
+                        unset($updateData['ktp_number']);
+                        $worker->update($updateData);
                     } else if ($action === 'bulk_import_update_worker') {
                         // 1. Update Worker (ignore nulls & ktp_number)
                         $workerFillable = array_intersect_key($dataRequest->requested_data, array_flip((new \App\Models\Worker)->getFillable()));

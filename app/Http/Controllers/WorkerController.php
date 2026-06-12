@@ -321,7 +321,7 @@ class WorkerController extends Controller
             'address_ktp' => 'nullable|string',
             'address_domicile' => 'nullable|string',
             'mother_name' => 'required|string|max:255',
-            'npwp' => 'nullable|digits:' . $digits['npwp'],
+            'npwp' => 'nullable|string|max:50',
             'bpjs_kesehatan' => 'nullable|digits:' . $digits['bpjs_kes'],
             'bpjs_ketenagakerjaan' => 'nullable|digits:' . $digits['bpjs_tk'],
             'bank_name' => 'nullable|string|max:100',
@@ -342,7 +342,6 @@ class WorkerController extends Controller
         return [
             'ktp_number.digits' => 'Nomor KTP (NIK) harus terdiri dari tepat ' . $digits['ktp'] . ' digit angka.',
             'kk_number.digits' => 'Nomor Kartu Keluarga (KK) harus terdiri dari tepat ' . $digits['kk'] . ' digit angka.',
-            'npwp.digits' => 'Nomor NPWP harus terdiri dari tepat ' . $digits['npwp'] . ' digit angka.',
             'bpjs_kesehatan.digits' => 'Nomor BPJS Kesehatan harus terdiri dari tepat ' . $digits['bpjs_kes'] . ' digit angka.',
             'bpjs_ketenagakerjaan.digits' => 'Nomor BPJS Ketenagakerjaan harus terdiri dari tepat ' . $digits['bpjs_tk'] . ' digit angka.',
         ];

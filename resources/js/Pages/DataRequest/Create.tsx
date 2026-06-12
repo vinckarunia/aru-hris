@@ -202,7 +202,7 @@ export default function Create({ worker, auth }: PageProps<Props>) {
                                 </div>
                                 <div>
                                     <InputLabel htmlFor="req_npwp" value="Nomor NPWP" />
-                                    <TextInput id="req_npwp" type="text" maxLength={16} className="mt-1 block w-full font-mono" value={requestData.requested_data.npwp} onChange={e => setRequestField('npwp', e.target.value.replace(/\D/g, ''))} placeholder="15/16 digit" />
+                                    <TextInput id="req_npwp" type="text" maxLength={50} className="mt-1 block w-full font-mono" value={requestData.requested_data.npwp} onChange={e => setRequestField('npwp', e.target.value)} placeholder="Nomor NPWP" />
                                 </div>
 
                                 <div>

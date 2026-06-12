@@ -702,12 +702,6 @@ class ImportService
         }
 
         $npwpRaw = $c::extractField($row, $mapping, 'npwp');
-        if ($npwpRaw) {
-            $npwpClean = $c::cleanIdentityNumber($npwpRaw);
-            if ($npwpClean && !preg_match('/^\d{15,16}$/', $npwpClean)) {
-                $errors[] = "Nomor NPWP harus 15-16 digit angka (ditemukan: {$npwpClean}).";
-            }
-        }
 
         $bpjsKesRaw = $c::extractField($row, $mapping, 'bpjs_kesehatan');
         if ($bpjsKesRaw) {

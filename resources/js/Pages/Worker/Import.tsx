@@ -234,7 +234,7 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
     const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
     const [validationSummary, setValidationSummary] = useState<ValidationSummary | null>(null);
     const [showOnlyErrors, setShowOnlyErrors] = useState<boolean>(false);
-    const [rowActions, setRowActions] = useState<Record<string, 'update' | 'skip'>>({});
+    const [rowActions, setRowActions] = useState<Record<string, 'update' | 'update_with_assignment' | 'skip'>>({});
     const [expandedConflicts, setExpandedConflicts] = useState<Set<number>>(new Set());
 
     // ---- Processing State ----
@@ -915,17 +915,27 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                     <>
                                         <button
                                             onClick={() => {
-                                                const actions: Record<string, 'update' | 'skip'> = {};
+                                                const actions: Record<string, 'update' | 'update_with_assignment' | 'skip'> = {};
                                                 validationResults.forEach(r => { if (r.conflict) actions[String(r.row_number)] = 'update'; });
                                                 setRowActions(actions);
                                             }}
                                             className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
                                         >
-                                            <iconify-icon icon="solar:refresh-bold" width="16"></iconify-icon> Update Semua Konflik
+                                            <iconify-icon icon="solar:refresh-bold" width="16"></iconify-icon> Update Data Saja (Semua)
                                         </button>
                                         <button
                                             onClick={() => {
-                                                const actions: Record<string, 'update' | 'skip'> = {};
+                                                const actions: Record<string, 'update' | 'update_with_assignment' | 'skip'> = {};
+                                                validationResults.forEach(r => { if (r.conflict) actions[String(r.row_number)] = 'update_with_assignment'; });
+                                                setRowActions(actions);
+                                            }}
+                                            className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400 rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
+                                        >
+                                            <iconify-icon icon="solar:add-circle-bold" width="16"></iconify-icon> Update + Cek Assignment (Semua)
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const actions: Record<string, 'update' | 'update_with_assignment' | 'skip'> = {};
                                                 validationResults.forEach(r => { if (r.conflict) actions[String(r.row_number)] = 'skip'; });
                                                 setRowActions(actions);
                                             }}
@@ -937,11 +947,11 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                 )}
                                 <button
                                     onClick={handleProcess}
-                                    disabled={isProcessing || (validationSummary.valid === 0 && Object.values(rowActions).filter(a => a === 'update').length === 0)}
+                                    disabled={isProcessing || (validationSummary.valid === 0 && Object.values(rowActions).filter(a => a === 'update' || a === 'update_with_assignment').length === 0)}
                                     className="px-5 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2 disabled:opacity-50"
                                 >
                                     <iconify-icon icon="solar:database-bold" width="18"></iconify-icon>
-                                    Mulai Import ({validationSummary.valid + Object.values(rowActions).filter(a => a === 'update').length} baris)
+                                    Mulai Import ({validationSummary.valid + Object.values(rowActions).filter(a => a === 'update' || a === 'update_with_assignment').length} baris)
                                 </button>
                             </div>
                         </div>
@@ -1011,16 +1021,17 @@ export default function Import({ clients, projects, dbColumns, autoMapHints }: P
                                                                         value={action || 'skip'}
                                                                         onChange={(e) => {
                                                                             e.stopPropagation();
-                                                                            setRowActions(prev => ({ ...prev, [String(r.row_number)]: e.target.value as 'update' | 'skip' }));
+                                                                            setRowActions(prev => ({ ...prev, [String(r.row_number)]: e.target.value as 'update' | 'update_with_assignment' | 'skip' }));
                                                                         }}
                                                                         onClick={(e) => e.stopPropagation()}
-                                                                        className={`text-[11px] rounded-lg px-2 py-1 pr-6 border font-semibold ${action === 'update'
+                                                                        className={`text-[11px] rounded-lg px-2 py-1 pr-6 border font-semibold ${action === 'update' || action === 'update_with_assignment'
                                                                             ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
                                                                             : 'border-slate-200 bg-slate-50 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
                                                                             }`}
                                                                     >
                                                                         <option value="skip">Lewati</option>
-                                                                        <option value="update">Update</option>
+                                                                        <option value="update">Update Data Saja</option>
+                                                                        <option value="update_with_assignment">Update + Cek Assignment</option>
                                                                     </select>
                                                                     <iconify-icon icon={isExpanded ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} width="14" className="text-slate-400"></iconify-icon>
                                                                 </div>
