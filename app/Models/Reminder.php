@@ -66,10 +66,14 @@ class Reminder extends Model
         }
 
         try {
+            $hashedId = method_exists($this->related_type, 'encodeHashid')
+                ? $this->related_type::encodeHashid($this->related_id)
+                : $this->related_id;
+
             return match ($this->related_type) {
-                \App\Models\Contract::class => route('contracts.show', $this->related_id),
-                \App\Models\Client::class   => route('clients.show', $this->related_id),
-                \App\Models\Worker::class   => route('workers.show', $this->related_id),
+                \App\Models\Contract::class => route('contracts.show', $hashedId),
+                \App\Models\Client::class   => route('clients.show', $hashedId),
+                \App\Models\Worker::class   => route('workers.show', $hashedId),
                 default                     => null,
             };
         } catch (\Throwable $e) {
