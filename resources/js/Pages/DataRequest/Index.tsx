@@ -763,6 +763,56 @@ export default function DataRequestIndex({ dataRequests, filters, filterOptions 
                                                 </>
                                             );
                                         })()}
+
+                                        {/* Render additional profile fields not in standard fieldLabels */}
+                                        {Object.keys(reviewingRequest.requested_data || {}).some(k => 
+                                            !Object.keys(fieldLabels).includes(k) && 
+                                            !hiddenKeys.has(k) && 
+                                            k !== 'name' && 
+                                            k !== 'ktp_number' && 
+                                            k !== 'birth_date' && 
+                                            k !== 'gender' && 
+                                            k !== 'phone' && 
+                                            k !== 'email' && 
+                                            k !== 'education' && 
+                                            k !== 'address_ktp' && 
+                                            k !== 'address_domicile' && 
+                                            k !== 'mother_name' &&
+                                            k !== 'documents'
+                                        ) && (
+                                            <div className="mt-4 bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
+                                                <div className="font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                                    <iconify-icon icon="solar:user-plus-bold" class="text-primary"></iconify-icon>
+                                                    Data Profil Tambahan
+                                                </div>
+                                                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-100 dark:border-slate-700 text-sm">
+                                                    {Object.entries(reviewingRequest.requested_data)
+                                                        .filter(([k]) => 
+                                                            !Object.keys(fieldLabels).includes(k) && 
+                                                            !hiddenKeys.has(k) && 
+                                                            k !== 'name' && 
+                                                            k !== 'ktp_number' && 
+                                                            k !== 'birth_date' && 
+                                                            k !== 'gender' && 
+                                                            k !== 'phone' && 
+                                                            k !== 'email' && 
+                                                            k !== 'education' && 
+                                                            k !== 'address_ktp' && 
+                                                            k !== 'address_domicile' && 
+                                                            k !== 'mother_name' &&
+                                                            k !== 'documents'
+                                                        )
+                                                        .map(([k, v]) => (
+                                                            <div key={k} className="grid grid-cols-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 items-start">
+                                                                <span className="text-slate-500 capitalize">{k.replace(/_/g, ' ')}</span>
+                                                                <span className="col-span-2 font-medium text-slate-800 dark:text-slate-200 break-words">
+                                                                    {renderFieldValue(k, v)}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                                 {reviewingRequest.requested_data?._action === 'bulk_import_update_worker' && (
