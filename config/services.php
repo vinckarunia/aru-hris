@@ -44,4 +44,8 @@ return [
         'refresh_token'          => env('GOOGLE_REFRESH_TOKEN'),
     ],
 
+    'hris' => [
+        'key' => env('HRIS_API_KEY'),
+    ],
+
 ];

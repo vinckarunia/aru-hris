@@ -509,6 +509,18 @@ class DataRequestController extends Controller
                             \App\Models\FamilyMember::create($fm);
                         }
                     }
+
+                    if (!empty($dataRequest->requested_data['documents']) && is_array($dataRequest->requested_data['documents'])) {
+                        foreach ($dataRequest->requested_data['documents'] as $doc) {
+                            if (empty($doc['type']) || empty($doc['file_path'])) continue;
+                            \App\Models\Document::create([
+                                'worker_id' => $worker->id,
+                                'type' => $doc['type'],
+                                'file_path' => $doc['file_path'],
+                                'verified_at' => now(),
+                            ]);
+                        }
+                    }
                 }
             }
         } else {
