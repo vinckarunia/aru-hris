@@ -203,6 +203,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
                                     }}
                                     required
                                 >
+                                    <option value="" disabled className="p-2 text-slate-400">-- Pilih Project --</option>
                                     {filteredProjects.map(p => (
                                         <option key={p.id} value={p.id.toString()} className="p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">{p.name} {p.prefix ? `(${p.prefix})` : ''}</option>
                                     ))}
@@ -334,7 +335,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
                         <div>
                             <InputLabel htmlFor="gender" value="Jenis Kelamin" />
                             <select id="gender" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.gender || ''} onChange={e => setData('gender', e.target.value as 'male' | 'female')}>
-                                <option value="">-- Pilih --</option>
+                                <option value="" disabled>-- Pilih --</option>
                                 <option value="male">Laki-laki</option>
                                 <option value="female">Perempuan</option>
                             </select>
@@ -344,7 +345,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
                         <div>
                             <InputLabel htmlFor="religion" value="Agama" />
                             <select id="religion" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.religion} onChange={e => setData('religion', e.target.value)}>
-                                <option value="">-- Pilih --</option>
+                                <option value="" disabled>-- Pilih --</option>
                                 {enabledOptions('religion').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <InputError message={errors.religion} className="mt-1" />
@@ -352,7 +353,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
                         <div>
                             <InputLabel htmlFor="education" value="Pendidikan Terakhir" />
                             <select id="education" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.education} onChange={e => setData('education', e.target.value)}>
-                                <option value="">-- Pilih Jenjang --</option>
+                                <option value="" disabled>-- Pilih Jenjang --</option>
                                 {enabledOptions('education').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <InputError message={errors.education} className="mt-1" />
@@ -394,7 +395,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
                         <div>
                             <InputLabel htmlFor="tax_status" value="Status PTKP (Pajak)" />
                             <select id="tax_status" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.tax_status} onChange={e => setData('tax_status', e.target.value)}>
-                                <option value="">-- Pilih --</option>
+                                <option value="" disabled>-- Pilih --</option>
                                 {enabledOptions('tax_status').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                             <InputError message={errors.tax_status} className="mt-1" />
@@ -432,7 +433,7 @@ export default function Create({ picProjects = [], validationDigits, validationE
                                         else setData('bank_name', '');
                                     }}
                                 >
-                                    <option value="">-- Pilih Bank --</option>
+                                    <option value="" disabled>-- Pilih Bank --</option>
                                     {BANK_OPTIONS.map((group, idx) => (
                                         <optgroup key={idx} label={group.group}>
                                             {group.banks.map(bank => <option key={bank} value={bank}>{bank}</option>)}

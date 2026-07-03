@@ -147,14 +147,14 @@ export default function Create({ worker, auth }: PageProps<Props>) {
                             <div>
                                 <InputLabel htmlFor="req_religion" value="Agama" />
                                 <select id="req_religion" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={requestData.requested_data.religion} onChange={e => setRequestField('religion', e.target.value)}>
-                                    <option value="">-- Pilih --</option>
+                                    <option value="" disabled>-- Pilih --</option>
                                     <option value="Islam">Islam</option><option value="Kristen">Kristen</option><option value="Katolik">Katolik</option><option value="Hindu">Hindu</option><option value="Buddha">Buddha</option><option value="Konghucu">Konghucu</option><option value="Lainnya">Lainnya</option>
                                 </select>
                             </div>
                             <div>
                                 <InputLabel htmlFor="req_education" value="Pendidikan Terakhir" />
                                 <select id="req_education" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={requestData.requested_data.education} onChange={e => setRequestField('education', e.target.value)}>
-                                    <option value="">-- Pilih Jenjang --</option>
+                                    <option value="" disabled>-- Pilih Jenjang --</option>
                                     <option value="SD">SD / Sederajat</option>
                                     <option value="SMP">SMP / Sederajat</option>
                                     <option value="SMA/SMK">SMA / SMK / Sederajat</option>
@@ -195,7 +195,7 @@ export default function Create({ worker, auth }: PageProps<Props>) {
                                 <div>
                                     <InputLabel htmlFor="req_tax_status" value="Status PTKP (Pajak)" />
                                     <select id="req_tax_status" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={requestData.requested_data.tax_status} onChange={e => setRequestField('tax_status', e.target.value)}>
-                                        <option value="">-- Pilih --</option>
+                                        <option value="" disabled>-- Pilih --</option>
                                         <option value="TK/0">TK/0</option><option value="TK/1">TK/1</option><option value="TK/2">TK/2</option><option value="TK/3">TK/3</option>
                                         <option value="K/0">K/0</option><option value="K/1">K/1</option><option value="K/2">K/2</option><option value="K/3">K/3</option>
                                     </select>
@@ -228,7 +228,7 @@ export default function Create({ worker, auth }: PageProps<Props>) {
                                                 else setRequestField('bank_name', '');
                                             }}
                                         >
-                                            <option value="">-- Pilih Bank --</option>
+                                            <option value="" disabled>-- Pilih Bank --</option>
                                             {BANK_OPTIONS.map((group, idx) => (
                                                 <optgroup key={idx} label={group.group}>
                                                     {group.banks.map(b => <option key={b} value={b}>{b}</option>)}

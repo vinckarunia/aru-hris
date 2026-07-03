@@ -86,7 +86,7 @@ export default function Edit({ assignment, projects }: Props) {
                         <div>
                             <InputLabel htmlFor="project_id">Pilih Project <span className="text-red-500 font-bold ml-1">*</span></InputLabel>
                             <select id="project_id" className="mt-1 block w-full border-slate-300 dark:bg-slate-900 dark:border-slate-700 rounded-md" value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_ids', []); }} required>
-                                <option value="">-- Pilih Project --</option>
+                                <option value="" disabled>-- Pilih Project --</option>
                                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                             <InputError message={errors.project_id} className="mt-1" />

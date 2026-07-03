@@ -192,6 +192,7 @@ export default function Create({ worker, projects }: Props) {
                                 onChange={e => setProjectSearch(e.target.value)}
                             />
                             <select id="project_id" className="block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" size={4} value={data.project_id} onChange={e => { setData('project_id', e.target.value); setData('branch_ids', []); }} required>
+                                <option value="" disabled className="p-2 text-slate-400">-- Pilih Project --</option>
                                 {filteredProjects.map(p => <option key={p.id} value={p.id} className="p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">{p.name} ({p.prefix})</option>)}
                                 {filteredProjects.length === 0 && <option disabled className="p-2">Project tidak ditemukan</option>}
                             </select>

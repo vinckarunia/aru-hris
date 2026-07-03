@@ -132,7 +132,7 @@ export default function Create() {
                         <div>
                             <InputLabel htmlFor="gender" value="Jenis Kelamin" />
                             <select id="gender" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.gender || ''} onChange={e => setData('gender', e.target.value as 'male' | 'female')}>
-                                <option value="">-- Pilih --</option>
+                                <option value="" disabled>-- Pilih --</option>
                                 <option value="male">Laki-laki</option>
                                 <option value="female">Perempuan</option>
                             </select>
@@ -142,7 +142,7 @@ export default function Create() {
                         <div>
                             <InputLabel htmlFor="religion" value="Agama" />
                             <select id="religion" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.religion} onChange={e => setData('religion', e.target.value)}>
-                                <option value="">-- Pilih --</option>
+                                <option value="" disabled>-- Pilih --</option>
                                 <option value="Islam">Islam</option><option value="Kristen">Kristen</option><option value="Katolik">Katolik</option><option value="Hindu">Hindu</option><option value="Buddha">Buddha</option><option value="Konghucu">Konghucu</option><option value="Lainnya">Lainnya</option>
                             </select>
                             <InputError message={errors.religion} className="mt-1" />
@@ -150,7 +150,7 @@ export default function Create() {
                         <div>
                             <InputLabel htmlFor="education" value="Pendidikan Terakhir" />
                             <select id="education" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.education} onChange={e => setData('education', e.target.value)}>
-                                <option value="">-- Pilih Jenjang --</option>
+                                <option value="" disabled>-- Pilih Jenjang --</option>
                                 <option value="SD">SD / Sederajat</option>
                                 <option value="SMP">SMP / Sederajat</option>
                                 <option value="SMA/SMK">SMA / SMK / Sederajat</option>
@@ -196,7 +196,7 @@ export default function Create() {
                         <div>
                             <InputLabel htmlFor="tax_status" value="Status PTKP (Pajak)" />
                             <select id="tax_status" className="mt-1 block w-full border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 focus:border-primary focus:ring-primary rounded-md shadow-sm" value={data.tax_status} onChange={e => setData('tax_status', e.target.value)}>
-                                <option value="">-- Pilih --</option>
+                                <option value="" disabled>-- Pilih --</option>
                                 <option value="TK/0">TK/0</option><option value="TK/1">TK/1</option><option value="TK/2">TK/2</option><option value="TK/3">TK/3</option>
                                 <option value="K/0">K/0</option><option value="K/1">K/1</option><option value="K/2">K/2</option><option value="K/3">K/3</option>
                             </select>
@@ -235,7 +235,7 @@ export default function Create() {
                                         else setData('bank_name', '');
                                     }}
                                 >
-                                    <option value="">-- Pilih Bank --</option>
+                                    <option value="" disabled>-- Pilih Bank --</option>
                                     {BANK_OPTIONS.map((group, idx) => (
                                         <optgroup key={idx} label={group.group}>
                                             {group.banks.map(bank => <option key={bank} value={bank}>{bank}</option>)}
