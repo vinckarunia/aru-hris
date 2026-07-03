@@ -131,6 +131,55 @@ export default function Show({ client, workers, pics }: Props) {
     const [branchSortConfigs, setBranchSortConfigs] = useState<SortConfig[]>([]);
     const [projSortConfigs, setProjSortConfigs] = useState<SortConfig[]>([]);
     const [workerSortConfigs, setWorkerSortConfigs] = useState<SortConfig[]>([]);
+    const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]);
+
+    const [isEligibilityModalOpen, setIsEligibilityModalOpen] = useState(false);
+    const [eligibilityData, setEligibilityData] = useState<{
+        eligible: Array<{ hashid: string, name: string }>;
+        ineligible: Array<{ hashid: string, name: string, reason: string }>;
+    } | null>(null);
+    const [checkingEligibility, setCheckingEligibility] = useState(false);
+
+    const handleDownloadPaklaring = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (checkingEligibility) return;
+        setCheckingEligibility(true);
+
+        try {
+            const response = await fetch(route('assignments.check-paklaring-eligibility') + '?ids=' + selectedWorkers.join(','));
+            const data = await response.json();
+            
+            if (data.ineligible && data.ineligible.length > 0) {
+                setEligibilityData(data);
+                setIsEligibilityModalOpen(true);
+            } else if (data.eligible && data.eligible.length > 0) {
+                window.location.href = route('assignments.bulk-download-paklaring') + '?ids=' + selectedWorkers.join(',');
+            } else {
+                alert('Tidak ada karyawan terpilih yang valid.');
+            }
+        } catch (error) {
+            console.error('Error checking eligibility:', error);
+            alert('Terjadi kesalahan saat memeriksa kelayakan karyawan.');
+        } finally {
+            setCheckingEligibility(false);
+        }
+    };
+
+    const handleSelectRow = (workerId: string) => {
+        setSelectedWorkers(prev =>
+            prev.includes(workerId) ? prev.filter(id => id !== workerId) : [...prev, workerId]
+        );
+    };
+
+    const handleSelectAll = () => {
+        const allPageWorkerIds = paginatedWorkers.map(w => w.id);
+        const allSelected = allPageWorkerIds.length > 0 && allPageWorkerIds.every(id => selectedWorkers.includes(id));
+        if (allSelected) {
+            setSelectedWorkers(prev => prev.filter(id => !allPageWorkerIds.includes(id)));
+        } else {
+            setSelectedWorkers(prev => [...new Set([...prev, ...allPageWorkerIds])]);
+        }
+    };
 
     const handleSort = (
         key: string,
@@ -577,6 +626,14 @@ export default function Show({ client, workers, pics }: Props) {
                             <table className="w-full text-left whitespace-nowrap">
                                 <thead className="bg-slate-50 dark:bg-slate-700/50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-700">
                                     <tr>
+                                        <th className="px-4 py-4 w-10 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={paginatedWorkers.length > 0 && paginatedWorkers.every(worker => selectedWorkers.includes(worker.id))}
+                                                onChange={handleSelectAll}
+                                                className="rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800"
+                                            />
+                                        </th>
                                         <th className="px-6 py-4">No</th>
                                         <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors select-none group" onClick={(e) => handleSort('name', e, workerSortConfigs, setWorkerSortConfigs)}>
                                             <div className="flex items-center gap-1">
@@ -614,7 +671,7 @@ export default function Show({ client, workers, pics }: Props) {
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                     {workers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="px-6 py-10">
+                                            <td colSpan={8} className="px-6 py-10">
                                                 <EmptyState icon="solar:user-id-bold" message="Belum ada karyawan terdaftar di client ini." />
                                             </td>
                                         </tr>
@@ -623,7 +680,15 @@ export default function Show({ client, workers, pics }: Props) {
                                             // Use the most recent assignment for display
                                             const latestAssignment = worker.assignments[worker.assignments.length - 1] ?? null;
                                             return (
-                                                <tr key={worker.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                                <tr key={worker.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${selectedWorkers.includes(worker.id) ? 'bg-primary/5 dark:bg-primary/10' : ''}`}>
+                                                    <td className="px-4 py-4 w-10 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedWorkers.includes(worker.id)}
+                                                            onChange={() => handleSelectRow(worker.id)}
+                                                            className="rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800"
+                                                        />
+                                                    </td>
                                                     <td className="px-6 py-4 text-slate-400">{workerOffset + idx + 1}</td>
                                                     <td className="px-6 py-4">
                                                         <Link href={route('workers.show', worker.id)} className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
@@ -806,6 +871,103 @@ export default function Show({ client, workers, pics }: Props) {
                         <SecondaryButton onClick={() => setIsProjDeleteModalOpen(false)} type="button">Batal</SecondaryButton>
                         <DangerButton onClick={() => { if (selectedProj) projForm.delete(route('projects.destroy', selectedProj.id), { onSuccess: () => setIsProjDeleteModalOpen(false) }) }} disabled={projForm.processing}>Ya, Hapus</DangerButton>
                     </div>
+                </div>
+            </Modal>
+
+            {selectedWorkers.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-slate-800 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+                    <span className="text-sm font-medium">
+                        <span className="bg-primary text-white px-2 py-0.5 rounded-full text-xs font-bold mr-1.5">{selectedWorkers.length}</span>
+                        karyawan dipilih
+                    </span>
+                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+                    <a
+                        href={route('contracts.bulk-download-pkwt') + '?ids=' + selectedWorkers.join(',')}
+                        className="px-4 py-1.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                        <iconify-icon icon="solar:file-download-bold" width="16"></iconify-icon> Unduh Kontrak
+                    </a>
+                    <a
+                        href={route('assignments.bulk-download-paklaring') + '?ids=' + selectedWorkers.join(',')}
+                        onClick={handleDownloadPaklaring}
+                        className={`px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors ${checkingEligibility ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <iconify-icon icon="solar:document-bold" width="16"></iconify-icon> {checkingEligibility ? 'Memeriksa...' : 'Unduh Paklaring'}
+                    </a>
+                    <button
+                        onClick={() => setSelectedWorkers([])}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm transition-colors"
+                    >
+                        Batal
+                    </button>
+                </div>
+            )}
+
+            <Modal show={isEligibilityModalOpen} onClose={() => setIsEligibilityModalOpen(false)} maxWidth="md">
+                <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center">
+                            <iconify-icon icon="solar:info-circle-bold" width="24"></iconify-icon>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                            Validasi Kelayakan Paklaring
+                        </h3>
+                    </div>
+
+                    {eligibilityData?.ineligible && eligibilityData.ineligible.length > 0 && (
+                        <div className="mb-6">
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                <span className="font-semibold text-red-600 dark:text-red-400">{eligibilityData.ineligible.length}</span> karyawan terpilih tidak memenuhi syarat untuk mendapatkan paklaring:
+                            </p>
+                            <div className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl p-3 max-h-48 overflow-y-auto space-y-2">
+                                {eligibilityData.ineligible.map((item, idx) => (
+                                    <div key={idx} className="text-xs text-red-800 dark:text-red-300 flex justify-between gap-4">
+                                        <span className="font-semibold">{item.name}</span>
+                                        <span className="text-right italic">{item.reason}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {eligibilityData?.eligible && eligibilityData.eligible.length > 0 ? (
+                        <>
+                            <div className="mb-6">
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">{eligibilityData.eligible.length}</span> karyawan memenuhi syarat dan siap diunduh:
+                                </p>
+                                <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-3 max-h-32 overflow-y-auto space-y-1">
+                                    {eligibilityData.eligible.map((item, idx) => (
+                                        <div key={idx} className="text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                                            ✓ {item.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-6">
+                                Apakah Anda ingin melanjutkan mengunduh paklaring untuk karyawan yang memenuhi syarat?
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <SecondaryButton onClick={() => setIsEligibilityModalOpen(false)}>Batal</SecondaryButton>
+                                <a
+                                    href={route('assignments.bulk-download-paklaring') + '?ids=' + eligibilityData.eligible.map(e => e.hashid).join(',')}
+                                    onClick={() => setIsEligibilityModalOpen(false)}
+                                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                                >
+                                    Unduh ({eligibilityData.eligible.length} Paklaring)
+                                </a>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-sm text-slate-500 mb-6">
+                                Tidak ada karyawan terpilih yang memenuhi syarat untuk diunduh. Pastikan perangkat kerja telah dikembalikan dan status penempatan sesuai.
+                            </p>
+                            <div className="flex justify-end">
+                                <PrimaryButton onClick={() => setIsEligibilityModalOpen(false)}>Tutup</PrimaryButton>
+                            </div>
+                        </>
+                    )}
                 </div>
             </Modal>
         </AdminLayout>

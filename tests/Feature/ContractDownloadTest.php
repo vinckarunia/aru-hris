@@ -128,3 +128,177 @@ test('it downloads pdf file when conversion is enabled and succeeds', function (
     $response->assertStatus(200);
     $this->assertTrue(str_contains($response->headers->get('content-disposition'), 'PKWT - John Doe.pdf'));
 });
+
+test('it downloads zip containing multiple files when bulk downloading', function () {
+    config(['services.google.pdf_conversion_enabled' => false]);
+
+    // Create a second worker, assignment, and contract
+    $worker2 = Worker::create([
+        'name' => 'Jane Smith',
+        'nik_aru' => 'ARU-56789',
+        'ktp_number' => '1234567890123457',
+        'gender' => 'female',
+    ]);
+    $assignment2 = Assignment::create([
+        'worker_id' => $worker2->id,
+        'project_id' => $this->project->id,
+        'hire_date' => now(),
+        'position' => 'Manager',
+        'branch_id' => $this->assignment->branch_id,
+    ]);
+    $contract2 = Contract::create([
+        'assignment_id' => $assignment2->id,
+        'start_date' => now(),
+        'end_date' => now()->addYear(),
+        'contract_type' => 'pkwt',
+    ]);
+
+    $ids = implode(',', [
+        $this->worker->getRouteKey(),
+        $worker2->getRouteKey(),
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('contracts.bulk-download-pkwt') . '?ids=' . $ids);
+
+    $response->assertStatus(200);
+    $this->assertTrue(str_contains($response->headers->get('content-type'), 'application/zip'));
+    $this->assertTrue(str_contains($response->headers->get('content-disposition'), 'kontrak_massal_'));
+});
+
+test('it downloads zip containing multiple paklaring files when bulk downloading paklaring', function () {
+    config(['services.google.pdf_conversion_enabled' => false]);
+
+    // Create paklaring templates
+    $paklaringTemplatePath = 'documents/templates/test_paklaring_a.docx';
+    Storage::disk('local')->put($paklaringTemplatePath, 'fake-docx-content');
+    DocumentTemplate::create([
+        'name' => 'Template Paklaring A',
+        'type' => 'paklaring_a',
+        'file_path' => $paklaringTemplatePath,
+        'is_default' => true,
+    ]);
+    
+    $paklaringBTemplatePath = 'documents/templates/test_paklaring_b.docx';
+    Storage::disk('local')->put($paklaringBTemplatePath, 'fake-docx-content');
+    DocumentTemplate::create([
+        'name' => 'Template Paklaring B',
+        'type' => 'paklaring_b',
+        'file_path' => $paklaringBTemplatePath,
+        'is_default' => true,
+    ]);
+
+    // Setup Worker 1 (eligible - resign)
+    $this->assignment->update([
+        'equipment_returned' => true,
+        'status' => 'resign',
+    ]);
+
+    // Setup Worker 2 (eligible - contract expired)
+    $worker2 = Worker::create([
+        'name' => 'Jane Smith',
+        'nik_aru' => 'ARU-56789',
+        'ktp_number' => '1234567890123457',
+        'gender' => 'female',
+    ]);
+    $assignment2 = Assignment::create([
+        'worker_id' => $worker2->id,
+        'project_id' => $this->project->id,
+        'hire_date' => now(),
+        'position' => 'Manager',
+        'branch_id' => $this->assignment->branch_id,
+        'equipment_returned' => true,
+        'status' => 'contract expired',
+    ]);
+
+    // Setup Worker 3 (NOT eligible - equipment not returned)
+    $worker3 = Worker::create([
+        'name' => 'Bob Johnson',
+        'nik_aru' => 'ARU-98765',
+        'ktp_number' => '1234567890123458',
+        'gender' => 'male',
+    ]);
+    $assignment3 = Assignment::create([
+        'worker_id' => $worker3->id,
+        'project_id' => $this->project->id,
+        'hire_date' => now(),
+        'position' => 'Developer',
+        'branch_id' => $this->assignment->branch_id,
+        'equipment_returned' => false,
+        'status' => 'resign',
+    ]);
+
+    $ids = implode(',', [
+        $this->worker->getRouteKey(),
+        $worker2->getRouteKey(),
+        $worker3->getRouteKey(),
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('assignments.bulk-download-paklaring') . '?ids=' . $ids);
+
+    $response->assertStatus(200);
+    $this->assertTrue(str_contains($response->headers->get('content-type'), 'application/zip'));
+    $this->assertTrue(str_contains($response->headers->get('content-disposition'), 'paklaring_massal_'));
+});
+
+test('it checks paklaring eligibility for multiple workers', function () {
+    // Setup Worker 1 (eligible - resign)
+    $this->assignment->update([
+        'equipment_returned' => true,
+        'status' => 'resign',
+    ]);
+
+    // Setup Worker 2 (eligible - contract expired)
+    $worker2 = Worker::create([
+        'name' => 'Jane Smith',
+        'nik_aru' => 'ARU-56789',
+        'ktp_number' => '1234567890123457',
+        'gender' => 'female',
+    ]);
+    $assignment2 = Assignment::create([
+        'worker_id' => $worker2->id,
+        'project_id' => $this->project->id,
+        'hire_date' => now(),
+        'position' => 'Manager',
+        'branch_id' => $this->assignment->branch_id,
+        'equipment_returned' => true,
+        'status' => 'contract expired',
+    ]);
+
+    // Setup Worker 3 (NOT eligible - equipment not returned)
+    $worker3 = Worker::create([
+        'name' => 'Bob Johnson',
+        'nik_aru' => 'ARU-98765',
+        'ktp_number' => '1234567890123458',
+        'gender' => 'male',
+    ]);
+    $assignment3 = Assignment::create([
+        'worker_id' => $worker3->id,
+        'project_id' => $this->project->id,
+        'hire_date' => now(),
+        'position' => 'Developer',
+        'branch_id' => $this->assignment->branch_id,
+        'equipment_returned' => false,
+        'status' => 'resign',
+    ]);
+
+    $ids = implode(',', [
+        $this->worker->getRouteKey(),
+        $worker2->getRouteKey(),
+        $worker3->getRouteKey(),
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('assignments.check-paklaring-eligibility') . '?ids=' . $ids);
+
+    $response->assertStatus(200);
+    $response->assertJsonCount(2, 'eligible');
+    $response->assertJsonCount(1, 'ineligible');
+    
+    $data = $response->json();
+    $this->assertEquals('John Doe', $data['eligible'][0]['name']);
+    $this->assertEquals('Jane Smith', $data['eligible'][1]['name']);
+    $this->assertEquals('Bob Johnson', $data['ineligible'][0]['name']);
+    $this->assertEquals('Perangkat kerja belum dikembalikan.', $data['ineligible'][0]['reason']);
+});

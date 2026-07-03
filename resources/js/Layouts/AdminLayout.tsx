@@ -348,17 +348,18 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                     <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden transform origin-top-right transition-all">
                                         <div className="p-4 bg-primary/5 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
                                             <h4 className="font-bold text-primary flex items-center gap-2">
-                                                Update Fitur Baru (v1.1.0)
+                                                Update Fitur Baru (v1.2.0)
                                             </h4>
                                             <button onClick={handleCloseChangelog} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                                 <iconify-icon icon="solar:close-circle-bold" width="20"></iconify-icon>
                                             </button>
                                         </div>
                                         <div className="p-4 text-sm text-slate-600 dark:text-slate-300 space-y-3 max-h-96 overflow-y-auto">
-                                            <p className="font-medium text-slate-800 dark:text-slate-200">Pembaruan Sistem Import & Paklaring</p>
+                                            <p className="font-medium text-slate-800 dark:text-slate-200">Pembaruan Otomatisasi & Unduh Massal Dokumen</p>
                                             <ul className="list-disc pl-4 space-y-1.5">
-                                                <li><strong>Pemisahan Mode Update Import:</strong> Opsi resolusi konflik import kini dibagi menjadi <em>Update Data Saja</em> (hanya memperbarui profil) dan <em>Update Data + Penempatan dan Kontrak</em> (sinkronisasi cerdas penempatan dan kontrak).</li>
-                                                <li><strong>Paklaring Status Project Closed:</strong> Status penempatan "Project Closed" kini memenuhi syarat untuk menerbitkan <strong>Paklaring Grade A</strong>, asalkan perangkat kerja telah dikembalikan.</li>
+                                                <li><strong>Otomatisasi PDF (docx-to-pdf):</strong> Integrasi dengan Google Docs untuk konversi otomatis dokumen DOCX ke PDF.</li>
+                                                <li><strong>Library Template Dokumen:</strong> Manajemen template dinamis untuk PKWT, PKPH, Surat Tugas, dan Paklaring.</li>
+                                                <li><strong>Unduh Kontrak Massal:</strong> Fitur bulk download dokumen kontrak kerja dalam format ZIP langsung dari tabel karyawan.</li>
                                             </ul>
                                         </div>
                                     </div>

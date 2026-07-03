@@ -79,8 +79,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/documents/{document}/verify', [DocumentController::class, 'verify'])->name('documents.verify');
 
     // Assignment and Contract Routes
+    Route::get('/assignments/check-paklaring-eligibility', [\App\Http\Controllers\ContractDocumentController::class, 'checkPaklaringEligibility'])->middleware(['role:SUPER_ADMIN,ADMIN_ARU,PIC'])->name('assignments.check-paklaring-eligibility');
+    Route::get('/assignments/bulk-download-paklaring', [\App\Http\Controllers\ContractDocumentController::class, 'bulkDownloadPaklaring'])->middleware(['role:SUPER_ADMIN,ADMIN_ARU,PIC'])->name('assignments.bulk-download-paklaring');
     Route::resource('assignments', App\Http\Controllers\AssignmentController::class)->except(['index']);
     Route::post('/assignments/{assignment}/toggle-equipment', [App\Http\Controllers\AssignmentController::class, 'toggleEquipmentReturned'])->name('assignments.toggle-equipment');
+    Route::get('/contracts/bulk-download-pkwt', [\App\Http\Controllers\ContractDocumentController::class, 'bulkDownloadPkwt'])->middleware(['role:SUPER_ADMIN,ADMIN_ARU,PIC'])->name('contracts.bulk-download-pkwt');
     Route::resource('contracts', App\Http\Controllers\ContractController::class)->except(['index']);
     Route::post('/contracts/{contract}/toggle-hardcopy', [App\Http\Controllers\ContractController::class, 'toggleHardcopy'])->name('contracts.toggle-hardcopy');
 

@@ -309,4 +309,418 @@ class ContractDocumentController extends Controller
 
         return response()->download($outputPath, $fileName)->deleteFileAfterSend(true);
     }
+
+    /**
+     * Download PKWT documents in bulk as a ZIP.
+     */
+    public function bulkDownloadPkwt(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Mengunduh kontrak hanya diperbolehkan untuk Admin dan PIC.');
+        }
+
+        $idsInput = $request->input('ids');
+        if (is_string($idsInput)) {
+            $hashids = explode(',', $idsInput);
+        } elseif (is_array($idsInput)) {
+            $hashids = $idsInput;
+        } else {
+            $hashids = [];
+        }
+
+        $hashids = array_filter($hashids);
+        if (empty($hashids)) {
+            return back()->with('error', 'Tidak ada karyawan yang dipilih.');
+        }
+
+        $workerIds = [];
+        foreach ($hashids as $hashid) {
+            $decoded = \App\Models\Worker::decodeHashid($hashid);
+            if ($decoded) {
+                $workerIds[] = $decoded;
+            }
+        }
+
+        if (empty($workerIds)) {
+            return back()->with('error', 'Karyawan yang dipilih tidak valid.');
+        }
+
+        $workers = \App\Models\Worker::whereIn('id', $workerIds)->get();
+
+        $zip = new \ZipArchive();
+        $zipFileName = 'bulk_contracts_' . time() . '.zip';
+        $zipFilePath = storage_path('app/' . $zipFileName);
+
+        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Gagal membuat file ZIP.');
+        }
+
+        $filesToCleanup = [];
+        $addedFilesCount = 0;
+
+        foreach ($workers as $worker) {
+            $assignmentQuery = $worker->assignments();
+            if ($user->isPic()) {
+                $assignmentQuery->whereIn('project_id', $projectIds);
+            }
+            $assignment = $assignmentQuery->orderBy('hire_date', 'desc')->first();
+
+            if (!$assignment) {
+                continue;
+            }
+
+            $contract = $assignment->contracts()->orderBy('start_date', 'desc')->first();
+            if (!$contract) {
+                continue;
+            }
+
+            $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateKontrak', 'assignment.project.templateHarian', 'assignment.project.templatePartTime']);
+            
+            $pihakPertama = ($user->internalEmployee ?? null)
+                ?? \App\Models\InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
+                ?? \App\Models\InternalEmployee::where('position', 'Head of Operation')->first()
+                ?? \App\Models\InternalEmployee::first();
+
+            $contractMonth = $contract->start_date ? \Carbon\Carbon::parse($contract->start_date) : now();
+            $pkwtMonthlySeq = \App\Models\Contract::whereYear('start_date', $contractMonth->year)
+                ->whereMonth('start_date', $contractMonth->month)
+                ->where('id', '<=', $contract->id)
+                ->count();
+                
+            $seqFormatted     = str_pad($pkwtMonthlySeq, 3, '0', STR_PAD_LEFT);
+            $pkwtNumFormatted = str_pad($contract->pkwt_number ?? 1, 3, '0', STR_PAD_LEFT);
+            $romanMonths  = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
+            $issueDate    = $contract->start_date ? \Carbon\Carbon::parse($contract->start_date) : now();
+            $romanMonth   = $romanMonths[$issueDate->month] ?? 'I';
+            $year         = $issueDate->year;
+            
+            $project = $assignment->project;
+            $contractType = strtolower($contract->contract_type);
+            
+            $prefix = in_array($contractType, ['harian', 'part-time']) ? 'PKPH' : 'PKWT';
+            $nomorSurat = sprintf('%s/ARU/%s-%s/%s/%s', $seqFormatted, $prefix, $pkwtNumFormatted, $romanMonth, $year);
+
+            $template = null;
+            if ($contractType === 'harian') {
+                $template = $project->templateHarian;
+            } elseif ($contractType === 'part-time') {
+                $template = $project->templatePartTime;
+            } else {
+                $template = $project->templateKontrak;
+            }
+
+            $contractTypeMapped = match ($contractType) {
+                'harian' => 'kontrak_harian',
+                'part-time' => 'kontrak_part_time',
+                default => 'kontrak_pkwt',
+            };
+
+            if (!$template) {
+                $template = \App\Models\DocumentTemplate::where('type', $contractTypeMapped)->where('is_default', true)->first();
+            }
+
+            if (!$template || !$template->file_path || !\Storage::disk('local')->exists($template->file_path)) {
+                continue;
+            }
+
+            $parsedData = $this->parserService->getRealData($contract, $assignment, $pihakPertama, $nomorSurat);
+            
+            $workerName = $worker->name ?? 'Unknown';
+            $outputPath = storage_path('app/temp_' . uniqid() . '.docx');
+            $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+            $filesToCleanup[] = $outputPath;
+
+            $added = false;
+            if (config('services.google.pdf_conversion_enabled')) {
+                $pdfOutputPath = storage_path('app/temp_' . uniqid() . '.pdf');
+                $converted = $this->pdfConverterService->convertDocxToPdf($outputPath, $pdfOutputPath);
+
+                if ($converted && file_exists($pdfOutputPath)) {
+                    $filesToCleanup[] = $pdfOutputPath;
+                    $fileName = "{$prefix} - {$workerName}.pdf";
+                    $zip->addFile($pdfOutputPath, $fileName);
+                    $added = true;
+                }
+            }
+
+            if (!$added) {
+                $fileName = "{$prefix} - {$workerName}.docx";
+                $zip->addFile($outputPath, $fileName);
+            }
+
+            $addedFilesCount++;
+        }
+
+        $zip->close();
+
+        foreach ($filesToCleanup as $tempFile) {
+            if (file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+        }
+
+        if ($addedFilesCount === 0) {
+            if (file_exists($zipFilePath)) {
+                @unlink($zipFilePath);
+            }
+            return back()->with('error', 'Tidak ada kontrak yang berhasil di-generate.');
+        }
+
+        \App\Models\AuditLog::log('download', 'contract', "Mengunduh secara massal {$addedFilesCount} kontrak kerja", [
+            'count' => $addedFilesCount,
+            'worker_ids' => $workerIds,
+        ]);
+
+        return response()->download($zipFilePath, 'kontrak_massal_' . date('Ymd_His') . '.zip')->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Download Paklaring documents in bulk as a ZIP.
+     */
+    public function bulkDownloadPaklaring(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+        } elseif (!$user->isAdminOrAbove()) {
+            abort(403, 'Akses ditolak. Mengunduh paklaring hanya diperbolehkan untuk Admin dan PIC.');
+        }
+
+        $idsInput = $request->input('ids');
+        if (is_string($idsInput)) {
+            $hashids = explode(',', $idsInput);
+        } elseif (is_array($idsInput)) {
+            $hashids = $idsInput;
+        } else {
+            $hashids = [];
+        }
+
+        $hashids = array_filter($hashids);
+        if (empty($hashids)) {
+            return back()->with('error', 'Tidak ada karyawan yang dipilih.');
+        }
+
+        $workerIds = [];
+        foreach ($hashids as $hashid) {
+            $decoded = \App\Models\Worker::decodeHashid($hashid);
+            if ($decoded) {
+                $workerIds[] = $decoded;
+            }
+        }
+
+        if (empty($workerIds)) {
+            return back()->with('error', 'Karyawan yang dipilih tidak valid.');
+        }
+
+        $workers = \App\Models\Worker::whereIn('id', $workerIds)->get();
+
+        $zip = new \ZipArchive();
+        $zipFileName = 'bulk_paklarings_' . time() . '.zip';
+        $zipFilePath = storage_path('app/' . $zipFileName);
+
+        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Gagal membuat file ZIP.');
+        }
+
+        $filesToCleanup = [];
+        $addedFilesCount = 0;
+
+        foreach ($workers as $worker) {
+            $assignmentQuery = $worker->assignments();
+            if ($user->isPic()) {
+                $assignmentQuery->whereIn('project_id', $projectIds);
+            }
+            $assignment = $assignmentQuery->orderBy('hire_date', 'desc')->first();
+
+            if (!$assignment) {
+                continue;
+            }
+
+            // Validation 1: Work equipment must be returned
+            if (!$assignment->equipment_returned) {
+                continue;
+            }
+
+            // Validation 2: Status must be Resign, Contract Expired, or Project Closed
+            $grade = '';
+            if ($assignment->status === 'contract expired' || $assignment->status === 'project closed') {
+                $grade = 'A';
+            } elseif ($assignment->status === 'resign') {
+                $grade = 'B';
+            } else {
+                continue;
+            }
+
+            $assignment->load(['worker', 'project.client', 'branches', 'project.templatePaklaringA', 'project.templatePaklaringB']);
+
+            $pihakPertama = ($user->internalEmployee ?? null)
+                ?? \App\Models\InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
+                ?? \App\Models\InternalEmployee::where('position', 'Head of Operation')->first()
+                ?? \App\Models\InternalEmployee::first();
+
+            $sequence = str_pad($assignment->id, 3, '0', STR_PAD_LEFT);
+            $romanMonths = [1=>'I', 2=>'II', 3=>'III', 4=>'IV', 5=>'V', 6=>'VI', 7=>'VII', 8=>'VIII', 9=>'IX', 10=>'X', 11=>'XI', 12=>'XII'];
+            $monthRom = $romanMonths[(int)\Carbon\Carbon::now()->format('n')];
+            $year = \Carbon\Carbon::now()->year;
+            $nomorSurat = "{$sequence}/ARU/Pers-SKK/{$monthRom}/{$year}";
+
+            $template = $grade === 'A' ? $assignment->project->templatePaklaringA : $assignment->project->templatePaklaringB;
+            $templateTypeStr = $grade === 'A' ? 'paklaring_a' : 'paklaring_b';
+
+            if (!$template) {
+                $template = \App\Models\DocumentTemplate::where('type', $templateTypeStr)->where('is_default', true)->first();
+            }
+
+            if (!$template || !$template->file_path || !\Storage::disk('local')->exists($template->file_path)) {
+                continue;
+            }
+
+            $parsedData = $this->parserService->getRealData(null, $assignment, $pihakPertama, $nomorSurat, 'docx');
+            $workerName = $worker->name ?? 'Unknown';
+            $outputPath = storage_path('app/temp_paklaring_' . uniqid() . '.docx');
+            
+            $this->parserService->generateDocx(\Storage::disk('local')->path($template->file_path), $parsedData, $outputPath);
+            $filesToCleanup[] = $outputPath;
+
+            $added = false;
+            if (config('services.google.pdf_conversion_enabled')) {
+                $pdfOutputPath = storage_path('app/temp_paklaring_' . uniqid() . '.pdf');
+                $converted = $this->pdfConverterService->convertDocxToPdf($outputPath, $pdfOutputPath);
+
+                if ($converted && file_exists($pdfOutputPath)) {
+                    $filesToCleanup[] = $pdfOutputPath;
+                    $fileName = "Paklaring - {$workerName}.pdf";
+                    $zip->addFile($pdfOutputPath, $fileName);
+                    $added = true;
+                }
+            }
+
+            if (!$added) {
+                $fileName = "Paklaring - {$workerName}.docx";
+                $zip->addFile($outputPath, $fileName);
+            }
+
+            $addedFilesCount++;
+        }
+
+        $zip->close();
+
+        foreach ($filesToCleanup as $tempFile) {
+            if (file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+        }
+
+        if ($addedFilesCount === 0) {
+            if (file_exists($zipFilePath)) {
+                @unlink($zipFilePath);
+            }
+            return back()->with('error', 'Tidak ada paklaring yang berhasil di-generate karena perangkat belum dikembalikan atau status penempatan tidak sesuai.');
+        }
+
+        \App\Models\AuditLog::log('download', 'assignment', "Mengunduh secara massal {$addedFilesCount} paklaring karyawan", [
+            'count' => $addedFilesCount,
+            'worker_ids' => $workerIds,
+        ]);
+
+        return response()->download($zipFilePath, 'paklaring_massal_' . date('Ymd_His') . '.zip')->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Check Paklaring eligibility for multiple workers.
+     */
+    public function checkPaklaringEligibility(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->isPic()) {
+            $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
+        } elseif (!$user->isAdminOrAbove()) {
+            return response()->json(['error' => 'Akses ditolak.'], 403);
+        }
+
+        $idsInput = $request->input('ids');
+        if (is_string($idsInput)) {
+            $hashids = explode(',', $idsInput);
+        } elseif (is_array($idsInput)) {
+            $hashids = $idsInput;
+        } else {
+            $hashids = [];
+        }
+
+        $hashids = array_filter($hashids);
+        if (empty($hashids)) {
+            return response()->json(['eligible' => [], 'ineligible' => []]);
+        }
+
+        $workerIds = [];
+        $hashMap = [];
+        foreach ($hashids as $hashid) {
+            $decoded = \App\Models\Worker::decodeHashid($hashid);
+            if ($decoded) {
+                $workerIds[] = $decoded;
+                $hashMap[$decoded] = $hashid;
+            }
+        }
+
+        if (empty($workerIds)) {
+            return response()->json(['eligible' => [], 'ineligible' => []]);
+        }
+
+        $workers = \App\Models\Worker::whereIn('id', $workerIds)->get();
+        $eligible = [];
+        $ineligible = [];
+
+        foreach ($workers as $worker) {
+            $assignmentQuery = $worker->assignments();
+            if ($user->isPic()) {
+                $assignmentQuery->whereIn('project_id', $projectIds);
+            }
+            $assignment = $assignmentQuery->orderBy('hire_date', 'desc')->first();
+
+            $hashid = $hashMap[$worker->id] ?? null;
+
+            if (!$assignment) {
+                $ineligible[] = [
+                    'hashid' => $hashid,
+                    'name' => $worker->name,
+                    'reason' => 'Karyawan tidak memiliki riwayat penempatan (assignment).'
+                ];
+                continue;
+            }
+
+            if (!$assignment->equipment_returned) {
+                $ineligible[] = [
+                    'hashid' => $hashid,
+                    'name' => $worker->name,
+                    'reason' => 'Perangkat kerja belum dikembalikan.'
+                ];
+                continue;
+            }
+
+            if (!in_array($assignment->status, ['resign', 'contract expired', 'project closed'])) {
+                $ineligible[] = [
+                    'hashid' => $hashid,
+                    'name' => $worker->name,
+                    'reason' => 'Status penempatan harus Resign, Contract Expired, atau Project Closed.'
+                ];
+                continue;
+            }
+
+            $eligible[] = [
+                'hashid' => $hashid,
+                'name' => $worker->name,
+            ];
+        }
+
+        return response()->json([
+            'eligible' => $eligible,
+            'ineligible' => $ineligible,
+        ]);
+    }
 }
