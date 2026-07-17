@@ -68,6 +68,33 @@ class Worker extends Model
         'bpjs_ketenagakerjaan',
         'bank_name',
         'bank_account_number',
+        'blood_type',
+        'height',
+        'weight',
+        'housing_status',
+        'phone_domicile',
+        'size_shoe',
+        'size_uniform',
+        'reference_name',
+        'reference_relationship',
+        'reference_phone',
+        'emergency_name',
+        'emergency_relationship',
+        'emergency_phone',
+        'emergency_address',
+        'school_name_city',
+        'school_major',
+        'school_graduation_year',
+        'work_experience',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'work_experience' => 'array',
     ];
 
     /**
