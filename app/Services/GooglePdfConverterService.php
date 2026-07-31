@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\GoogleOAuthCredential;
 use Google\Client;
 use Google\Service\Drive;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +26,9 @@ class GooglePdfConverterService
 
         $clientId = config('services.google.client_id');
         $clientSecret = config('services.google.client_secret');
-        $refreshToken = config('services.google.refresh_token');
+        $storedCredential = GoogleOAuthCredential::query()->latest('id')->first();
+        $refreshToken = $storedCredential?->refresh_token
+            ?: config('services.google.refresh_token');
 
         $useUserAuth = !empty($clientId) && !empty($clientSecret) && !empty($refreshToken);
 

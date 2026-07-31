@@ -86,11 +86,19 @@ function AssetUploadCard({ label, type, currentUrl, icon }: {
     );
 }
 
-export default function Index({ settings, assetUrls, validationDigits, validationEnums }: {
+export default function Index({ settings, assetUrls, validationDigits, validationEnums, googleOAuth }: {
     settings: Record<string, string | null>;
     assetUrls: { logo: string | null; signature: string | null };
     validationDigits: Record<string, number>;
     validationEnums: Record<string, { value: string; label: string; enabled: boolean }[]>;
+    googleOAuth: {
+        configured: boolean;
+        connected: boolean;
+        connectedAt: string | null;
+        expiresAt: string | null;
+        redirectUri: string;
+        usingEnvFallback: boolean;
+    };
 }) {
     const user = usePage<PageProps>().props.auth.user;
 
@@ -400,6 +408,96 @@ export default function Index({ settings, assetUrls, validationDigits, validatio
                             </div>
                         </form>
                     </div>
+
+                    {/* Google Drive OAuth Section */}
+                    {user.role === 'SUPER_ADMIN' && (
+                        <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">
+                            <header className="mb-6">
+                                <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                    <iconify-icon icon="logos:google-drive" width="24"></iconify-icon>
+                                    Google Drive PDF Converter
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                    Hubungkan akun Google untuk konversi DOCX ke PDF tanpa menggunakan OAuth Playground.
+                                </p>
+                            </header>
+
+                            <div className="space-y-5">
+                                <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                                    googleOAuth.connected
+                                        ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'
+                                        : googleOAuth.usingEnvFallback
+                                            ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800'
+                                            : 'bg-slate-50 border-slate-200 dark:bg-slate-900/30 dark:border-slate-700'
+                                }`}>
+                                    <div className="flex items-start gap-3">
+                                        <iconify-icon
+                                            icon={googleOAuth.connected ? 'solar:check-circle-bold' : googleOAuth.usingEnvFallback ? 'solar:danger-triangle-bold' : 'solar:close-circle-bold'}
+                                            width="24"
+                                            className={googleOAuth.connected ? 'text-emerald-600' : googleOAuth.usingEnvFallback ? 'text-amber-600' : 'text-slate-400'}
+                                        ></iconify-icon>
+                                        <div>
+                                            <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                                                {googleOAuth.connected
+                                                    ? 'Google Drive terhubung'
+                                                    : googleOAuth.usingEnvFallback
+                                                        ? 'Menggunakan token dari .env'
+                                                        : 'Google Drive belum terhubung'}
+                                            </h3>
+                                            {googleOAuth.connectedAt && (
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                    Terhubung {new Date(googleOAuth.connectedAt).toLocaleString('id-ID')}
+                                                </p>
+                                            )}
+                                            {googleOAuth.expiresAt && (
+                                                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                                                    Google memberikan token berbatas waktu sampai {new Date(googleOAuth.expiresAt).toLocaleString('id-ID')}.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2 shrink-0">
+                                        <a
+                                            href={route('settings.google.connect')}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold transition-colors"
+                                        >
+                                            <iconify-icon icon="solar:login-3-bold" width="17"></iconify-icon>
+                                            {googleOAuth.connected ? 'Hubungkan Ulang' : 'Hubungkan Google Drive'}
+                                        </a>
+                                        {googleOAuth.connected && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (window.confirm('Hapus koneksi Google Drive dari sistem?')) {
+                                                        router.post(route('settings.google.disconnect'), {}, { preserveScroll: true });
+                                                    }
+                                                }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg text-sm font-semibold transition-colors"
+                                            >
+                                                <iconify-icon icon="solar:link-broken-bold" width="17"></iconify-icon>
+                                                Putuskan
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {!googleOAuth.configured && (
+                                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300">
+                                        Isi <code>GOOGLE_CLIENT_ID</code> dan <code>GOOGLE_CLIENT_SECRET</code> di server sebelum menghubungkan akun.
+                                    </div>
+                                )}
+
+                                <div className="p-4 bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/20">
+                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Authorized redirect URI</p>
+                                    <code className="text-xs text-primary break-all select-all">{googleOAuth.redirectUri}</code>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                        Tambahkan URL ini ke OAuth Client Google Cloud Console. Refresh token disimpan terenkripsi dan tidak pernah dikirim ke browser.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Document Settings Section */}
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-8">

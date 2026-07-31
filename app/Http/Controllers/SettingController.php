@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Models\GoogleOAuthCredential;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
@@ -88,6 +89,7 @@ class SettingController extends Controller
     public function index()
     {
         $settings = Setting::all()->keyBy('key')->map->value;
+        $googleCredential = GoogleOAuthCredential::query()->latest('id')->first();
         
         $assetUrls = [
             'logo'      => $settings->get('asset_logo')      ? asset('uploads/' . $settings->get('asset_logo'))      : null,
@@ -99,6 +101,17 @@ class SettingController extends Controller
             'assetUrls'         => $assetUrls,
             'validationDigits'  => self::getValidationDigits(),
             'validationEnums'   => self::getValidationEnums(),
+            'googleOAuth'       => [
+                'configured' => filled(config('services.google.client_id'))
+                    && filled(config('services.google.client_secret')),
+                'connected' => $googleCredential !== null,
+                'connectedAt' => $googleCredential?->connected_at?->toIso8601String(),
+                'expiresAt' => $googleCredential?->refresh_token_expires_at?->toIso8601String(),
+                'redirectUri' => config('services.google.redirect_uri')
+                    ?: route('settings.google.callback'),
+                'usingEnvFallback' => $googleCredential === null
+                    && filled(config('services.google.refresh_token')),
+            ],
         ]);
     }
 

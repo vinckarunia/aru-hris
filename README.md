@@ -141,28 +141,35 @@ Metode ini paling cepat karena menggunakan autentikasi server-to-server secara o
 
 ---
 
-### Metode B: Menggunakan OAuth 2.0 User Consent (Pribadi)
-Metode ini berjalan langsung atas nama akun Google pribadi Anda sehingga memiliki akses penuh ke kuota penyimpanan 15 GB gratis Anda secara langsung:
+### Metode B: Menggunakan OAuth 2.0 User Consent (Akun Google Pribadi)
+Metode ini berjalan atas nama akun Google pribadi dan dapat dihubungkan langsung dari halaman Pengaturan HRIS tanpa OAuth Playground:
 
 1. **Buat OAuth Client ID**:
    - Di Google Cloud Console, buka **APIs & Services > Credentials**.
    - Klik **Create Credentials > OAuth client ID**, pilih tipe aplikasi **Web application**.
-   - Di bagian **Authorized redirect URIs**, tambahkan: `https://developers.google.com/oauthplayground`.
+   - Di bagian **Authorized redirect URIs**, tambahkan URL callback aplikasi:
+     `https://domain-hris-anda.com/settings/google/callback`.
    - Salin **Client ID** dan **Client Secret** yang didapatkan.
-2. **Dapatkan Refresh Token**:
-   - Buka [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground).
-   - Klik ikon gerigi (Settings) di pojok kanan atas, centang **Use your own OAuth credentials**, lalu masukkan **Client ID** & **Client Secret** Anda.
-   - Di panel kiri (Step 1), cari **Google Drive API v3**, centang scope `https://www.googleapis.com/auth/drive` atau `https://www.googleapis.com/auth/drive.file`.
-   - Klik **Authorize APIs** dan setujui izin pada akun Google Anda.
-   - Di Step 2, klik **Exchange authorization code for tokens**, lalu salin **Refresh Token** yang muncul di panel kanan.
-3. **Konfigurasikan `.env`**:
-   Tambahkan variabel berikut ke berkas `.env` server produksi:
+2. **Konfigurasikan `.env`**:
+   Tambahkan variabel berikut ke berkas `.env` server produksi. URL harus sama persis dengan Authorized redirect URI di Google Cloud:
    ```env
    GOOGLE_CLIENT_ID=isi_client_id_anda
    GOOGLE_CLIENT_SECRET=isi_client_secret_anda
-   GOOGLE_REFRESH_TOKEN=isi_refresh_token_anda
+   GOOGLE_REDIRECT_URI=https://domain-hris-anda.com/settings/google/callback
    ```
-   *(Jika variabel OAuth ini terisi, sistem secara otomatis akan memprioritaskan metode OAuth ini dibanding Service Account).*
+3. **Jalankan Migrasi dan Bersihkan Cache**:
+   ```bash
+   php artisan migrate --force
+   php artisan optimize:clear
+   php artisan config:cache
+   ```
+4. **Hubungkan Akun Google**:
+   - Login sebagai **Super Admin**.
+   - Buka menu **Pengaturan Sistem > Google Drive PDF Converter**.
+   - Klik **Hubungkan Google Drive**, login ke akun Google tujuan, lalu setujui akses.
+   - Refresh token akan disimpan terenkripsi di database dan digunakan otomatis oleh converter.
+
+`GOOGLE_REFRESH_TOKEN` tetap didukung sebagai fallback untuk instalasi lama, tetapi tidak diperlukan setelah koneksi dibuat melalui halaman Pengaturan.
 
 ---
 
@@ -178,4 +185,3 @@ Jika sukses, hasil tes akan menampilkan:
   ✓ it falls back to docx when pdf conversion fails
   ✓ it downloads pdf file when conversion is enabled and succeeds
 ```
-

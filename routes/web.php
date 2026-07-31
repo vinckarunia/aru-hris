@@ -136,6 +136,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/settings/upload-asset', [\App\Http\Controllers\SettingController::class, 'uploadAsset'])->name('settings.upload-asset');
         Route::post('/settings/reset-data', [\App\Http\Controllers\SettingController::class, 'resetData'])->name('settings.reset-data');
         Route::post('/settings/reset-system', [\App\Http\Controllers\SettingController::class, 'resetSystem'])->name('settings.reset-system');
+        Route::middleware('role:SUPER_ADMIN')->group(function () {
+            Route::get('/settings/google/connect', [\App\Http\Controllers\GoogleOAuthController::class, 'connect'])->name('settings.google.connect');
+            Route::get('/settings/google/callback', [\App\Http\Controllers\GoogleOAuthController::class, 'callback'])->name('settings.google.callback');
+            Route::post('/settings/google/disconnect', [\App\Http\Controllers\GoogleOAuthController::class, 'disconnect'])->name('settings.google.disconnect');
+        });
 
         Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
 
