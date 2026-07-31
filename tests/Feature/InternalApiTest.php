@@ -56,6 +56,10 @@ it('returns active projects with hashed IDs', function () {
     // Verify IDs are hashed strings (length should be at least 10 as per HasHashid trait)
     expect($data[0]['id'])->toBeString()->toHaveLength(10);
     expect($data[0]['name'])->toBe('Project Alpha');
+    expect($data[0]['client'])->toBe([
+        'id' => $this->client->getRouteKey(),
+        'name' => 'Test Client',
+    ]);
 });
 
 it('creates onboarding DataRequest successfully', function () {
@@ -162,4 +166,3 @@ it('creates documents when new_data onboarding request is approved', function ()
     expect($kk->file_path)->toBe('uploads/budi/kk.pdf');
     expect($kk->verified_at)->not->toBeNull();
 });
-

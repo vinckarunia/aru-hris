@@ -17,10 +17,20 @@ class InternalApiController extends Controller
      */
     public function getProjects(): JsonResponse
     {
-        $projects = Project::orderBy('name')->get(['id', 'name']);
+        $projects = Project::with('client:id,full_name')
+            ->orderBy('name')
+            ->get(['id', 'client_id', 'name'])
+            ->map(fn (Project $project) => [
+                'id' => $project->getRouteKey(),
+                'name' => $project->name,
+                'client' => $project->client ? [
+                    'id' => $project->client->getRouteKey(),
+                    'name' => $project->client->full_name,
+                ] : null,
+            ]);
         
         return response()->json([
-            'data' => $projects->toArray(),
+            'data' => $projects,
         ]);
     }
 
