@@ -50,7 +50,20 @@ class GooglePdfConverterService
             if ($useUserAuth) {
                 $client->setClientId($clientId);
                 $client->setClientSecret($clientSecret);
-                $client->fetchAccessTokenWithRefreshToken($refreshToken);
+                $tokenResponse = $client->fetchAccessTokenWithRefreshToken($refreshToken);
+
+                if (!is_array($tokenResponse) || empty($tokenResponse['access_token'])) {
+                    Log::error('Google PDF Converter: gagal memperoleh access token.', [
+                        'error' => is_array($tokenResponse)
+                            ? ($tokenResponse['error'] ?? 'unknown_error')
+                            : 'invalid_token_response',
+                        'description' => is_array($tokenResponse)
+                            ? ($tokenResponse['error_description'] ?? null)
+                            : null,
+                    ]);
+
+                    return false;
+                }
             } else {
                 // Handle credentials either as raw JSON string or file path
                 if ($this->isJson($jsonCredentials)) {
