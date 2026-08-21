@@ -21,6 +21,7 @@ erDiagram
         bigint template_kontrak_id FK
         bigint template_harian_id FK
         bigint template_part_time_id FK
+        bigint template_mitra_id FK
         bigint template_surat_tugas_id FK
         bigint template_paklaring_a_id FK
         bigint template_paklaring_b_id FK
@@ -104,7 +105,7 @@ erDiagram
     CONTRACTS {
         bigint id PK
         bigint assignment_id FK "NN"
-        enum contract_type "Kontrak|Harian|Part Time"
+        enum contract_type "Kontrak|Harian|Part Time|Mitra"
         enum pkwt_type "PKWT|PKWTT"
         int pkwt_number
         date start_date

@@ -14,7 +14,7 @@ use App\Models\ContractCompensation;
  *
  * @property int $id
  * @property int $assignment_id
- * @property string $contract_type (Kontrak|Harian)
+ * @property string $contract_type (Kontrak|Harian|Part-time|Mitra)
  * @property string|null $pkwt_type (PKWT|PKWTT)
  * @property int $pkwt_number
  * @property string $start_date

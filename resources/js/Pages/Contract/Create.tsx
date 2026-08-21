@@ -169,7 +169,7 @@ export default function Create({ assignment, suggestedStartDate, suggestedPkwtNu
                                 onChange={e => {
                                     const type = e.target.value;
                                     setData('contract_type', type);
-                                    if (type === 'Harian') {
+                                    if (type !== 'Kontrak') {
                                         setData('pkwt_type', '');
                                     } else if (!data.pkwt_type) {
                                         setData('pkwt_type', 'PKWT');
@@ -178,6 +178,8 @@ export default function Create({ assignment, suggestedStartDate, suggestedPkwtNu
                             >
                                 <option value="Kontrak">Contract</option>
                                 <option value="Harian">Harian</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Mitra">Mitra</option>
                             </select>
                             <InputError message={errors.contract_type} className="mt-1" />
                         </div>
@@ -188,9 +190,9 @@ export default function Create({ assignment, suggestedStartDate, suggestedPkwtNu
                                 className="mt-1 block w-full rounded-md border-slate-300 dark:bg-slate-900 dark:border-slate-700 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                                 value={data.pkwt_type}
                                 onChange={e => setData('pkwt_type', e.target.value)}
-                                disabled={data.contract_type === 'Harian'}
+                                disabled={data.contract_type !== 'Kontrak'}
                             >
-                                <option value="" disabled={data.contract_type !== 'Harian'}>Harian</option>
+                                <option value="" disabled={data.contract_type === 'Kontrak'}>{data.contract_type !== 'Kontrak' ? data.contract_type : 'Pilih...'}</option>
                                 <option value="PKWT">PKWT</option>
                                 <option value="PKWTT">PKWTT</option>
                             </select>
@@ -204,7 +206,7 @@ export default function Create({ assignment, suggestedStartDate, suggestedPkwtNu
                                 className="mt-1 block w-full disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                                 value={data.pkwt_number}
                                 onChange={e => setData('pkwt_number', e.target.value)}
-                                disabled={data.contract_type === 'PKWTT' || data.contract_type === 'Harian'}
+                                disabled={data.contract_type !== 'Kontrak' || data.pkwt_type === 'PKWTT'}
                                 placeholder="Opsional — Contoh: 1"
                             />
                             <InputError message={errors.pkwt_number} className="mt-1" />

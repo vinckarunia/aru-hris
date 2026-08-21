@@ -643,8 +643,8 @@ class ImportDataCleaner
     /**
      * Normalize a contract type string from to the database enum value.
      *
-     * @param string|null $value The raw contract type (e.g., "Contract", "Harian").
-     * @return string The normalized contract type: "Kontrak" or "Harian".
+     * @param string|null $value The raw contract type (e.g., "Contract", "Harian", "Mitra").
+     * @return string The normalized database contract type.
      */
     public static function parseContractType(?string $value): string
     {
@@ -660,6 +660,10 @@ class ImportDataCleaner
 
         if (str_contains($lower, 'part-time') || str_contains($lower, 'part time') || str_contains($lower, 'parttime')) {
             return 'Part-time';
+        }
+
+        if (str_contains($lower, 'mitra') || str_contains($lower, 'partner')) {
+            return 'Mitra';
         }
 
         return 'Kontrak';

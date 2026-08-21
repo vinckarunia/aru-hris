@@ -17,6 +17,7 @@ class DocumentTemplate extends Model
     public const TYPE_KONTRAK_PKWT = 'kontrak_pkwt';
     public const TYPE_KONTRAK_PART_TIME = 'kontrak_part_time';
     public const TYPE_KONTRAK_HARIAN = 'kontrak_harian';
+    public const TYPE_KONTRAK_MITRA = 'kontrak_mitra';
     public const TYPE_SURAT_TUGAS = 'surat_tugas';
     public const TYPE_PAKLARING_A = 'paklaring_a';
     public const TYPE_PAKLARING_B = 'paklaring_b';

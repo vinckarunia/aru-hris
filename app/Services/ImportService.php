@@ -92,9 +92,9 @@ class ImportService
             ],
         ],
         [
-            'group' => 'Data Kontrak (PKWT/PKWTT/Harian)',
+            'group' => 'Data Kontrak (PKWT/PKWTT/Harian/Part-time/Mitra)',
             'options' => [
-                ['key' => 'raw_contract_type', 'label' => 'Jenis Kontrak (PKWT/PKWTT/Harian)'],
+                ['key' => 'raw_contract_type', 'label' => 'Jenis Kontrak (PKWT/PKWTT/Harian/Part-time/Mitra)'],
                 ['key' => 'contract_start', 'label' => 'Kontrak Start Date/Mulai'],
                 ['key' => 'contract_end', 'label' => 'Kontrak End Date/Selesai'],
                 ['key' => 'evaluation_notes', 'label' => 'Catatan Evaluasi Kontrak'],
@@ -159,8 +159,8 @@ class ImportService
         'tgl resign' => 'resign_date',
         'tanggal resign' => 'resign_date',
         
-        'jenis kontrak' => 'contract_type',
-        'contract type' => 'contract_type',
+        'jenis kontrak' => 'raw_contract_type',
+        'contract type' => 'raw_contract_type',
         
         'status' => 'status',
         

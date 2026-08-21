@@ -167,6 +167,7 @@ export default function Edit({ contract }: Props) {
                                 <option value="Kontrak">Contract</option>
                                 <option value="Harian">Harian</option>
                                 <option value="Part-time">Part-time</option>
+                                <option value="Mitra">Mitra</option>
                             </select>
                             <InputError message={errors.contract_type} className="mt-1" />
                         </div>

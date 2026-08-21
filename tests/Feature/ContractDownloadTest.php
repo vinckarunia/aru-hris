@@ -93,6 +93,32 @@ test('it downloads docx file when pdf conversion is disabled', function () {
     $this->assertTrue(str_contains($response->headers->get('content-disposition'), 'PKWT - John Doe.docx'));
 });
 
+test('it downloads a mitra contract using the mitra template and filename', function () {
+    config(['services.google.pdf_conversion_enabled' => false]);
+
+    $mitraTemplatePath = 'documents/templates/test_mitra.docx';
+    Storage::disk('local')->put($mitraTemplatePath, 'fake-mitra-docx-content');
+
+    DocumentTemplate::create([
+        'name' => 'Template Mitra',
+        'type' => DocumentTemplate::TYPE_KONTRAK_MITRA,
+        'file_path' => $mitraTemplatePath,
+        'is_default' => true,
+    ]);
+
+    $this->contract->update([
+        'contract_type' => 'Mitra',
+        'pkwt_type' => null,
+        'pkwt_number' => null,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('contracts.download-pkwt', $this->contract));
+
+    $response->assertStatus(200);
+    $this->assertTrue(str_contains($response->headers->get('content-disposition'), 'MITRA - John Doe.docx'));
+});
+
 test('it falls back to docx when pdf conversion fails', function () {
     config(['services.google.pdf_conversion_enabled' => true]);
 

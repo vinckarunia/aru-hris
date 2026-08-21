@@ -132,6 +132,7 @@ const CONTRACT_TYPE_OPTIONS = [
     { value: 'Kontrak', label: 'Kontrak (PKWT)' },
     { value: 'Harian', label: 'Harian' },
     { value: 'Part-time', label: 'Part-time' },
+    { value: 'Mitra', label: 'Mitra' },
 ];
 
 // ============================================================================

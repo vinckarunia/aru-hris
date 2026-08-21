@@ -376,7 +376,7 @@ class ContractController extends Controller
         return [
             // Contract validation rules
             'assignment_id' => 'required|exists:assignments,id',
-            'contract_type' => 'required|in:Kontrak,Harian,Part-time',
+            'contract_type' => 'required|in:Kontrak,Harian,Part-time,Mitra',
             'pkwt_type' => 'nullable|in:PKWT,PKWTT',
             'pkwt_number' => [
                 'nullable', 'integer', 'min:1',

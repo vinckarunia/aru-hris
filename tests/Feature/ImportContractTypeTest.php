@@ -89,4 +89,31 @@ test('it auto defaults contract pkwt_type to PKWT unless explicitly stated as PK
     expect($contracts5)->toHaveCount(1);
     expect($contracts5[0]['contract_type'])->toBe('Harian');
     expect($contracts5[0]['pkwt_type'])->toBeNull();
+
+    // Case 6: Mitra from the mapped file column
+    $row6 = [
+        'Mitra',
+        '2026-06-12',
+        '2026-12-11',
+        '2026-06-12',
+        'Notes 6',
+    ];
+
+    $contracts6 = $importService->buildContractsData($row6, $mapping, $globalSettings);
+    expect($contracts6)->toHaveCount(1);
+    expect($contracts6[0]['contract_type'])->toBe('Mitra');
+    expect($contracts6[0]['pkwt_type'])->toBeNull();
+
+    // Case 7: Mitra supplied as the global import override
+    $contracts7 = $importService->buildContractsData($row4, $mapping, ['contract_type' => 'Mitra']);
+    expect($contracts7)->toHaveCount(1);
+    expect($contracts7[0]['contract_type'])->toBe('Mitra');
+    expect($contracts7[0]['pkwt_type'])->toBeNull();
+});
+
+test('it auto maps the contract type column used by bulk import', function () {
+    $mapping = (new ImportService())->autoMapHeaders(['Nama Lengkap', 'Jenis Kontrak']);
+
+    expect($mapping)->toHaveKey('raw_contract_type', 1)
+        ->not->toHaveKey('contract_type');
 });

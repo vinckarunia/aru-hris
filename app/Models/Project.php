@@ -41,6 +41,7 @@ class Project extends Model
         'template_kontrak_id',
         'template_harian_id',
         'template_part_time_id',
+        'template_mitra_id',
         'template_surat_tugas_id',
         'template_paklaring_a_id',
         'template_paklaring_b_id',
@@ -101,6 +102,11 @@ class Project extends Model
     public function templatePartTime()
     {
         return $this->belongsTo(DocumentTemplate::class, 'template_part_time_id');
+    }
+
+    public function templateMitra()
+    {
+        return $this->belongsTo(DocumentTemplate::class, 'template_mitra_id');
     }
 
     public function templateSuratTugas()

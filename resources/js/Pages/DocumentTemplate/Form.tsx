@@ -84,6 +84,7 @@ export default function DocumentTemplateForm({ auth }: PageProps) {
                                 <option value="kontrak_pkwt">Kontrak PKWT</option>
                                 <option value="kontrak_part_time">Kontrak Part-Time</option>
                                 <option value="kontrak_harian">Kontrak Harian</option>
+                                <option value="kontrak_mitra">Kontrak Mitra</option>
                                 <option value="surat_tugas">Surat Tugas</option>
                                 <option value="paklaring_a">Paklaring A</option>
                                 <option value="paklaring_b">Paklaring B</option>

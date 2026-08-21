@@ -78,7 +78,7 @@ class AssignmentController extends Controller
 
             // Validate bundled contract fields
             $contractData = $request->validate([
-                'contract_type'    => 'required|in:Kontrak,Harian,Part-time',
+                'contract_type'    => 'required|in:Kontrak,Harian,Part-time,Mitra',
                 'pkwt_type'        => 'nullable|in:PKWT,PKWTT',
                 'pkwt_number'      => 'nullable|integer|min:1',
                 'start_date'       => 'nullable|date',

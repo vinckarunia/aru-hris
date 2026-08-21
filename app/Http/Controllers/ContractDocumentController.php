@@ -27,7 +27,7 @@ class ContractDocumentController extends Controller
     {
         $user = $request->user();
 
-        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateKontrak', 'assignment.project.templateHarian', 'assignment.project.templatePartTime']);
+        $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateKontrak', 'assignment.project.templateHarian', 'assignment.project.templatePartTime', 'assignment.project.templateMitra']);
 
         if ($user->isPic()) {
             $projectIds = $user->pic ? $user->pic->projects()->pluck('projects.id')->toArray() : [];
@@ -61,7 +61,11 @@ class ContractDocumentController extends Controller
         $project = $contract->assignment->project;
         $contractType = strtolower($contract->contract_type);
         
-        $prefix = in_array($contractType, ['harian', 'part-time']) ? 'PKPH' : 'PKWT';
+        $prefix = match ($contractType) {
+            'harian', 'part-time' => 'PKPH',
+            'mitra' => 'MITRA',
+            default => 'PKWT',
+        };
         $nomorSurat = sprintf('%s/ARU/%s-%s/%s/%s', $seqFormatted, $prefix, $pkwtNumFormatted, $romanMonth, $year);
 
 
@@ -71,6 +75,8 @@ class ContractDocumentController extends Controller
             $template = $project->templateHarian;
         } elseif ($contractType === 'part-time') {
             $template = $project->templatePartTime;
+        } elseif ($contractType === 'mitra') {
+            $template = $project->templateMitra;
         } else {
             $template = $project->templateKontrak;
         }
@@ -78,6 +84,7 @@ class ContractDocumentController extends Controller
         $contractTypeMapped = match ($contractType) {
             'harian' => 'kontrak_harian',
             'part-time' => 'kontrak_part_time',
+            'mitra' => 'kontrak_mitra',
             default => 'kontrak_pkwt',
         };
 
@@ -378,7 +385,7 @@ class ContractDocumentController extends Controller
                 continue;
             }
 
-            $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateKontrak', 'assignment.project.templateHarian', 'assignment.project.templatePartTime']);
+            $contract->load(['compensation', 'assignment.worker', 'assignment.project.client', 'assignment.branches', 'assignment.project.templateKontrak', 'assignment.project.templateHarian', 'assignment.project.templatePartTime', 'assignment.project.templateMitra']);
             
             $pihakPertama = ($user->internalEmployee ?? null)
                 ?? \App\Models\InternalEmployee::where('name', 'JUMAGA TUA SINAGA')->first()
@@ -401,7 +408,11 @@ class ContractDocumentController extends Controller
             $project = $assignment->project;
             $contractType = strtolower($contract->contract_type);
             
-            $prefix = in_array($contractType, ['harian', 'part-time']) ? 'PKPH' : 'PKWT';
+            $prefix = match ($contractType) {
+                'harian', 'part-time' => 'PKPH',
+                'mitra' => 'MITRA',
+                default => 'PKWT',
+            };
             $nomorSurat = sprintf('%s/ARU/%s-%s/%s/%s', $seqFormatted, $prefix, $pkwtNumFormatted, $romanMonth, $year);
 
             $template = null;
@@ -409,6 +420,8 @@ class ContractDocumentController extends Controller
                 $template = $project->templateHarian;
             } elseif ($contractType === 'part-time') {
                 $template = $project->templatePartTime;
+            } elseif ($contractType === 'mitra') {
+                $template = $project->templateMitra;
             } else {
                 $template = $project->templateKontrak;
             }
@@ -416,6 +429,7 @@ class ContractDocumentController extends Controller
             $contractTypeMapped = match ($contractType) {
                 'harian' => 'kontrak_harian',
                 'part-time' => 'kontrak_part_time',
+                'mitra' => 'kontrak_mitra',
                 default => 'kontrak_pkwt',
             };
 

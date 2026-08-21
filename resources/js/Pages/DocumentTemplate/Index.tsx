@@ -45,6 +45,7 @@ export default function Index({ auth, templates }: Props) {
             'kontrak_pkwt': 'Kontrak PKWT',
             'kontrak_part_time': 'Kontrak Part-Time',
             'kontrak_harian': 'Kontrak Harian',
+            'kontrak_mitra': 'Kontrak Mitra',
             'surat_tugas': 'Surat Tugas',
             'paklaring_a': 'Paklaring A',
             'paklaring_b': 'Paklaring B',
@@ -53,7 +54,7 @@ export default function Index({ auth, templates }: Props) {
     };
 
     const filteredTemplates = templates.filter(t => {
-        if (activeTab === 'kontrak') return ['kontrak_pkwt', 'kontrak_part_time', 'kontrak_harian'].includes(t.type);
+        if (activeTab === 'kontrak') return ['kontrak_pkwt', 'kontrak_part_time', 'kontrak_harian', 'kontrak_mitra'].includes(t.type);
         if (activeTab === 'surat_tugas') return t.type === 'surat_tugas';
         if (activeTab === 'paklaring') return ['paklaring_a', 'paklaring_b'].includes(t.type);
         return false;

@@ -358,7 +358,7 @@ export default function AdminLayout({ title, header, children }: PropsWithChildr
                                             <p className="font-medium text-slate-800 dark:text-slate-200">Pembaruan Otomatisasi & Unduh Massal Dokumen</p>
                                             <ul className="list-disc pl-4 space-y-1.5">
                                                 <li><strong>Otomatisasi PDF (docx-to-pdf):</strong> Integrasi dengan Google Docs untuk konversi otomatis dokumen DOCX ke PDF.</li>
-                                                <li><strong>Library Template Dokumen:</strong> Manajemen template dinamis untuk PKWT, PKPH, Surat Tugas, dan Paklaring.</li>
+                                                <li><strong>Library Template Dokumen:</strong> Manajemen template dinamis untuk PKWT, PKPH, kontrak Mitra, Surat Tugas, dan Paklaring.</li>
                                                 <li><strong>Unduh Kontrak Massal:</strong> Fitur bulk download dokumen kontrak kerja dalam format ZIP langsung dari tabel karyawan.</li>
                                             </ul>
                                         </div>
